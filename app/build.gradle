@@ -37,4 +37,16 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.espresso.core
     androidTestImplementation libs.ext.junit
+
+    // Navigation Component
+    implementation libs.navigation.fragment
+    implementation libs.navigation.ui
+
+    // Retrofit + Gson
+    implementation libs.retrofit
+    implementation libs.retrofit.converter.gson
+
+    // OkHttp + Logging
+    implementation libs.okhttp
+    implementation libs.okhttp.logging.interceptor
 }
