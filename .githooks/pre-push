@@ -1,0 +1,113 @@
+#!/bin/bash
+#
+# pre-push - Se ejecuta automaticamente antes de cada "git push".
+#
+# Pasos:
+#   1. Verifica que no se este pusheando directo a main/master.
+#   2. Actualiza la rama con el remoto (rebase) para evitar merge commits.
+#   3. Corre los tests unitarios.
+#
+# Si cualquier paso falla, el push se cancela (exit 1).
+#
+# Instalacion (una sola vez por clon): ejecutar setup-hooks.bat o setup-hooks.sh
+
+set -u
+
+# ---------------------------------------------------------------
+# Colores (solo si la salida es una terminal que los soporta)
+# ---------------------------------------------------------------
+if [ -t 1 ] && command -v tput >/dev/null 2>&1 && [ "$(tput colors 2>/dev/null || echo 0)" -ge 8 ]; then
+    ROJO="$(tput setaf 1)"
+    VERDE="$(tput setaf 2)"
+    CYAN="$(tput setaf 6)"
+    NEGRITA="$(tput bold)"
+    RESET="$(tput sgr0)"
+else
+    ROJO=""
+    VERDE=""
+    CYAN=""
+    NEGRITA=""
+    RESET=""
+fi
+
+paso()  { echo "${CYAN}==> $*${RESET}"; }
+ok()    { echo "${VERDE}    $*${RESET}"; }
+error() { echo "" >&2; echo "${ROJO}${NEGRITA}$*${RESET}" >&2; echo "" >&2; }
+
+# ---------------------------------------------------------------
+# PASO 1 - Verificar la rama actual
+# ---------------------------------------------------------------
+paso "Verificando rama..."
+
+RAMA="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$RAMA" = "HEAD" ]; then
+    error "ERROR: Estas en detached HEAD, no hay rama sobre la cual pushear. Hace 'git checkout -b nombre-rama' primero."
+    exit 1
+fi
+
+if [ "$RAMA" = "main" ] || [ "$RAMA" = "master" ]; then
+    error "ERROR: No se permite pushear directamente a main. Crea una rama feature/ y hace un Pull Request."
+    exit 1
+fi
+
+ok "Rama '$RAMA' habilitada para push."
+
+# ---------------------------------------------------------------
+# PASO 2 - Actualizar con el remoto
+# ---------------------------------------------------------------
+paso "Actualizando con el remoto..."
+
+if git ls-remote --exit-code --heads origin "$RAMA" >/dev/null 2>&1; then
+
+    # git pull --rebase aborta si hay cambios sin commitear en archivos trackeados.
+    # Los archivos sin trackear no molestan, por eso --untracked-files=no.
+    # Lo chequeamos antes para poder dar un mensaje claro.
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+        error "ERROR: Tenes cambios sin commitear. Commitealos o guardalos con 'git stash' antes de pushear."
+        exit 1
+    fi
+
+    if ! git pull --rebase origin "$RAMA"; then
+        error "ERROR: Hay conflictos con la rama remota. Resolvelos antes de pushear."
+        exit 1
+    fi
+
+    ok "Rama al dia con origin/$RAMA."
+else
+    ok "La rama '$RAMA' todavia no existe en el remoto: se omite el pull."
+fi
+
+# ---------------------------------------------------------------
+# PASO 3 - Correr los tests unitarios
+# ---------------------------------------------------------------
+paso "Ejecutando tests unitarios..."
+
+# En Git Bash sobre Windows, uname devuelve MINGW64_NT / MSYS_NT / CYGWIN_NT
+case "$(uname -s 2>/dev/null || echo desconocido)" in
+    MINGW*|MSYS*|CYGWIN*) GRADLE="./gradlew.bat" ;;
+    *)                    GRADLE="./gradlew" ;;
+esac
+
+if [ ! -f "$GRADLE" ]; then
+    if [ -f "./gradlew" ]; then
+        GRADLE="./gradlew"
+    else
+        error "ERROR: No se encontro el wrapper de Gradle en la raiz del proyecto."
+        exit 1
+    fi
+fi
+
+if ! "$GRADLE" test --console=plain; then
+    error "ERROR: Los tests unitarios fallaron. Corregi los errores antes de pushear."
+    exit 1
+fi
+
+ok "Tests unitarios en verde."
+
+# ---------------------------------------------------------------
+# Todo listo
+# ---------------------------------------------------------------
+echo ""
+echo "${VERDE}${NEGRITA}Todo OK. Pusheando...${RESET}"
+exit 0
