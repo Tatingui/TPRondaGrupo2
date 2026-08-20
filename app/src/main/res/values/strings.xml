@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">TPRondaGrupo2</string>
+    <string name="app_name">Ronda</string>
     <string name="otp_message">Ingresá el código enviado a: %1$s</string>
 </resources>
