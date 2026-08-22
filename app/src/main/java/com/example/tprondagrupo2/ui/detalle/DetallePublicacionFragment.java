@@ -16,6 +16,7 @@ import com.example.tprondagrupo2.model.Publicacion;
 
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 public class DetallePublicacionFragment extends Fragment {
@@ -81,7 +82,12 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void configurarGaleria(@NonNull Publicacion publicacion) {
-        GaleriaFotosAdapter adapter = new GaleriaFotosAdapter(publicacion.getFotos());
+        List<String> fotos = publicacion.getFotos();
+
+        GaleriaFotosAdapter adapter = new GaleriaFotosAdapter(fotos, position -> {
+            FotoFullscreenDialog dialog = FotoFullscreenDialog.newInstance(fotos, position);
+            dialog.show(getParentFragmentManager(), "foto_fullscreen");
+        });
         vpGaleria.setAdapter(adapter);
 
         int total = publicacion.getCantidadFotos();

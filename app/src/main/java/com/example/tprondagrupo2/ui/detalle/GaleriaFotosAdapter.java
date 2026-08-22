@@ -15,10 +15,16 @@ import java.util.List;
 
 public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapter.FotoViewHolder> {
 
-    private final List<String> fotos;
+    public interface OnFotoClickListener {
+        void onFotoClick(int position);
+    }
 
-    public GaleriaFotosAdapter(List<String> fotos) {
+    private final List<String> fotos;
+    private final OnFotoClickListener listener;
+
+    public GaleriaFotosAdapter(List<String> fotos, OnFotoClickListener listener) {
         this.fotos = fotos != null ? fotos : new ArrayList<>();
+        this.listener = listener;
     }
 
     @NonNull
@@ -31,10 +37,13 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
 
     @Override
     public void onBindViewHolder(@NonNull FotoViewHolder holder, int position) {
-        // Todavia no hay libreria de imagenes ni backend real, mostramos el nombre
-        // de la foto sobre el placeholder para que la galeria se vea con contenido
         String foto = fotos.get(position);
         holder.tvFotoPlaceholder.setText(foto);
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onFotoClick(position);
+            }
+        });
     }
 
     @Override
