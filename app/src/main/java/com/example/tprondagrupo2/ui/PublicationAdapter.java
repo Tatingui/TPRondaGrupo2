@@ -12,11 +12,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publication;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.ViewHolder> {
 
     private List<Publication> publications;
+    private List<Publication> publicationsFull; // Copia para el filtrado
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -25,7 +28,14 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     public PublicationAdapter(List<Publication> publications, OnItemClickListener listener) {
         this.publications = publications;
+        this.publicationsFull = new ArrayList<>(publications);
         this.listener = listener;
+    }
+
+    // Método para que el compañero implemente el filtrado
+    public void updateList(List<Publication> newList) {
+        this.publications = newList;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -40,7 +50,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Publication pub = publications.get(position);
         holder.tvTitle.setText(pub.getTitle());
-        holder.tvPrice.setText(String.format("$ %.2f", pub.getPrice()));
+        holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
         holder.tvCondition.setText(pub.getCondition());
         holder.tvLocation.setText(pub.getLocation());
         
