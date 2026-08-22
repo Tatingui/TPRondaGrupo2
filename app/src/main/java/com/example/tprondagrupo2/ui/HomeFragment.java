@@ -7,20 +7,23 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Publication;
+import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -60,23 +63,21 @@ public class HomeFragment extends Fragment {
 
         rvPublications = view.findViewById(R.id.rvPublications);
         etSearch = view.findViewById(R.id.etSearch);
-        
+
         allPublications = getMockPublications();
         displayedPublications = new ArrayList<>();
-        
+
         setupRecyclerView();
         setupSearchLogic();
         setupFilters(view);
-        
+
         loadNextPage();
     }
 
     private void setupRecyclerView() {
-        adapter = new PublicationAdapter(displayedPublications, publication -> {
-            Toast.makeText(getContext(), "Click en: " + publication.getTitle(), Toast.LENGTH_SHORT).show();
-        });
+        adapter = new PublicationAdapter(displayedPublications, this::abrirDetalle);
         rvPublications.setAdapter(adapter);
-        
+
         rvPublications.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -96,9 +97,71 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void abrirDetalle(Publication publication) {
+        Bundle args = new Bundle();
+        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, mapearADetalle(publication));
+
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_home_to_detalle, args);
+    }
+
+    private Publicacion mapearADetalle(Publication publication) {
+        List<String> fotos = Arrays.asList("Foto 1", "Foto 2", "Foto 3");
+
+        String descripcionCompleta = obtenerDescripcionCompleta(publication.getId(),
+                publication.getDescription());
+
+        String fecha = obtenerFechaMock(publication.getId());
+
+        return new Publicacion(
+                publication.getId(),
+                publication.getTitle(),
+                fotos,
+                descripcionCompleta,
+                publication.getCategory(),
+                publication.getCondition(),
+                publication.getPrice(),
+                fecha);
+    }
+
+    private String obtenerDescripcionCompleta(String id, String descCorta) {
+        switch (id) {
+            case "1":
+                return "Bicicleta de montaña rodado 29, cuadro de aluminio, 21 velocidades. "
+                        + "Muy poco uso, siempre guardada en lugar techado. Frenos a disco "
+                        + "delanteros y traseros recién calibrados. Incluye luces y timbre.";
+            case "2":
+                return "Sillón de 3 cuerpos tapizado en tela gris. Muy cómodo y amplio, "
+                        + "ideal para living. Patas de madera. Se retira por Almagro. "
+                        + "Acepto oferta razonable.";
+            case "3":
+                return "iPhone 13 de 128GB, color azul medianoche. En caja original con "
+                        + "cargador, cable y auriculares. Batería al 94%. Liberado de fábrica, "
+                        + "funciona con cualquier operador.";
+            case "4":
+                return "Mesa de luz de pino macizo barnizado. Medidas: 45x35x50cm. "
+                        + "Tiene un cajón amplio con tirador metálico. Ideal para dormitorio.";
+            case "5":
+                return "Zapatillas de running talle 42, color azul con detalles blancos. "
+                        + "Sin uso, nuevas en caja. Suela con amortiguación para asfalto.";
+            default:
+                return descCorta;
+        }
+    }
+
+    private String obtenerFechaMock(String id) {
+        switch (id) {
+            case "1": return "15/08/2026";
+            case "2": return "10/08/2026";
+            case "3": return "18/08/2026";
+            case "4": return "05/08/2026";
+            case "5": return "20/08/2026";
+            default: return "";
+        }
+    }
+
     private void loadNextPage() {
         isLoading = true;
-        // Simulamos un delay de red
         rvPublications.postDelayed(() -> {
             List<Publication> filtered = getFilteredList();
             int start = (currentPage - 1) * PAGE_SIZE;
@@ -158,7 +221,6 @@ public class HomeFragment extends Fragment {
             }
         }
 
-        // Sorting
         if (currentSort.equals("Menor precio")) {
             Collections.sort(filtered, (p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
         } else if (currentSort.equals("Mayor precio")) {
@@ -206,7 +268,7 @@ public class HomeFragment extends Fragment {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_price_filter, null);
         EditText etMin = dialogView.findViewById(R.id.etMinPrice);
         EditText etMax = dialogView.findViewById(R.id.etMaxPrice);
-        
+
         if (minPrice != null) etMin.setText(String.valueOf(minPrice));
         if (maxPrice != null) etMax.setText(String.valueOf(maxPrice));
 
