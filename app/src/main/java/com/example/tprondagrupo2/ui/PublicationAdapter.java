@@ -12,14 +12,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publication;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.ViewHolder> {
 
     private List<Publication> publications;
-    private List<Publication> publicationsFull; // Copia para el filtrado
     private OnItemClickListener listener;
 
     public interface OnItemClickListener {
@@ -28,13 +26,13 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     public PublicationAdapter(List<Publication> publications, OnItemClickListener listener) {
         this.publications = publications;
-        this.publicationsFull = new ArrayList<>(publications);
         this.listener = listener;
     }
 
-    // Método para que el compañero implemente el filtrado
+    // Método para actualizar la lista completa si fuera necesario
     public void updateList(List<Publication> newList) {
-        this.publications = newList;
+        this.publications.clear();
+        this.publications.addAll(newList);
         notifyDataSetChanged();
     }
 
