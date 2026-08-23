@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Encabezado de la sección -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/detalle_vendedor_titulo"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Fila principal: avatar + nombre + reputación -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Avatar con la inicial del vendedor -->
+        <TextView
+            android:id="@+id/tvVendedorAvatar"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_avatar_vendedor"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="J" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvVendedorNombre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                tools:text="Juan Pérez" />
+
+            <TextView
+                android:id="@+id/tvVendedorNivel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="Excelente vendedor"
+                tools:textColor="#2E7D32" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Reputación: estrellas + puntaje numérico -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <RatingBar
+            android:id="@+id/rbVendedorReputacion"
+            style="?android:attr/ratingBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:isIndicator="true"
+            android:numStars="5"
+            android:stepSize="0.1"
+            tools:rating="4.5" />
+
+        <TextView
+            android:id="@+id/tvVendedorReputacion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="#616161"
+            android:textSize="14sp"
+            tools:text="4.5 (128 opiniones)" />
+
+    </LinearLayout>
+
+    <!-- Ventas concretadas -->
+    <TextView
+        android:id="@+id/tvVendedorVentas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="#616161"
+        android:textSize="14sp"
+        tools:text="342 ventas concretadas" />
+
+    <!-- Antigüedad -->
+    <TextView
+        android:id="@+id/tvVendedorMiembroDesde"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="#9E9E9E"
+        android:textSize="13sp"
+        tools:text="Miembro desde Marzo 2023" />
+
+    <!-- Acceso al perfil público -->
+    <Button
+        android:id="@+id/btnVerPerfilVendedor"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="-4dp"
+        android:text="@string/vendedor_ver_perfil"
+        android:textColor="#7E57C2"
+        android:textStyle="bold" />
+
+</LinearLayout>

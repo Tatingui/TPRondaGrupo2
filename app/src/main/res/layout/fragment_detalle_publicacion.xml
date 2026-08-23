@@ -112,6 +112,18 @@
                 android:layout_marginBottom="16dp"
                 android:background="#E0E0E0" />
 
+            <!-- Datos del vendedor con su reputación -->
+            <include
+                android:id="@+id/seccionVendedor"
+                layout="@layout/view_vendedor_resumen" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:background="#E0E0E0" />
+
             <!-- Descripción completa -->
             <TextView
                 android:layout_width="match_parent"

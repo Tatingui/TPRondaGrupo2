@@ -4,15 +4,19 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.model.Vendedor;
 
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -34,6 +38,16 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvFechaPublicacion;
     private TextView tvDescripcion;
 
+    // Sección del vendedor
+    private TextView tvVendedorAvatar;
+    private TextView tvVendedorNombre;
+    private TextView tvVendedorNivel;
+    private RatingBar rbVendedorReputacion;
+    private TextView tvVendedorReputacion;
+    private TextView tvVendedorVentas;
+    private TextView tvVendedorMiembroDesde;
+    private Button btnVerPerfilVendedor;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -53,6 +67,15 @@ public class DetallePublicacionFragment extends Fragment {
         tvEstado = view.findViewById(R.id.tvEstado);
         tvFechaPublicacion = view.findViewById(R.id.tvFechaPublicacion);
         tvDescripcion = view.findViewById(R.id.tvDescripcion);
+
+        tvVendedorAvatar = view.findViewById(R.id.tvVendedorAvatar);
+        tvVendedorNombre = view.findViewById(R.id.tvVendedorNombre);
+        tvVendedorNivel = view.findViewById(R.id.tvVendedorNivel);
+        rbVendedorReputacion = view.findViewById(R.id.rbVendedorReputacion);
+        tvVendedorReputacion = view.findViewById(R.id.tvVendedorReputacion);
+        tvVendedorVentas = view.findViewById(R.id.tvVendedorVentas);
+        tvVendedorMiembroDesde = view.findViewById(R.id.tvVendedorMiembroDesde);
+        btnVerPerfilVendedor = view.findViewById(R.id.btnVerPerfilVendedor);
 
         mostrarPublicacion(obtenerPublicacion());
     }
@@ -79,6 +102,43 @@ public class DetallePublicacionFragment extends Fragment {
         tvFechaPublicacion.setText(
                 getString(R.string.detalle_publicado_el, publicacion.getFechaPublicacion()));
         tvDescripcion.setText(publicacion.getDescripcion());
+
+        mostrarVendedor(obtenerVendedor(publicacion));
+    }
+
+    private void mostrarVendedor(@NonNull Vendedor vendedor) {
+        tvVendedorNombre.setText(vendedor.getNombre());
+        VendedorViewBinder.bindReputacion(vendedor, tvVendedorAvatar, rbVendedorReputacion,
+                tvVendedorReputacion, tvVendedorNivel);
+
+        tvVendedorVentas.setText(getString(R.string.vendedor_ventas, vendedor.getCantidadVentas()));
+        tvVendedorMiembroDesde.setText(
+                getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+
+        btnVerPerfilVendedor.setOnClickListener(v -> abrirPerfil(vendedor));
+    }
+
+    private void abrirPerfil(@NonNull Vendedor vendedor) {
+        Bundle args = new Bundle();
+        args.putSerializable(PerfilVendedorFragment.ARG_VENDEDOR, vendedor);
+
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_detalle_to_perfil_vendedor, args);
+    }
+
+    /**
+     * Si la publicación todavía no trae vendedor (mocks previos sin backend),
+     * usamos datos de demo para que la sección se vea con contenido.
+     */
+    private Vendedor obtenerVendedor(@NonNull Publicacion publicacion) {
+        if (publicacion.getVendedor() != null) {
+            return publicacion.getVendedor();
+        }
+        return crearVendedorDemo();
+    }
+
+    private Vendedor crearVendedorDemo() {
+        return new Vendedor("1", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
     }
 
     private void configurarGaleria(@NonNull Publicacion publicacion) {
@@ -125,6 +185,7 @@ public class DetallePublicacionFragment extends Fragment {
                 "Deportes",
                 "Usado",
                 185000,
-                "20/08/2026");
+                "20/08/2026",
+                crearVendedorDemo());
     }
 }

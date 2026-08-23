@@ -88,6 +88,24 @@
             app:argType="com.example.tprondagrupo2.model.Publicacion"
             app:nullable="true" />
 
+        <action
+            android:id="@+id/action_detalle_to_perfil_vendedor"
+            app:destination="@id/perfilVendedorFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/perfilVendedorFragment"
+        android:name="com.example.tprondagrupo2.ui.detalle.PerfilVendedorFragment"
+        android:label="@string/perfil_vendedor_titulo"
+        tools:layout="@layout/fragment_perfil_vendedor">
+
+        <argument
+            android:name="vendedor"
+            android:defaultValue="@null"
+            app:argType="com.example.tprondagrupo2.model.Vendedor"
+            app:nullable="true" />
+
     </fragment>
 
 </navigation>

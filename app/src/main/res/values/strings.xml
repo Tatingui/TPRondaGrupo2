@@ -3,4 +3,14 @@
     <string name="otp_message">Ingresá el código enviado a: %1$s</string>
     <string name="detalle_publicado_el">Publicado el %1$s</string>
     <string name="detalle_indicador_fotos">%1$d / %2$d</string>
+
+    <!-- Sección del vendedor -->
+    <string name="detalle_vendedor_titulo">Información del vendedor</string>
+    <string name="vendedor_reputacion_formato">%1$.1f (%2$d opiniones)</string>
+    <string name="vendedor_sin_opiniones">Sin opiniones aún</string>
+    <string name="vendedor_ventas">%1$d ventas concretadas</string>
+    <string name="vendedor_miembro_desde">Miembro desde %1$s</string>
+    <string name="vendedor_ver_perfil">Ver perfil público</string>
+    <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
+    <string name="perfil_vendedor_ubicacion">Ubicación: %1$s</string>
 </resources>
