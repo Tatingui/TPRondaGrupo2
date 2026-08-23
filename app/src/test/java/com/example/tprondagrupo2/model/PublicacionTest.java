@@ -119,4 +119,39 @@ public class PublicacionTest {
 
         assertEquals(3, publicacion.getCantidadFotos());
     }
+
+    @Test
+    public void testVendedorEsNullPorDefecto() {
+        // Mocks previos sin vendedor: el detalle debe poder detectar la ausencia
+        assertNull(publicacion.getVendedor());
+    }
+
+    @Test
+    public void testConstructorConVendedorLoAsigna() {
+        Vendedor vendedor = new Vendedor("7", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
+        Publicacion p = new Publicacion("10", "Bicicleta", Arrays.asList("f.jpg"), "Desc",
+                "Deportes", "Usado", 185000, "20/08/2026", vendedor);
+
+        assertNotNull(p.getVendedor());
+        assertEquals("Juan Pérez", p.getVendedor().getNombre());
+    }
+
+    @Test
+    public void testConstructorSinVendedorDejaVendedorNull() {
+        // El constructor corto (compatibilidad hacia atrás) no trae vendedor
+        Publicacion p = new Publicacion("10", "Bicicleta", Arrays.asList("f.jpg"), "Desc",
+                "Deportes", "Usado", 185000, "20/08/2026");
+
+        assertNull(p.getVendedor());
+    }
+
+    @Test
+    public void testSetVendedor() {
+        Vendedor vendedor = new Vendedor();
+        vendedor.setNombre("Ana");
+        publicacion.setVendedor(vendedor);
+
+        assertNotNull(publicacion.getVendedor());
+        assertEquals("Ana", publicacion.getVendedor().getNombre());
+    }
 }

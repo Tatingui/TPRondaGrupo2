@@ -14,6 +14,7 @@ public class Publicacion implements Serializable {
     private String estado;
     private double precio;
     private String fechaPublicacion;
+    private Vendedor vendedor;
 
     public Publicacion() {
         // Constructor vacio requerido por Gson
@@ -22,6 +23,12 @@ public class Publicacion implements Serializable {
 
     public Publicacion(String id, String titulo, List<String> fotos, String descripcion,
                        String categoria, String estado, double precio, String fechaPublicacion) {
+        this(id, titulo, fotos, descripcion, categoria, estado, precio, fechaPublicacion, null);
+    }
+
+    public Publicacion(String id, String titulo, List<String> fotos, String descripcion,
+                       String categoria, String estado, double precio, String fechaPublicacion,
+                       Vendedor vendedor) {
         this.id = id;
         this.titulo = titulo;
         this.fotos = fotos != null ? fotos : new ArrayList<>();
@@ -30,6 +37,7 @@ public class Publicacion implements Serializable {
         this.estado = estado;
         this.precio = precio;
         this.fechaPublicacion = fechaPublicacion;
+        this.vendedor = vendedor;
     }
 
     public String getId() {
@@ -94,6 +102,14 @@ public class Publicacion implements Serializable {
 
     public void setFechaPublicacion(String fechaPublicacion) {
         this.fechaPublicacion = fechaPublicacion;
+    }
+
+    public Vendedor getVendedor() {
+        return vendedor;
+    }
+
+    public void setVendedor(Vendedor vendedor) {
+        this.vendedor = vendedor;
     }
 
     public int getCantidadFotos() {
