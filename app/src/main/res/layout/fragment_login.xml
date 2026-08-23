@@ -73,4 +73,14 @@
         android:layout_marginTop="8dp"
         android:text="Registrarse" />
 
+    <!-- TODO: TEMPORAL - Sacar antes de mergear -->
+    <Button
+        android:id="@+id/btnSkipLogin"
+        style="?attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="[DEV] Saltar login"
+        android:textColor="#FF5722" />
+
 </LinearLayout>

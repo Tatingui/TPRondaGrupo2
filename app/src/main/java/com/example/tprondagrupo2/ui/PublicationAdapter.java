@@ -29,7 +29,6 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         this.listener = listener;
     }
 
-    // Método para actualizar la lista completa si fuera necesario
     public void updateList(List<Publication> newList) {
         this.publications.clear();
         this.publications.addAll(newList);
@@ -51,9 +50,9 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
         holder.tvCondition.setText(pub.getCondition());
         holder.tvLocation.setText(pub.getLocation());
-        
+
         // TODO: Cargar imagen con Glide o Picasso cuando tengan fotos reales
-        
+
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
     }
 

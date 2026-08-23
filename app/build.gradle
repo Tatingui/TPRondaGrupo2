@@ -42,6 +42,9 @@ dependencies {
     implementation libs.navigation.fragment
     implementation libs.navigation.ui
 
+    // ViewPager2 para la galeria de fotos
+    implementation libs.viewpager2
+
     // Retrofit + Gson
     implementation libs.retrofit
     implementation libs.retrofit.converter.gson
