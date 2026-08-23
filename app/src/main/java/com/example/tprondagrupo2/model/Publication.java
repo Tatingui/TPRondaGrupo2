@@ -11,8 +11,9 @@ public class Publication implements Serializable {
     private String location;
     private String category;
     private String imageUrl;
+    private long timestamp;
 
-    public Publication(String id, String title, String description, double price, String condition, String location, String category, String imageUrl) {
+    public Publication(String id, String title, String description, double price, String condition, String location, String category, String imageUrl, long timestamp) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -21,6 +22,7 @@ public class Publication implements Serializable {
         this.location = location;
         this.category = category;
         this.imageUrl = imageUrl;
+        this.timestamp = timestamp;
     }
 
     public String getId() { return id; }
@@ -31,4 +33,5 @@ public class Publication implements Serializable {
     public String getLocation() { return location; }
     public String getCategory() { return category; }
     public String getImageUrl() { return imageUrl; }
+    public long getTimestamp() { return timestamp; }
 }

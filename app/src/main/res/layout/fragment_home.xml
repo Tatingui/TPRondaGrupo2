@@ -110,6 +110,22 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:text="Precio" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFilterCondition"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="Estado" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFilterLocation"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:text="Zona" />
             </LinearLayout>
         </HorizontalScrollView>
 
