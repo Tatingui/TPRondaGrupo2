@@ -10,7 +10,7 @@ import retrofit2.Retrofit;
 
 public class ApiClientTest {
 
-    private static final String BASE_URL_ESPERADA = "http://10.0.2.2:8080/api/";
+    private static final String BASE_URL_ESPERADA = "http://10.0.2.2:8081/api/";
 
     @Test
     public void testGetClientNoDevuelveNull() {
