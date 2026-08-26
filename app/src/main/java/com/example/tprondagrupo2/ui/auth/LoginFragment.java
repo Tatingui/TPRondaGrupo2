@@ -58,10 +58,6 @@ public class LoginFragment extends Fragment {
         btnLoginOtp.setOnClickListener(v -> doSendOtp());
         btnGoRegister.setOnClickListener(v ->
                 NavHostFragment.findNavController(this).navigate(R.id.action_login_to_register));
-
-        // TODO: TEMPORAL - Sacar antes de mergear
-        view.findViewById(R.id.btnSkipLogin).setOnClickListener(v ->
-                NavHostFragment.findNavController(this).navigate(R.id.action_login_to_home));
     }
 
     private void doLogin() {
