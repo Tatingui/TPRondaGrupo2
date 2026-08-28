@@ -14,6 +14,8 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
+import android.util.Log;
+
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.RegisterRequest;
@@ -24,6 +26,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class RegisterFragment extends Fragment {
+
+    private static final String TAG = "RONDA_REGISTER";
 
     private EditText etNombre;
     private EditText etEmail;
@@ -78,35 +82,52 @@ public class RegisterFragment extends Fragment {
         hideError();
         setLoading(true);
 
-        ApiClient.getAuthService().register(new RegisterRequest(nombre, email, password))
+        Log.d(TAG, "Intentando registro: nombre=" + nombre + " email=" + email);
+
+        RegisterRequest req = new RegisterRequest(nombre, email, password);
+        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService().register()");
+
+        ApiClient.getAuthService().register(req)
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,
                                            @NonNull Response<AuthResponse> response) {
+                        Log.d(TAG, "onResponse: code=" + response.code());
                         if (!isAdded()) {
+                            Log.w(TAG, "Fragment not added, ignorando respuesta");
                             return;
                         }
                         setLoading(false);
 
                         AuthResponse body = response.body();
                         if (response.isSuccessful() && body != null && body.isSuccess()) {
+                            Log.d(TAG, "Registro exitoso, navegando a OTP");
                             Bundle args = new Bundle();
                             args.putString("email", email);
 
                             NavHostFragment.findNavController(RegisterFragment.this)
                                     .navigate(R.id.action_register_to_otp, args);
                         } else {
+                            String errorBody = "";
+                            try {
+                                if (response.errorBody() != null) {
+                                    errorBody = response.errorBody().string();
+                                }
+                            } catch (Exception ignored) {}
+                            Log.e(TAG, "Registro fallido: code=" + response.code()
+                                    + " body=" + body + " errorBody=" + errorBody);
                             showError(extractMessage(body, "No se pudo crear la cuenta"));
                         }
                     }
 
                     @Override
                     public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
+                        Log.e(TAG, "onFailure: " + t.getClass().getName() + ": " + t.getMessage(), t);
                         if (!isAdded()) {
                             return;
                         }
                         setLoading(false);
-                        showError("Error de conexión");
+                        showError("Error de conexión: " + t.getMessage());
                     }
                 });
     }
