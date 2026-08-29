@@ -7,12 +7,10 @@
 
     <ImageView
         android:id="@+id/ivFoto"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_gravity="center"
-        android:contentDescription="Foto del artículo"
-        android:src="@android:drawable/ic_menu_gallery"
-        app:tint="#BDBDBD" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="Foto del artículo" />
 
     <TextView
         android:id="@+id/tvFotoPlaceholder"

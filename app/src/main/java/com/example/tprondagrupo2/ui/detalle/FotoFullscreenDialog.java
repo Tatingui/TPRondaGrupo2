@@ -14,6 +14,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 
 import java.util.ArrayList;
@@ -104,7 +105,11 @@ public class FotoFullscreenDialog extends DialogFragment {
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
-            holder.tvFotoNombre.setText(fotos.get(position));
+            String url = fotos.get(position);
+            Glide.with(holder.itemView.getContext())
+                    .load(url)
+                    .fitCenter()
+                    .into(holder.ivFotoFullscreen);
         }
 
         @Override
@@ -113,11 +118,11 @@ public class FotoFullscreenDialog extends DialogFragment {
         }
 
         static class VH extends RecyclerView.ViewHolder {
-            final TextView tvFotoNombre;
+            final ImageView ivFotoFullscreen;
 
             VH(@NonNull View itemView) {
                 super(itemView);
-                tvFotoNombre = itemView.findViewById(R.id.tvFotoNombre);
+                ivFotoFullscreen = itemView.findViewById(R.id.ivFotoFullscreen);
             }
         }
     }

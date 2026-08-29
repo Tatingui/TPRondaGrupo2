@@ -19,8 +19,7 @@
             android:layout_height="200dp"
             android:background="#EEEEEE"
             android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_gallery"
-            app:tint="#BDBDBD" />
+            android:src="@android:drawable/ic_menu_gallery" />
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -3,11 +3,13 @@ package com.example.tprondagrupo2.ui.detalle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 
 import java.util.ArrayList;
@@ -37,8 +39,14 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
 
     @Override
     public void onBindViewHolder(@NonNull FotoViewHolder holder, int position) {
-        String foto = fotos.get(position);
-        holder.tvFotoPlaceholder.setText(foto);
+        String url = fotos.get(position);
+        
+        Glide.with(holder.itemView.getContext())
+                .load(url)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .centerCrop()
+                .into(holder.ivFoto);
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onFotoClick(position);
@@ -53,11 +61,11 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
 
     static class FotoViewHolder extends RecyclerView.ViewHolder {
 
-        final TextView tvFotoPlaceholder;
+        final ImageView ivFoto;
 
         FotoViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvFotoPlaceholder = itemView.findViewById(R.id.tvFotoPlaceholder);
+            ivFoto = itemView.findViewById(R.id.ivFoto);
         }
     }
 }

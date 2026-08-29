@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
+import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publication;
 
@@ -17,6 +19,7 @@ import java.util.Locale;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.ViewHolder> {
 
+    private static final String TAG = "PublicationAdapter";
     private List<Publication> publications;
     private OnItemClickListener listener;
 
@@ -35,6 +38,12 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         notifyDataSetChanged();
     }
 
+    public void addItems(List<Publication> newItems) {
+        int startPos = this.publications.size();
+        this.publications.addAll(newItems);
+        notifyItemRangeInserted(startPos, newItems.size());
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -48,10 +57,19 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         Publication pub = publications.get(position);
         holder.tvTitle.setText(pub.getTitle());
         holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
-        holder.tvCondition.setText(pub.getCondition());
-        holder.tvLocation.setText(pub.getLocation());
+        holder.tvCondition.setText(pub.getStatus());
+        holder.tvLocation.setText("Zona: " + pub.getLocation());
 
-        // TODO: Cargar imagen con Glide o Picasso cuando tengan fotos reales
+        String imageUrl = pub.getFirstImageUrl();
+        Log.d(TAG, "Cargando imagen para: " + pub.getTitle() + " URL: " + imageUrl);
+
+        // Carga de imagen con Glide
+        Glide.with(holder.itemView.getContext())
+                .load(imageUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_report_image)
+                .centerCrop()
+                .into(holder.ivProduct);
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
     }
