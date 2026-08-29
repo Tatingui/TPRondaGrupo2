@@ -5,6 +5,7 @@ import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.service.PublicationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class PublicationController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) PublicationStatus status,
             @RequestParam(required = false) String location,
-            @PageableDefault(size = 10, sort = "createdAt,desc") Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         
         Page<PublicationDTO> publications = publicationService.findAll(
                 search, categoryId, minPrice, maxPrice, status, location, pageable);
