@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @Transactional
+@org.springframework.test.context.ActiveProfiles("test")
 public class PublicationServiceTest {
 
     @Autowired
@@ -35,10 +36,10 @@ public class PublicationServiceTest {
 
     @BeforeEach
     public void setup() {
-        catDeportes = new Category("Deportes");
+        catDeportes = new Category("CategoriaTest");
         entityManager.persist(catDeportes);
 
-        user = new User("Juan", "juan@test.com", "pass");
+        user = new User("Juan Test", "juan_test@test.com", "pass");
         entityManager.persist(user);
 
         Publication p1 = new Publication();
