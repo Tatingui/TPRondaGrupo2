@@ -3,10 +3,12 @@ package com.example.tprondagrupo2.ui;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,34 +21,44 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Publication;
+import com.example.tprondagrupo2.model.Vendedor;
+import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
 
+    private static final String TAG = "HomeFragment";
+
     private RecyclerView rvPublications;
     private PublicationAdapter adapter;
-    private List<Publication> allPublications;
     private List<Publication> displayedPublications;
     private EditText etSearch;
 
     // Filter states
     private String currentSearchText = "";
-    private String selectedCategory = "Todas";
-    private String selectedCondition = "Cualquiera";
-    private String selectedLocation = "Todas";
+    private Long selectedCategoryId = null;
+    private String selectedCategoryName = "Categoría";
+    private String selectedCondition = null;
+    private String selectedConditionName = "Estado";
+    private String selectedLocation = null;
+    private String selectedLocationName = "Zona";
     private Double minPrice = null;
     private Double maxPrice = null;
-    private String currentSort = "Recientes";
+    private String currentSort = "createdAt,desc";
+    private String currentSortName = "Ordenar por";
 
     // Pagination states
-    private int currentPage = 1;
-    private final int PAGE_SIZE = 5;
+    private int currentPage = 0;
+    private final int PAGE_SIZE = 10;
     private boolean isLoading = false;
     private boolean isLastPage = false;
 
@@ -64,14 +76,13 @@ public class HomeFragment extends Fragment {
         rvPublications = view.findViewById(R.id.rvPublications);
         etSearch = view.findViewById(R.id.etSearch);
 
-        allPublications = getMockPublications();
         displayedPublications = new ArrayList<>();
 
         setupRecyclerView();
         setupSearchLogic();
         setupFilters(view);
 
-        loadNextPage();
+        refreshData();
     }
 
     private void setupRecyclerView() {
@@ -90,11 +101,64 @@ public class HomeFragment extends Fragment {
 
                     if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount
                             && firstVisibleItemPosition >= 0) {
-                        loadNextPage();
+                        fetchPublications();
                     }
                 }
             }
         });
+    }
+
+    private void fetchPublications() {
+        if (isLoading) return;
+        isLoading = true;
+
+        ApiClient.getPublicationService().getPublications(
+                currentSearchText.isEmpty() ? null : currentSearchText,
+                selectedCategoryId,
+                minPrice,
+                maxPrice,
+                selectedCondition,
+                selectedLocation,
+                currentPage,
+                PAGE_SIZE,
+                currentSort
+        ).enqueue(new Callback<PublicationPageResponse>() {
+            @Override
+            public void onResponse(Call<PublicationPageResponse> call, Response<PublicationPageResponse> response) {
+                isLoading = false;
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Publication> newItems = response.body().getContent();
+                    if (currentPage == 0) {
+                        displayedPublications.clear();
+                        displayedPublications.addAll(newItems);
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        adapter.addItems(newItems);
+                    }
+
+                    isLastPage = response.body().isLast();
+                    if (!isLastPage) {
+                        currentPage++;
+                    }
+                } else {
+                    Log.e(TAG, "Error en la respuesta: " + response.code());
+                    Toast.makeText(getContext(), "Error al cargar publicaciones", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
+                isLoading = false;
+                Log.e(TAG, "Falla en la peticion", t);
+                Toast.makeText(getContext(), "Error de conexion", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void refreshData() {
+        currentPage = 0;
+        isLastPage = false;
+        fetchPublications();
     }
 
     private void abrirDetalle(Publication publication) {
@@ -106,79 +170,26 @@ public class HomeFragment extends Fragment {
     }
 
     private Publicacion mapearADetalle(Publication publication) {
-        List<String> fotos = Arrays.asList("Foto 1", "Foto 2", "Foto 3");
-
-        String descripcionCompleta = obtenerDescripcionCompleta(publication.getId(),
-                publication.getDescription());
-
-        String fecha = obtenerFechaMock(publication.getId());
+        Vendedor vendedor = new Vendedor(
+                publication.getSellerId().toString(),
+                publication.getSellerName(),
+                4.5, // Reputacion mock
+                15,  // Ventas mock
+                10,  // Opiniones mock
+                "2 años",
+                publication.getLocation()
+        );
 
         return new Publicacion(
-                publication.getId(),
+                publication.getId().toString(),
                 publication.getTitle(),
-                fotos,
-                descripcionCompleta,
-                publication.getCategory(),
-                publication.getCondition(),
+                publication.getImageUrls(),
+                publication.getDescription(),
+                publication.getCategoryName(),
+                publication.getStatus(),
                 publication.getPrice(),
-                fecha);
-    }
-
-    private String obtenerDescripcionCompleta(String id, String descCorta) {
-        switch (id) {
-            case "1":
-                return "Bicicleta de montaña rodado 29, cuadro de aluminio, 21 velocidades. "
-                        + "Muy poco uso, siempre guardada en lugar techado. Frenos a disco "
-                        + "delanteros y traseros recién calibrados. Incluye luces y timbre.";
-            case "2":
-                return "Sillón de 3 cuerpos tapizado en tela gris. Muy cómodo y amplio, "
-                        + "ideal para living. Patas de madera. Se retira por Almagro. "
-                        + "Acepto oferta razonable.";
-            case "3":
-                return "iPhone 13 de 128GB, color azul medianoche. En caja original con "
-                        + "cargador, cable y auriculares. Batería al 94%. Liberado de fábrica, "
-                        + "funciona con cualquier operador.";
-            case "4":
-                return "Mesa de luz de pino macizo barnizado. Medidas: 45x35x50cm. "
-                        + "Tiene un cajón amplio con tirador metálico. Ideal para dormitorio.";
-            case "5":
-                return "Zapatillas de running talle 42, color azul con detalles blancos. "
-                        + "Sin uso, nuevas en caja. Suela con amortiguación para asfalto.";
-            default:
-                return descCorta;
-        }
-    }
-
-    private String obtenerFechaMock(String id) {
-        switch (id) {
-            case "1": return "15/08/2026";
-            case "2": return "10/08/2026";
-            case "3": return "18/08/2026";
-            case "4": return "05/08/2026";
-            case "5": return "20/08/2026";
-            default: return "";
-        }
-    }
-
-    private void loadNextPage() {
-        isLoading = true;
-        rvPublications.postDelayed(() -> {
-            List<Publication> filtered = getFilteredList();
-            int start = (currentPage - 1) * PAGE_SIZE;
-            int end = Math.min(start + PAGE_SIZE, filtered.size());
-
-            if (start < filtered.size()) {
-                List<Publication> newItems = filtered.subList(start, end);
-                displayedPublications.addAll(newItems);
-                adapter.notifyDataSetChanged();
-                currentPage++;
-            }
-
-            if (end >= filtered.size()) {
-                isLastPage = true;
-            }
-            isLoading = false;
-        }, 500);
+                publication.getCreatedAt(),
+                vendedor);
     }
 
     private void setupSearchLogic() {
@@ -189,47 +200,12 @@ public class HomeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 currentSearchText = s.toString();
-                resetAndApplyFilters();
+                refreshData();
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
-    }
-
-    private void resetAndApplyFilters() {
-        currentPage = 1;
-        isLastPage = false;
-        displayedPublications.clear();
-        adapter.notifyDataSetChanged();
-        loadNextPage();
-    }
-
-    private List<Publication> getFilteredList() {
-        List<Publication> filtered = new ArrayList<>();
-        for (Publication pub : allPublications) {
-            boolean matchesSearch = pub.getTitle().toLowerCase().contains(currentSearchText.toLowerCase()) ||
-                    pub.getDescription().toLowerCase().contains(currentSearchText.toLowerCase());
-            boolean matchesCategory = selectedCategory.equals("Todas") || pub.getCategory().equals(selectedCategory);
-            boolean matchesCondition = selectedCondition.equals("Cualquiera") || pub.getCondition().equalsIgnoreCase(selectedCondition);
-            boolean matchesLocation = selectedLocation.equals("Todas") || pub.getLocation().equalsIgnoreCase(selectedLocation);
-            boolean matchesPrice = (minPrice == null || pub.getPrice() >= minPrice) &&
-                                   (maxPrice == null || pub.getPrice() <= maxPrice);
-
-            if (matchesSearch && matchesCategory && matchesCondition && matchesLocation && matchesPrice) {
-                filtered.add(pub);
-            }
-        }
-
-        if (currentSort.equals("Menor precio")) {
-            Collections.sort(filtered, (p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
-        } else if (currentSort.equals("Mayor precio")) {
-            Collections.sort(filtered, (p1, p2) -> Double.compare(p2.getPrice(), p1.getPrice()));
-        } else {
-            Collections.sort(filtered, (p1, p2) -> Long.compare(p2.getTimestamp(), p1.getTimestamp()));
-        }
-
-        return filtered;
     }
 
     private void setupFilters(View view) {
@@ -242,24 +218,30 @@ public class HomeFragment extends Fragment {
 
     private void showSortDialog() {
         String[] options = {"Recientes", "Menor precio", "Mayor precio"};
+        String[] sortValues = {"createdAt,desc", "price,asc", "price,desc"};
+        
         new AlertDialog.Builder(requireContext())
                 .setTitle("Ordenar por")
                 .setItems(options, (dialog, which) -> {
-                    currentSort = options[which];
-                    ((Chip) getView().findViewById(R.id.chipSort)).setText("Orden: " + currentSort);
-                    resetAndApplyFilters();
+                    currentSort = sortValues[which];
+                    currentSortName = options[which];
+                    ((Chip) getView().findViewById(R.id.chipSort)).setText("Orden: " + currentSortName);
+                    refreshData();
                 })
                 .show();
     }
 
     private void showCategoryDialog() {
         String[] categories = {"Todas", "Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
+        Long[] ids = {null, 1L, 2L, 3L, 4L, 5L};
+
         new AlertDialog.Builder(requireContext())
                 .setTitle("Seleccionar Categoría")
                 .setItems(categories, (dialog, which) -> {
-                    selectedCategory = categories[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterCategory)).setText(selectedCategory);
-                    resetAndApplyFilters();
+                    selectedCategoryId = ids[which];
+                    selectedCategoryName = categories[which];
+                    ((Chip) getView().findViewById(R.id.chipFilterCategory)).setText(selectedCategoryName);
+                    refreshData();
                 })
                 .show();
     }
@@ -280,24 +262,27 @@ public class HomeFragment extends Fragment {
                     String maxStr = etMax.getText().toString();
                     minPrice = minStr.isEmpty() ? null : Double.parseDouble(minStr);
                     maxPrice = maxStr.isEmpty() ? null : Double.parseDouble(maxStr);
-                    resetAndApplyFilters();
+                    refreshData();
                 })
                 .setNegativeButton("Limpiar", (dialog, which) -> {
                     minPrice = null;
                     maxPrice = null;
-                    resetAndApplyFilters();
+                    refreshData();
                 })
                 .show();
     }
 
     private void showConditionDialog() {
-        String[] conditions = {"Cualquiera", "Nuevo", "Como nuevo", "Usado"};
+        String[] options = {"Cualquiera", "Nuevo", "Como nuevo", "Usado"};
+        String[] values = {null, "NUEVO", "COMO_NUEVO", "USADO"};
+
         new AlertDialog.Builder(requireContext())
                 .setTitle("Estado del Artículo")
-                .setItems(conditions, (dialog, which) -> {
-                    selectedCondition = conditions[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterCondition)).setText(selectedCondition);
-                    resetAndApplyFilters();
+                .setItems(options, (dialog, which) -> {
+                    selectedCondition = values[which];
+                    selectedConditionName = options[which];
+                    ((Chip) getView().findViewById(R.id.chipFilterCondition)).setText(selectedConditionName);
+                    refreshData();
                 })
                 .show();
     }
@@ -307,28 +292,11 @@ public class HomeFragment extends Fragment {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Zona del Vendedor")
                 .setItems(locations, (dialog, which) -> {
-                    selectedLocation = locations[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterLocation)).setText(selectedLocation);
-                    resetAndApplyFilters();
+                    selectedLocation = locations[which].equals("Todas") ? null : locations[which];
+                    selectedLocationName = locations[which];
+                    ((Chip) getView().findViewById(R.id.chipFilterLocation)).setText(selectedLocationName);
+                    refreshData();
                 })
                 .show();
-    }
-
-    private List<Publication> getMockPublications() {
-        List<Publication> list = new ArrayList<>();
-        long now = System.currentTimeMillis();
-        list.add(new Publication("1", "Bicicleta de montaña", "Excelente estado, poco uso.", 150000.0, "Como nuevo", "Palermo", "Deportes", "", now - 100000));
-        list.add(new Publication("2", "Sillón 3 cuerpos", "Cómodo y amplio.", 85000.0, "Usado", "Almagro", "Hogar", "", now - 200000));
-        list.add(new Publication("3", "iPhone 13 128GB", "En caja con accesorios.", 950000.0, "Nuevo", "Belgrano", "Electrónica", "", now - 300000));
-        list.add(new Publication("4", "Mesa de luz", "Madera pino barnizada.", 25000.0, "Usado", "Caballito", "Hogar", "", now - 400000));
-        list.add(new Publication("5", "Zapatillas running", "Talle 42, color azul.", 45000.0, "Nuevo", "Villa Urquiza", "Ropa", "", now - 500000));
-        list.add(new Publication("6", "Raqueta de Tenis", "Wilson Pro Staff.", 120000.0, "Nuevo", "Palermo", "Deportes", "", now - 600000));
-        list.add(new Publication("7", "Cafetera Nespresso", "Casi nueva.", 60000.0, "Como nuevo", "Almagro", "Hogar", "", now - 700000));
-        list.add(new Publication("8", "MacBook Air M1", "8GB RAM, 256GB SSD.", 1200000.0, "Usado", "Belgrano", "Electrónica", "", now - 800000));
-        list.add(new Publication("9", "Monitor 24 pulgadas", "Samsung IPS.", 180000.0, "Nuevo", "Caballito", "Electrónica", "", now - 900000));
-        list.add(new Publication("10", "Escritorio oficina", "Metal y madera.", 95000.0, "Usado", "Villa Urquiza", "Hogar", "", now - 1000000));
-        list.add(new Publication("11", "Pelota de Fútbol", "Adidas Al Rihla.", 35000.0, "Nuevo", "Palermo", "Deportes", "", now - 1100000));
-        list.add(new Publication("12", "Lámpara de pie", "Diseño moderno.", 40000.0, "Usado", "Almagro", "Hogar", "", now - 1200000));
-        return list;
     }
 }

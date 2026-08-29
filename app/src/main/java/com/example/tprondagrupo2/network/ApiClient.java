@@ -51,4 +51,8 @@ public class ApiClient {
     public static AuthApiService getAuthService() {
         return getClient().create(AuthApiService.class);
     }
+
+    public static PublicationApiService getPublicationService() {
+        return getClient().create(PublicationApiService.class);
+    }
 }

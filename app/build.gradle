@@ -52,4 +52,7 @@ dependencies {
     // OkHttp + Logging
     implementation libs.okhttp
     implementation libs.okhttp.logging.interceptor
+
+    // Glide para imagenes
+    implementation libs.glide
 }
