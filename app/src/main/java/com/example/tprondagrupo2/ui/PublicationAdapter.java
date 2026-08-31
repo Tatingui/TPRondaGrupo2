@@ -63,11 +63,12 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         String imageUrl = pub.getFirstImageUrl();
         Log.d(TAG, "Cargando imagen para: " + pub.getTitle() + " URL: " + imageUrl);
 
-        // Carga de imagen con Glide
+        // Carga de imagen con Glide mejorada
         Glide.with(holder.itemView.getContext())
                 .load(imageUrl)
                 .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
+                .error(android.R.drawable.stat_notify_error)
+                .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
                 .centerCrop()
                 .into(holder.ivProduct);
 
