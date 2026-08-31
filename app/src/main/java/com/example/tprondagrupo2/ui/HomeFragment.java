@@ -7,7 +7,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -16,8 +19,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
@@ -43,6 +46,9 @@ public class HomeFragment extends Fragment {
     private PublicationAdapter adapter;
     private List<Publication> displayedPublications;
     private EditText etSearch;
+    private SwipeRefreshLayout swipeRefresh;
+    private ProgressBar pbLoading;
+    private LinearLayout llEmptyState;
 
     // Filter states
     private String currentSearchText = "";
@@ -76,12 +82,18 @@ public class HomeFragment extends Fragment {
 
         rvPublications = view.findViewById(R.id.rvPublications);
         etSearch = view.findViewById(R.id.etSearch);
+        swipeRefresh = view.findViewById(R.id.swipeRefresh);
+        pbLoading = view.findViewById(R.id.pbLoading);
+        llEmptyState = view.findViewById(R.id.llEmptyState);
 
         displayedPublications = new ArrayList<>();
 
         setupRecyclerView();
         setupSearchLogic();
         setupFilters(view);
+
+        swipeRefresh.setOnRefreshListener(this::refreshData);
+        swipeRefresh.setColorSchemeResources(R.color.purple_500);
 
         refreshData();
     }
@@ -92,6 +104,14 @@ public class HomeFragment extends Fragment {
         rvPublications.setAdapter(adapter);
 
         rvPublications.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                    hideKeyboard();
+                }
+            }
+
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
@@ -110,9 +130,21 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void hideKeyboard() {
+        if (getView() != null) {
+            InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(getView().getWindowToken(), 0);
+        }
+    }
+
     private void fetchPublications() {
         if (isLoading) return;
         isLoading = true;
+
+        if (currentPage == 0 && !swipeRefresh.isRefreshing()) {
+            pbLoading.setVisibility(View.VISIBLE);
+        }
+        llEmptyState.setVisibility(View.GONE);
 
         ApiClient.getPublicationService().getPublications(
                 currentSearchText.isEmpty() ? null : currentSearchText,
@@ -128,6 +160,9 @@ public class HomeFragment extends Fragment {
             @Override
             public void onResponse(Call<PublicationPageResponse> call, Response<PublicationPageResponse> response) {
                 isLoading = false;
+                pbLoading.setVisibility(View.GONE);
+                swipeRefresh.setRefreshing(false);
+
                 if (response.isSuccessful() && response.body() != null) {
                     List<Publication> newItems = response.body().getContent();
                     if (currentPage == 0) {
@@ -137,6 +172,8 @@ public class HomeFragment extends Fragment {
                     } else {
                         adapter.addItems(newItems);
                     }
+
+                    llEmptyState.setVisibility(displayedPublications.isEmpty() ? View.VISIBLE : View.GONE);
 
                     isLastPage = response.body().isLast();
                     if (!isLastPage) {
@@ -151,6 +188,8 @@ public class HomeFragment extends Fragment {
             @Override
             public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
                 isLoading = false;
+                pbLoading.setVisibility(View.GONE);
+                swipeRefresh.setRefreshing(false);
                 Log.e(TAG, "Falla en la peticion", t);
                 Toast.makeText(getContext(), "Error de conexion", Toast.LENGTH_SHORT).show();
             }
