@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.ui;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,14 +23,20 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
     private static final String TAG = "PublicationAdapter";
     private List<Publication> publications;
     private OnItemClickListener listener;
+    private OnFavoriteClickListener favoriteListener;
 
     public interface OnItemClickListener {
         void onItemClick(Publication publication);
     }
 
-    public PublicationAdapter(List<Publication> publications, OnItemClickListener listener) {
+    public interface OnFavoriteClickListener {
+        void onFavoriteClick(Publication publication, int position);
+    }
+
+    public PublicationAdapter(List<Publication> publications, OnItemClickListener listener, OnFavoriteClickListener favoriteListener) {
         this.publications = publications;
         this.listener = listener;
+        this.favoriteListener = favoriteListener;
     }
 
     public void updateList(List<Publication> newList) {
@@ -71,6 +78,16 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 .centerCrop()
                 .into(holder.ivProduct);
 
+        holder.btnFavorite.setImageResource(pub.isFavorite()
+                ? android.R.drawable.btn_star_big_on
+                : android.R.drawable.btn_star_big_off);
+
+        holder.btnFavorite.setOnClickListener(v -> {
+            if (favoriteListener != null) {
+                favoriteListener.onFavoriteClick(pub, position);
+            }
+        });
+
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
     }
 
@@ -82,6 +99,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProduct;
         TextView tvTitle, tvPrice, tvCondition, tvLocation;
+        ImageButton btnFavorite;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,6 +108,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
             tvPrice = itemView.findViewById(R.id.tvPrice);
             tvCondition = itemView.findViewById(R.id.tvCondition);
             tvLocation = itemView.findViewById(R.id.tvLocation);
+            btnFavorite = itemView.findViewById(R.id.btnFavorite);
         }
     }
 }

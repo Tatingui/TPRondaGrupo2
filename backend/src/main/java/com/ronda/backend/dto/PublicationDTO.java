@@ -19,6 +19,9 @@ public class PublicationDTO {
     private Long sellerId;
     private String sellerName;
 
+    // Indica si la publicación es un favorito para el USUARIO ACTUAL.
+    private boolean isFavorite;
+
     public PublicationDTO() {
     }
 
@@ -108,5 +111,13 @@ public class PublicationDTO {
 
     public void setSellerName(String sellerName) {
         this.sellerName = sellerName;
+    }
+
+    public boolean isFavorite() {
+        return this.isFavorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.isFavorite = favorite;
     }
 }

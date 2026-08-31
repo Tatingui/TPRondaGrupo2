@@ -5,8 +5,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,11 +19,16 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
+import com.example.tprondagrupo2.network.ApiClient;
 
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class DetallePublicacionFragment extends Fragment {
 
@@ -37,6 +44,8 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvEstado;
     private TextView tvFechaPublicacion;
     private TextView tvDescripcion;
+    private ImageButton btnFavorite;
+    private Publicacion currentPublicacion;
 
     // Sección del vendedor
     private TextView tvVendedorAvatar;
@@ -67,6 +76,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvEstado = view.findViewById(R.id.tvEstado);
         tvFechaPublicacion = view.findViewById(R.id.tvFechaPublicacion);
         tvDescripcion = view.findViewById(R.id.tvDescripcion);
+        btnFavorite = view.findViewById(R.id.btnFavoriteDetail);
 
         tvVendedorAvatar = view.findViewById(R.id.tvVendedorAvatar);
         tvVendedorNombre = view.findViewById(R.id.tvVendedorNombre);
@@ -77,12 +87,14 @@ public class DetallePublicacionFragment extends Fragment {
         tvVendedorMiembroDesde = view.findViewById(R.id.tvVendedorMiembroDesde);
         btnVerPerfilVendedor = view.findViewById(R.id.btnVerPerfilVendedor);
 
-        mostrarPublicacion(obtenerPublicacion());
+        currentPublicacion = obtenerPublicacion();
+        if (btnFavorite != null && currentPublicacion != null) {
+            btnFavorite.setOnClickListener(v -> toggleFavorite(currentPublicacion));
+        }
+        mostrarPublicacion(currentPublicacion);
     }
 
     private Publicacion obtenerPublicacion() {
-        // Todavia no hay backend de publicaciones: si no llega nada por argumentos
-        // usamos datos de demo para que la pantalla se pueda ver con contenido
         if (getArguments() != null) {
             Object extra = getArguments().getSerializable(ARG_PUBLICACION);
             if (extra instanceof Publicacion) {
@@ -103,7 +115,52 @@ public class DetallePublicacionFragment extends Fragment {
                 getString(R.string.detalle_publicado_el, publicacion.getFechaPublicacion()));
         tvDescripcion.setText(publicacion.getDescripcion());
 
+        actualizarIconoFavorito(publicacion.isFavorite());
         mostrarVendedor(obtenerVendedor(publicacion));
+    }
+
+    private void toggleFavorite(@NonNull Publicacion publicacion) {
+        final boolean wasFavorite = publicacion.isFavorite();
+        final String pubId = publicacion.getId();
+
+        btnFavorite.setEnabled(false);
+
+        Callback<Void> callback = new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (isAdded()) {
+                    btnFavorite.setEnabled(true);
+                    if (response.isSuccessful()) {
+                        publicacion.setFavorite(!wasFavorite);
+                        actualizarIconoFavorito(publicacion.isFavorite());
+                        String mensaje = publicacion.isFavorite() ? "Agregado a favoritos" : "Eliminado de favoritos";
+                        Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Error al actualizar favorito", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                if (isAdded()) {
+                    btnFavorite.setEnabled(true);
+                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+
+        if (wasFavorite) {
+            ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
+        } else {
+            ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
+        }
+    }
+
+    private void actualizarIconoFavorito(boolean isFavorite) {
+        btnFavorite.setImageResource(isFavorite 
+                ? android.R.drawable.btn_star_big_on 
+                : android.R.drawable.btn_star_big_off);
     }
 
     private void mostrarVendedor(@NonNull Vendedor vendedor) {

@@ -5,7 +5,7 @@
         android:icon="@android:drawable/ic_menu_search"
         android:title="Explorar" />
     <item
-        android:id="@+id/perfilVendedorFragment"
+        android:id="@+id/profileFragment"
         android:icon="@android:drawable/ic_menu_myplaces"
         android:title="Mi Perfil" />
 </menu>

@@ -9,18 +9,22 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Sin esta clase, Spring Security bloquea todos los endpoints con 401 y agrega
  * un formulario de login por defecto. Aca se abre /auth/** y /health, que es lo
  * que consume el cliente Android.
- *
- * Todavia NO hay filtro JWT: los tokens se generan y se devuelven, pero ninguna
- * ruta los exige. Eso viene en el proximo incremento.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,7 +38,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/publications/**").permitAll()
                         .requestMatchers("/auth/**", "/health").permitAll()
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

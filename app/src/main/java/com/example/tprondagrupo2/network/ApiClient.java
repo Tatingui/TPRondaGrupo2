@@ -5,6 +5,7 @@ import android.util.Log;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -13,7 +14,6 @@ public class ApiClient {
 
     private static final String TAG = "RONDA_API";
 
-    // 10.0.2.2 es la IP con la que el emulador de Android ve el localhost de la maquina host
     private static final String BASE_URL = "http://localhost:8081/api/";
 
     private static final long TIMEOUT_SECONDS = 30;
@@ -37,6 +37,19 @@ public class ApiClient {
                     .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .addInterceptor(loggingInterceptor)
+                    .addInterceptor(chain -> {
+                        Request original = chain.request();
+                        String token = TokenManager.getInstance().getToken();
+
+                        if (token != null) {
+                            Request.Builder requestBuilder = original.newBuilder()
+                                    .header("Authorization", "Bearer " + token);
+                            Request request = requestBuilder.build();
+                            return chain.proceed(request);
+                        }
+
+                        return chain.proceed(original);
+                    })
                     .build();
 
             retrofit = new Retrofit.Builder()

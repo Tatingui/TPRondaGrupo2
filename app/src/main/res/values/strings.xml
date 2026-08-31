@@ -13,4 +13,8 @@
     <string name="vendedor_ver_perfil">Ver perfil público</string>
     <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
     <string name="perfil_vendedor_ubicacion">Ubicación: %1$s</string>
+
+    <!-- Sección de favoritos -->
+    <string name="perfil_mis_favoritos">Mis favoritos</string>
+    <string name="perfil_favoritos_vacio">Aún no tenés favoritos</string>
 </resources>

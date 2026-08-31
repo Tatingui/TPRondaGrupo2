@@ -16,7 +16,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
@@ -29,7 +28,9 @@ import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,6 +44,7 @@ public class HomeFragment extends Fragment {
     private PublicationAdapter adapter;
     private List<Publication> displayedPublications;
     private EditText etSearch;
+    private Set<Long> favoriteIds = new HashSet<>();
 
     // Filter states
     private String currentSearchText = "";
@@ -82,12 +84,38 @@ public class HomeFragment extends Fragment {
         setupRecyclerView();
         setupSearchLogic();
         setupFilters(view);
+    }
 
-        refreshData();
+    @Override
+    public void onResume() {
+        super.onResume();
+        fetchFavoriteIds();
+    }
+
+    private void fetchFavoriteIds() {
+        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publication>>() {
+            @Override
+            public void onResponse(Call<List<Publication>> call, Response<List<Publication>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    favoriteIds.clear();
+                    for (Publication p : response.body()) {
+                        favoriteIds.add(p.getId());
+                    }
+                    refreshData();
+                } else {
+                    refreshData();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Publication>> call, Throwable t) {
+                refreshData();
+            }
+        });
     }
 
     private void setupRecyclerView() {
-        adapter = new PublicationAdapter(displayedPublications, this::abrirDetalle);
+        adapter = new PublicationAdapter(displayedPublications, this::abrirDetalle, this::onFavoriteClick);
         rvPublications.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rvPublications.setAdapter(adapter);
 
@@ -130,6 +158,12 @@ public class HomeFragment extends Fragment {
                 isLoading = false;
                 if (response.isSuccessful() && response.body() != null) {
                     List<Publication> newItems = response.body().getContent();
+                    
+                    // Sincronizar estado de favoritos
+                    for (Publication p : newItems) {
+                        p.setFavorite(favoriteIds.contains(p.getId()));
+                    }
+
                     if (currentPage == 0) {
                         displayedPublications.clear();
                         displayedPublications.addAll(newItems);
@@ -165,25 +199,64 @@ public class HomeFragment extends Fragment {
 
     private void abrirDetalle(Publication publication) {
         Bundle args = new Bundle();
-        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, mapearADetalle(publication));
+        Publicacion p = mapearADetalle(publication);
+        p.setFavorite(publication.isFavorite());
+        android.util.Log.d(TAG, "Abriendo detalle para ID: " + p.getId());
+        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, p);
 
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_home_to_detalle, args);
     }
 
+    private void onFavoriteClick(Publication publication, int position) {
+        boolean isFavorite = publication.isFavorite();
+        String pubId = String.valueOf(publication.getId());
+
+        Callback<Void> callback = new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    publication.setFavorite(!isFavorite);
+                    if (publication.isFavorite()) {
+                        favoriteIds.add(publication.getId());
+                    } else {
+                        favoriteIds.remove(publication.getId());
+                    }
+                    adapter.notifyItemChanged(position);
+                } else {
+                    Toast.makeText(getContext(), "Error al actualizar favorito", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        if (isFavorite) {
+            ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
+        } else {
+            ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
+        }
+    }
+
     private Publicacion mapearADetalle(Publication publication) {
-        Vendedor vendedor = new Vendedor(
-                publication.getSellerId().toString(),
-                publication.getSellerName(),
-                4.5, // Reputacion mock
-                15,  // Ventas mock
-                10,  // Opiniones mock
-                "2 años",
-                publication.getLocation()
-        );
+        Vendedor vendedor = null;
+        if (publication.getSellerId() != null) {
+            vendedor = new Vendedor(
+                    publication.getSellerId().toString(),
+                    publication.getSellerName(),
+                    4.5, // Reputacion mock
+                    15,  // Ventas mock
+                    10,  // Opiniones mock
+                    "2 años",
+                    publication.getLocation()
+            );
+        }
 
         return new Publicacion(
-                publication.getId().toString(),
+                publication.getId() != null ? publication.getId().toString() : "0",
                 publication.getTitle(),
                 publication.getImageUrls(),
                 publication.getDescription(),

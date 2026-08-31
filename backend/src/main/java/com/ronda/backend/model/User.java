@@ -7,8 +7,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.JoinColumn;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -34,6 +39,14 @@ public class User {
     private String otpCode;
 
     private LocalDateTime otpExpiresAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "user_favorites",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "publication_id")
+    )
+    private Set<Publication> favorites = new HashSet<>();
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -115,5 +128,21 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Set<Publication> getFavorites() {
+        return favorites;
+    }
+
+    public void setFavorites(Set<Publication> favorites) {
+        this.favorites = favorites;
+    }
+
+    public void addFavorite(Publication publication) {
+        this.favorites.add(publication);
+    }
+
+    public void removeFavorite(Publication publication) {
+        this.favorites.remove(publication);
     }
 }

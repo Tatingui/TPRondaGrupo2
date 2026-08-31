@@ -15,6 +15,7 @@ public class Publication implements Serializable {
     private String createdAt;
     private Long sellerId;
     private String sellerName;
+    private boolean isFavorite;
 
     public Publication() {
     }
@@ -51,6 +52,14 @@ public class Publication implements Serializable {
 
     public String getSellerName() { return sellerName; }
     public void setSellerName(String sellerName) { this.sellerName = sellerName; }
+
+    public boolean isFavorite() {
+        return isFavorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        isFavorite = favorite;
+    }
 
     public String getFirstImageUrl() {
         if (imageUrls != null && !imageUrls.isEmpty()) {
