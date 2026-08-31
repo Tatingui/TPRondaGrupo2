@@ -85,7 +85,7 @@ public class RegisterFragment extends Fragment {
         Log.d(TAG, "Intentando registro: nombre=" + nombre + " email=" + email);
 
         RegisterRequest req = new RegisterRequest(nombre, email, password);
-        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService().register()");
+        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService(requireContext()).register()");
 
         ApiClient.getAuthService().register(req)
                 .enqueue(new Callback<AuthResponse>() {

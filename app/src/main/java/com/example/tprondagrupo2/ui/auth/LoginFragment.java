@@ -20,6 +20,7 @@ import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.LoginRequest;
 import com.example.tprondagrupo2.model.OtpSendRequest;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.TokenManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -84,6 +85,9 @@ public class LoginFragment extends Fragment {
 
                         AuthResponse body = response.body();
                         if (response.isSuccessful() && body != null && body.isSuccess()) {
+                            if (body.getToken() != null) {
+                                TokenManager.getInstance().saveToken(body.getToken());
+                            }
                             NavHostFragment.findNavController(LoginFragment.this)
                                     .navigate(R.id.action_login_to_home);
                         } else {

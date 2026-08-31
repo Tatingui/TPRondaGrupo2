@@ -15,6 +15,7 @@ public class Publicacion implements Serializable {
     private double precio;
     private String fechaPublicacion;
     private Vendedor vendedor;
+    private boolean isFavorite;
 
     public Publicacion() {
         // Constructor vacio requerido por Gson
@@ -114,5 +115,13 @@ public class Publicacion implements Serializable {
 
     public int getCantidadFotos() {
         return fotos != null ? fotos.size() : 0;
+    }
+
+    public boolean isFavorite() {
+        return isFavorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        isFavorite = favorite;
     }
 }

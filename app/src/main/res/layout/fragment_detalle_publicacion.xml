@@ -35,6 +35,20 @@
                 android:textSize="14sp"
                 tools:ignore="UnusedAttribute" />
 
+            <ImageButton
+                android:id="@+id/btnFavoriteDetail"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="24dp"
+                android:background="@drawable/bg_circle_white"
+                android:contentDescription="Favorito"
+                android:elevation="6dp"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@android:drawable/btn_star_big_off"
+                android:translationY="50px" />
+
         </FrameLayout>
 
         <LinearLayout
