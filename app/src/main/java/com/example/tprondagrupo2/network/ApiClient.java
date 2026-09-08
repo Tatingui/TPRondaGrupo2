@@ -42,14 +42,11 @@ public class ApiClient {
                         Request original = chain.request();
                         String token = TokenManager.getInstance().getToken();
 
-                        if (token != null) {
-                            Request.Builder requestBuilder = original.newBuilder()
-                                    .header("Authorization", "Bearer " + token);
-                            Request request = requestBuilder.build();
-                            return chain.proceed(request);
+                        Request.Builder builder = original.newBuilder();
+                        if (token != null && !token.trim().isEmpty()) {
+                            builder.header("Authorization", "Bearer " + token);
                         }
-
-                        return chain.proceed(original);
+                        return chain.proceed(builder.build());
                     })
                     .build();
 
@@ -68,5 +65,9 @@ public class ApiClient {
 
     public static PublicationApiService getPublicationService() {
         return getClient().create(PublicationApiService.class);
+    }
+
+    public static SavedSearchApiService getSavedSearchService() {
+        return getClient().create(SavedSearchApiService.class);
     }
 }

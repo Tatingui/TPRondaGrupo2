@@ -78,6 +78,18 @@
                 app:singleLine="true">
 
                 <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSaveSearch"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/guardar_busqueda"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="@color/purple_500"
+                    app:chipIcon="@android:drawable/ic_menu_save"
+                    app:chipIconTint="@color/white" />
+
+                <com.google.android.material.chip.Chip
                     android:id="@+id/chipSort"
                     style="@style/Widget.MaterialComponents.Chip.Action"
                     android:layout_width="wrap_content"

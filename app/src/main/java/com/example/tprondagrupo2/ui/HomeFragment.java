@@ -1,5 +1,6 @@
 package com.example.tprondagrupo2.ui;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Publication;
+import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -84,6 +87,7 @@ public class HomeFragment extends Fragment {
         setupRecyclerView();
         setupSearchLogic();
         setupFilters(view);
+        checkIncomingSavedSearch();
     }
 
     @Override
@@ -201,7 +205,7 @@ public class HomeFragment extends Fragment {
         Bundle args = new Bundle();
         Publicacion p = mapearADetalle(publication);
         p.setFavorite(publication.isFavorite());
-        android.util.Log.d(TAG, "Abriendo detalle para ID: " + p.getId());
+        Log.d(TAG, "Abriendo detalle para ID: " + p.getId());
         args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, p);
 
         NavHostFragment.findNavController(this)
@@ -284,11 +288,102 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupFilters(View view) {
+        view.findViewById(R.id.chipSaveSearch).setOnClickListener(v -> guardarBusquedaActual());
         view.findViewById(R.id.chipSort).setOnClickListener(v -> showSortDialog());
         view.findViewById(R.id.chipFilterCategory).setOnClickListener(v -> showCategoryDialog());
         view.findViewById(R.id.chipFilterPrice).setOnClickListener(v -> showPriceDialog());
         view.findViewById(R.id.chipFilterCondition).setOnClickListener(v -> showConditionDialog());
         view.findViewById(R.id.chipFilterLocation).setOnClickListener(v -> showLocationDialog());
+    }
+
+    private void guardarBusquedaActual() {
+        SavedSearch savedSearch = new SavedSearch(
+                null,
+                currentSearchText,
+                selectedCategoryId,
+                selectedCategoryName,
+                selectedCondition,
+                selectedConditionName,
+                selectedLocation,
+                selectedLocationName,
+                minPrice,
+                maxPrice,
+                currentSort,
+                currentSortName,
+                null
+        );
+
+        if (!savedSearch.hasAnyFilterOrQuery()) {
+            Toast.makeText(getContext(), R.string.busqueda_vacia_error, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ApiClient.getSavedSearchService().saveSearch(savedSearch).enqueue(new Callback<SavedSearch>() {
+            @Override
+            public void onResponse(Call<SavedSearch> call, Response<SavedSearch> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), R.string.busqueda_guardada_exito, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Error al guardar la búsqueda", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SavedSearch> call, Throwable t) {
+                Toast.makeText(getContext(), "Error de conexión al guardar", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void checkIncomingSavedSearch() {
+        if (getArguments() != null && getArguments().containsKey("saved_search")) {
+            SavedSearch savedSearch;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedSearch = getArguments().getSerializable("saved_search", SavedSearch.class);
+            } else {
+                //noinspection deprecation
+                savedSearch = (SavedSearch) getArguments().getSerializable("saved_search");
+            }
+            if (savedSearch != null) {
+                applySavedSearch(savedSearch);
+                getArguments().remove("saved_search");
+            }
+        }
+    }
+
+    public void applySavedSearch(SavedSearch search) {
+        if (search == null) return;
+        this.currentSearchText = search.getQuery() != null ? search.getQuery() : "";
+        if (etSearch != null) {
+            etSearch.setText(this.currentSearchText);
+        }
+        this.selectedCategoryId = search.getCategoryId();
+        this.selectedCategoryName = search.getCategoryName() != null ? search.getCategoryName() : "Categoría";
+        this.selectedCondition = search.getCondition();
+        this.selectedConditionName = search.getConditionName() != null ? search.getConditionName() : "Estado";
+        this.selectedLocation = search.getLocation();
+        this.selectedLocationName = search.getLocationName() != null ? search.getLocationName() : "Zona";
+        this.minPrice = search.getMinPrice();
+        this.maxPrice = search.getMaxPrice();
+        this.currentSort = search.getSort() != null ? search.getSort() : "createdAt,desc";
+        this.currentSortName = search.getSortName() != null ? search.getSortName() : "Ordenar por";
+
+        updateChipLabels();
+        refreshData();
+    }
+
+    private void updateChipLabels() {
+        View view = getView();
+        if (view == null) return;
+        Chip chipSort = view.findViewById(R.id.chipSort);
+        Chip chipCat = view.findViewById(R.id.chipFilterCategory);
+        Chip chipCond = view.findViewById(R.id.chipFilterCondition);
+        Chip chipLoc = view.findViewById(R.id.chipFilterLocation);
+
+        if (chipSort != null) chipSort.setText("Orden: " + currentSortName);
+        if (chipCat != null) chipCat.setText(selectedCategoryName);
+        if (chipCond != null) chipCond.setText(selectedConditionName);
+        if (chipLoc != null) chipLoc.setText(selectedLocationName);
     }
 
     private void showSortDialog() {

@@ -12,14 +12,17 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Publication;
+import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
@@ -48,9 +51,14 @@ public class ProfileFragment extends Fragment {
     private RecyclerView rvFavorites;
     private ProgressBar progressBar;
     private TextView tvEmpty;
+
+    private RecyclerView rvSavedSearches;
+    private TextView tvEmptySavedSearches;
+    private SavedSearchAdapter savedSearchAdapter;
+    private final List<SavedSearch> savedSearches = new ArrayList<>();
     
     private PublicationAdapter adapter;
-    private List<Publication> favoritePublications = new ArrayList<>();
+    private final List<Publication> favoritePublications = new ArrayList<>();
 
     @Nullable
     @Override
@@ -75,6 +83,10 @@ public class ProfileFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         tvEmpty = view.findViewById(R.id.tvEmpty);
 
+        rvSavedSearches = view.findViewById(R.id.rvSavedSearches);
+        tvEmptySavedSearches = view.findViewById(R.id.tvEmptySavedSearches);
+
+        setupSavedSearchesRecyclerView();
         setupRecyclerView();
         mostrarMiPerfil();
     }
@@ -82,7 +94,87 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        loadSavedSearches();
         fetchFavorites();
+    }
+
+    private void setupSavedSearchesRecyclerView() {
+        if (rvSavedSearches == null) return;
+        savedSearchAdapter = new SavedSearchAdapter(savedSearches, new SavedSearchAdapter.OnSavedSearchClickListener() {
+            @Override
+            public void onSearchClick(SavedSearch savedSearch) {
+                Bundle args = new Bundle();
+                args.putSerializable("saved_search", savedSearch);
+                NavHostFragment.findNavController(ProfileFragment.this)
+                        .navigate(R.id.action_profile_to_home, args);
+            }
+
+            @Override
+            public void onDeleteClick(SavedSearch savedSearch, int position) {
+                if (getContext() == null || savedSearch == null || savedSearch.getId() == null) return;
+                new AlertDialog.Builder(requireContext())
+                        .setTitle(R.string.perfil_mis_busquedas)
+                        .setMessage(R.string.eliminar_busqueda_confirm)
+                        .setPositiveButton("Eliminar", (dialog, which) -> {
+                            ApiClient.getSavedSearchService().deleteSearch(savedSearch.getId()).enqueue(new Callback<Void>() {
+                                @Override
+                                public void onResponse(Call<Void> call, Response<Void> response) {
+                                    if (response.isSuccessful()) {
+                                        if (position >= 0 && position < savedSearches.size()) {
+                                            savedSearches.remove(position);
+                                            if (savedSearchAdapter != null) {
+                                                savedSearchAdapter.notifyItemRemoved(position);
+                                                savedSearchAdapter.notifyItemRangeChanged(position, savedSearches.size());
+                                            }
+                                        } else {
+                                            loadSavedSearches();
+                                        }
+                                        if (savedSearches.isEmpty() && tvEmptySavedSearches != null) {
+                                            tvEmptySavedSearches.setVisibility(View.VISIBLE);
+                                        }
+                                        Toast.makeText(getContext(), "Búsqueda eliminada", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Toast.makeText(getContext(), "Error al eliminar la búsqueda", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<Void> call, Throwable t) {
+                                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        })
+                        .setNegativeButton("Cancelar", null)
+                        .show();
+            }
+        });
+        rvSavedSearches.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvSavedSearches.setAdapter(savedSearchAdapter);
+        rvSavedSearches.setNestedScrollingEnabled(false);
+    }
+
+    private void loadSavedSearches() {
+        if (getContext() == null) return;
+        ApiClient.getSavedSearchService().getSavedSearches().enqueue(new Callback<List<SavedSearch>>() {
+            @Override
+            public void onResponse(Call<List<SavedSearch>> call, Response<List<SavedSearch>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    savedSearches.clear();
+                    savedSearches.addAll(response.body());
+                    if (savedSearchAdapter != null) {
+                        savedSearchAdapter.notifyDataSetChanged();
+                    }
+                    if (tvEmptySavedSearches != null) {
+                        tvEmptySavedSearches.setVisibility(savedSearches.isEmpty() ? View.VISIBLE : View.GONE);
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<SavedSearch>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar búsquedas guardadas", t);
+            }
+        });
     }
 
     private void setupRecyclerView() {
@@ -132,8 +224,6 @@ public class ProfileFragment extends Fragment {
             if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
         }
     }
-
-
 
     private void abrirDetalle(Publication publication) {
         Bundle args = new Bundle();
