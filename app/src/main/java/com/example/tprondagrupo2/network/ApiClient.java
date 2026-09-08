@@ -14,6 +14,8 @@ public class ApiClient {
 
     private static final String TAG = "RONDA_API";
 
+    // Conexion al backend de la PC mediante adb reverse tcp:8081 tcp:8081.
+    // Configurar el tunel despues de iniciar el emulador (start-backend.bat lo hace).
     private static final String BASE_URL = "http://localhost:8081/api/";
 
     private static final long TIMEOUT_SECONDS = 30;

@@ -10,7 +10,7 @@ import retrofit2.Retrofit;
 
 public class ApiClientTest {
 
-    private static final String BASE_URL_ESPERADA = "http://10.0.2.2:8081/api/";
+    private static final String BASE_URL_ESPERADA = "http://localhost:8081/api/";
 
     @Test
     public void testGetClientNoDevuelveNull() {
@@ -35,7 +35,7 @@ public class ApiClientTest {
 
     @Test
     public void testBaseUrlEsLaEsperada() {
-        // Valida que apunta al localhost del host visto desde el emulador
+        // Valida la direccion local que adb reverse conecta con el backend de la PC
         assertEquals(BASE_URL_ESPERADA, ApiClient.getClient().baseUrl().toString());
     }
 
