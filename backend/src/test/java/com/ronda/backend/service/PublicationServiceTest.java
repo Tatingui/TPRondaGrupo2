@@ -85,4 +85,23 @@ public class PublicationServiceTest {
         assertEquals(1, result.getTotalElements());
         assertEquals("Pelota", result.getContent().get(0).getTitle());
     }
+
+    @Test
+    public void testMarkAndUnmarkAsFavorite() {
+        Publication publication = publicationRepository.findAll().get(0);
+
+        publicationService.markAsFavorite(publication.getId(), user.getEmail());
+        entityManager.flush();
+        entityManager.clear();
+
+        User reloaded = entityManager.find(User.class, user.getId());
+        assertTrue(reloaded.getFavorites().stream().anyMatch(uf -> uf.getPublication() != null && uf.getPublication().getId().equals(publication.getId())));
+
+        publicationService.unmarkAsFavorite(publication.getId(), user.getEmail());
+        entityManager.flush();
+        entityManager.clear();
+
+        User reloadedAfterRemove = entityManager.find(User.class, user.getId());
+        assertTrue(reloadedAfterRemove.getFavorites().isEmpty());
+    }
 }

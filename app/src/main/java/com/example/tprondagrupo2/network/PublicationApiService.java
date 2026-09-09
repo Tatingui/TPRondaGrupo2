@@ -1,6 +1,6 @@
 package com.example.tprondagrupo2.network;
 
-import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.model.Publication;
 
 import java.util.List;
 
@@ -33,5 +33,5 @@ public interface PublicationApiService {
     Call<Void> unmarkAsFavorite(@Path("id") String id);
 
     @GET("publications/favorites")
-    Call<List<com.example.tprondagrupo2.model.Publication>> getFavorites();
+    Call<List<Publication>> getFavorites();
 }

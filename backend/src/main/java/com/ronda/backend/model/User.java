@@ -1,15 +1,14 @@
 package com.ronda.backend.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.JoinColumn;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -40,13 +39,8 @@ public class User {
 
     private LocalDateTime otpExpiresAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_favorites",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "publication_id")
-    )
-    private Set<Publication> favorites = new HashSet<>();
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserFavorite> favorites = new HashSet<>();
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -130,19 +124,24 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public Set<Publication> getFavorites() {
+    public Set<UserFavorite> getFavorites() {
         return favorites;
     }
 
-    public void setFavorites(Set<Publication> favorites) {
+    public void setFavorites(Set<UserFavorite> favorites) {
         this.favorites = favorites;
     }
 
-    public void addFavorite(Publication publication) {
-        this.favorites.add(publication);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
     }
 
-    public void removeFavorite(Publication publication) {
-        this.favorites.remove(publication);
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
