@@ -1,5 +1,7 @@
 package com.example.tprondagrupo2.network;
 
+import androidx.annotation.Nullable;
+
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -40,7 +42,7 @@ public class ApiClient {
                     .addInterceptor(loggingInterceptor)
                     .addInterceptor(chain -> {
                         Request original = chain.request();
-                        String token = TokenManager.getInstance().getToken();
+                        String token = getStoredToken();
 
                         Request.Builder builder = original.newBuilder();
                         if (token != null && !token.trim().isEmpty()) {
@@ -69,5 +71,15 @@ public class ApiClient {
 
     public static SavedSearchApiService getSavedSearchService() {
         return getClient().create(SavedSearchApiService.class);
+    }
+
+    @Nullable
+    private static String getStoredToken() {
+        try {
+            return TokenManager.getInstance().getToken();
+        } catch (IllegalStateException e) {
+            LOGGER.fine("TokenManager no inicializado; se omite Authorization");
+            return null;
+        }
     }
 }

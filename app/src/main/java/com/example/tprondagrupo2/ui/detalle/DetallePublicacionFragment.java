@@ -20,6 +20,7 @@ import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.google.gson.Gson;
 
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -35,6 +36,7 @@ public class DetallePublicacionFragment extends Fragment {
     public static final String ARG_PUBLICACION = "publicacion";
 
     private static final Locale LOCALE_AR = new Locale("es", "AR");
+    private static final Gson GSON = new Gson();
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -136,7 +138,25 @@ public class DetallePublicacionFragment extends Fragment {
                         String mensaje = publicacion.isFavorite() ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(getContext(), "Error al actualizar favorito", Toast.LENGTH_SHORT).show();
+                        String mensaje = "Error al actualizar favorito";
+                        if (response.errorBody() != null) {
+                            try {
+                                String errorJson = response.errorBody().string();
+                                com.example.tprondagrupo2.model.AuthResponse error = GSON.fromJson(errorJson, com.example.tprondagrupo2.model.AuthResponse.class);
+                                if (response.code() == 401 || response.code() == 403) {
+                                    mensaje = "Sesión vencida o inválida. Iniciá sesión de nuevo.";
+                                } else if (error != null && error.getMessage() != null && !error.getMessage().isEmpty()) {
+                                    mensaje = error.getMessage();
+                                }
+                            } catch (Exception ignored) {
+                                if (response.code() == 401 || response.code() == 403) {
+                                    mensaje = "Sesión vencida o inválida. Iniciá sesión de nuevo.";
+                                }
+                            }
+                        } else if (response.code() == 401 || response.code() == 403) {
+                            mensaje = "Sesión vencida o inválida. Iniciá sesión de nuevo.";
+                        }
+                        Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
                     }
                 }
             }

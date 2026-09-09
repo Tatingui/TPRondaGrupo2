@@ -1,5 +1,6 @@
 package com.ronda.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 
 public class SavedSearchDTO {
@@ -16,6 +17,8 @@ public class SavedSearchDTO {
     private Double maxPrice;
     private String sort;
     private String sortName;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
 
     public SavedSearchDTO() {

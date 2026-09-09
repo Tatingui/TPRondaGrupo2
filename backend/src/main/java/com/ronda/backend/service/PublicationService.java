@@ -5,7 +5,9 @@ import com.ronda.backend.exception.ResourceNotFoundException;
 import com.ronda.backend.model.Publication;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.model.User;
+import com.ronda.backend.model.UserFavorite;
 import com.ronda.backend.repository.PublicationRepository;
+import com.ronda.backend.repository.UserFavoriteRepository;
 import com.ronda.backend.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -26,12 +28,17 @@ public class PublicationService {
 
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
+    private final UserFavoriteRepository userFavoriteRepository;
 
-    public PublicationService(PublicationRepository publicationRepository, UserRepository userRepository) {
+    public PublicationService(PublicationRepository publicationRepository,
+                              UserRepository userRepository,
+                              UserFavoriteRepository userFavoriteRepository) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
+        this.userFavoriteRepository = userFavoriteRepository;
     }
 
+    @Transactional(readOnly = true)
     public Page<PublicationDTO> findAll(String search, Long categoryId, Double minPrice, Double maxPrice, 
                                        PublicationStatus status, String location, Pageable pageable) {
         
@@ -77,39 +84,57 @@ public class PublicationService {
 
     @Transactional
     public void markAsFavorite(Long publicationId, String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
-        user.getFavorites().add(publication);
-        userRepository.save(user);
+        if (!userFavoriteRepository.existsByUserIdAndPublicationId(user.getId(), publicationId)) {
+            Double priceToSave = publication.getPrice() != null ? publication.getPrice() : 0.0;
+            UserFavorite favorite = new UserFavorite(user, publication, priceToSave);
+            userFavoriteRepository.save(favorite);
+        }
     }
 
     @Transactional
     public void unmarkAsFavorite(Long publicationId, String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        Publication publication = publicationRepository.findById(publicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
-        user.getFavorites().remove(publication);
-        userRepository.save(user);
+        userFavoriteRepository.deleteByUserIdAndPublicationId(user.getId(), publicationId);
     }
 
+    @Transactional(readOnly = true)
     public List<PublicationDTO> getFavorites(String email) {
+        if (email == null) {
+            return Collections.emptyList();
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
-        Set<Publication> favorites = user.getFavorites();
-        Set<Long> favoriteIds = favorites.stream().map(Publication::getId).collect(Collectors.toSet());
+        List<UserFavorite> favorites = userFavoriteRepository.findByUser(user);
+        Set<Long> favoriteIds = favorites.stream()
+                .filter(uf -> uf.getPublication() != null && uf.getPublication().getId() != null)
+                .map(uf -> uf.getPublication().getId())
+                .collect(Collectors.toSet());
 
         return favorites.stream()
+                .map(uf -> uf.getPublication())
+                .filter(pub -> pub != null)
                 .map(pub -> convertToDTO(pub, favoriteIds))
                 .collect(Collectors.toList());
     }
 
     private String getCurrentUserEmail() {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            return null;
+        }
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof String) {
             return (String) principal;
@@ -120,13 +145,15 @@ public class PublicationService {
     private Set<Long> getFavoriteIdsForUser(String email) {
         if (email == null) return Collections.emptySet();
         return userRepository.findByEmail(email)
-                .map(user -> user.getFavorites().stream()
-                        .map(Publication::getId)
+                .map(user -> userFavoriteRepository.findByUser(user).stream()
+                        .filter(uf -> uf.getPublication() != null && uf.getPublication().getId() != null)
+                        .map(uf -> uf.getPublication().getId())
                         .collect(Collectors.toSet()))
                 .orElse(Collections.emptySet());
     }
 
     private PublicationDTO convertToDTO(Publication pub, Set<Long> favoriteIds) {
+        if (pub == null) return null;
         PublicationDTO dto = new PublicationDTO();
         dto.setId(pub.getId());
         dto.setTitle(pub.getTitle());
@@ -134,12 +161,18 @@ public class PublicationService {
         dto.setPrice(pub.getPrice());
         dto.setStatus(pub.getStatus());
         dto.setLocation(pub.getLocation());
-        dto.setCategoryName(pub.getCategory().getName());
-        dto.setImageUrls(pub.getImageUrls());
+        if (pub.getCategory() != null) {
+            dto.setCategoryName(pub.getCategory().getName());
+        }
+        if (pub.getImageUrls() != null) {
+            dto.setImageUrls(new ArrayList<>(pub.getImageUrls()));
+        }
         dto.setCreatedAt(pub.getCreatedAt());
-        dto.setSellerId(pub.getSeller().getId());
-        dto.setSellerName(pub.getSeller().getNombre());
-        dto.setFavorite(favoriteIds.contains(pub.getId()));
+        if (pub.getSeller() != null) {
+            dto.setSellerId(pub.getSeller().getId());
+            dto.setSellerName(pub.getSeller().getNombre());
+        }
+        dto.setFavorite(favoriteIds != null && pub.getId() != null && favoriteIds.contains(pub.getId()));
         return dto;
     }
 }

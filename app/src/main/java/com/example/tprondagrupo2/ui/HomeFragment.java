@@ -106,6 +106,9 @@ public class HomeFragment extends Fragment {
                         favoriteIds.add(p.getId());
                     }
                     refreshData();
+                } else if (response.code() == 401 || response.code() == 403) {
+                    Toast.makeText(getContext(), "Sesión vencida o inválida. Iniciá sesión de nuevo.", Toast.LENGTH_SHORT).show();
+                    refreshData();
                 } else {
                     refreshData();
                 }
