@@ -17,4 +17,12 @@
     <!-- Sección de favoritos -->
     <string name="perfil_mis_favoritos">Mis favoritos</string>
     <string name="perfil_favoritos_vacio">Aún no tenés favoritos</string>
+
+    <!-- Sección de Mis Búsquedas -->
+    <string name="perfil_mis_busquedas">Mis búsquedas</string>
+    <string name="perfil_busquedas_vacias">Aún no tenés búsquedas guardadas</string>
+    <string name="guardar_busqueda">Guardar búsqueda</string>
+    <string name="busqueda_guardada_exito">Búsqueda guardada exitosamente</string>
+    <string name="busqueda_vacia_error">Aplicá un término de búsqueda o un filtro antes de guardar</string>
+    <string name="eliminar_busqueda_confirm">¿Deseas eliminar esta búsqueda guardada?</string>
 </resources>
