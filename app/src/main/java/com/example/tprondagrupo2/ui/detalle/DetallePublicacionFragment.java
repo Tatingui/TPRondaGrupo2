@@ -17,6 +17,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
@@ -109,13 +110,13 @@ public class DetallePublicacionFragment extends Fragment {
     private void mostrarPublicacion(@NonNull Publicacion publicacion) {
         configurarGaleria(publicacion);
 
-        tvTitulo.setText(publicacion.getTitulo());
-        tvPrecio.setText(formatearPrecio(publicacion.getPrecio()));
-        tvCategoria.setText(publicacion.getCategoria());
-        tvEstado.setText(publicacion.getEstado());
+        tvTitulo.setText(publicacion.getTitle());
+        tvPrecio.setText(formatearPrecio(publicacion.getPrice()));
+        tvCategoria.setText(publicacion.getCategoryName());
+        tvEstado.setText(publicacion.getStatus());
         tvFechaPublicacion.setText(
-                getString(R.string.detalle_publicado_el, publicacion.getFechaPublicacion()));
-        tvDescripcion.setText(publicacion.getDescripcion());
+                getString(R.string.detalle_publicado_el, publicacion.getCreatedAt()));
+        tvDescripcion.setText(publicacion.getDescription());
 
         actualizarIconoFavorito(publicacion.isFavorite());
         mostrarVendedor(obtenerVendedor(publicacion));
@@ -142,7 +143,7 @@ public class DetallePublicacionFragment extends Fragment {
                         if (response.errorBody() != null) {
                             try {
                                 String errorJson = response.errorBody().string();
-                                com.example.tprondagrupo2.model.AuthResponse error = GSON.fromJson(errorJson, com.example.tprondagrupo2.model.AuthResponse.class);
+                                AuthResponse error = GSON.fromJson(errorJson, AuthResponse.class);
                                 if (response.code() == 401 || response.code() == 403) {
                                     mensaje = "Sesión vencida o inválida. Iniciá sesión de nuevo.";
                                 } else if (error != null && error.getMessage() != null && !error.getMessage().isEmpty()) {
@@ -219,7 +220,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void configurarGaleria(@NonNull Publicacion publicacion) {
-        List<String> fotos = publicacion.getFotos();
+        List<String> fotos = publicacion.getImageUrls();
 
         GaleriaFotosAdapter adapter = new GaleriaFotosAdapter(fotos, position -> {
             FotoFullscreenDialog dialog = FotoFullscreenDialog.newInstance(fotos, position);

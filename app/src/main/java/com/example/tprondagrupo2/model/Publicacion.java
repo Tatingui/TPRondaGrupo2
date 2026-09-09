@@ -7,38 +7,65 @@ import java.util.List;
 public class Publicacion implements Serializable {
 
     private String id;
-    private String titulo;
-    private List<String> fotos;
-    private String descripcion;
-    private String categoria;
-    private String estado;
-    private double precio;
-    private String fechaPublicacion;
+
+    private String title;
+
+    private List<String> imageUrls;
+
+    private String description;
+
+    private String categoryName;
+
+    private String status;
+
+    private double price;
+
+    private String createdAt;
+
     private Vendedor vendedor;
+
+    // TODO: decidir si deberíamos seguir usando sellerId y sellerName
+    //       o si es redundante porque vendedor ya los incluye.
+    private Long sellerId;
+
+    private String sellerName;
+
+    private String location;
+
     private boolean isFavorite;
 
     public Publicacion() {
         // Constructor vacio requerido por Gson
-        this.fotos = new ArrayList<>();
+        // this.imageUrls = new ArrayList<>();
     }
 
-    public Publicacion(String id, String titulo, List<String> fotos, String descripcion,
-                       String categoria, String estado, double precio, String fechaPublicacion) {
-        this(id, titulo, fotos, descripcion, categoria, estado, precio, fechaPublicacion, null);
+    public Publicacion(String id, String title, List<String> imageUrls, String description,
+                       String categoryName, String status, double price, String createdAt) {
+        this(id, title, imageUrls, description, categoryName, status, price, createdAt, null);
     }
 
-    public Publicacion(String id, String titulo, List<String> fotos, String descripcion,
-                       String categoria, String estado, double precio, String fechaPublicacion,
+    public Publicacion(String id, String title, List<String> imageUrls, String description,
+                       String categoryName, String status, double price, String createdAt,
                        Vendedor vendedor) {
         this.id = id;
-        this.titulo = titulo;
-        this.fotos = fotos != null ? fotos : new ArrayList<>();
-        this.descripcion = descripcion;
-        this.categoria = categoria;
-        this.estado = estado;
-        this.precio = precio;
-        this.fechaPublicacion = fechaPublicacion;
+        this.title = title;
+        this.imageUrls = imageUrls != null ? imageUrls : new ArrayList<>();
+        this.description = description;
+        this.categoryName = categoryName;
+        this.status = status;
+        this.price = price;
+        this.createdAt = createdAt;
         this.vendedor = vendedor;
+        if (vendedor != null) {
+            this.sellerName = vendedor.getNombre();
+            this.location = vendedor.getUbicacion();
+            if (vendedor.getId() != null) {
+                try {
+                    this.sellerId = Long.parseLong(vendedor.getId());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
     }
 
     public String getId() {
@@ -49,72 +76,155 @@ public class Publicacion implements Serializable {
         this.id = id;
     }
 
-    public String getTitulo() {
-        return titulo;
+    public Long getIdLong() {
+        if (id == null) return null;
+        try {
+            return Long.parseLong(id);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
+    public void setId(Long id) {
+        this.id = id != null ? id.toString() : null;
     }
 
-    public List<String> getFotos() {
-        return fotos;
+    public String getTitle() {
+        return title;
     }
 
-    public void setFotos(List<String> fotos) {
-        this.fotos = fotos != null ? fotos : new ArrayList<>();
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getDescripcion() {
-        return descripcion;
+    public List<String> getImageUrls() {
+        if (imageUrls == null) {
+            imageUrls = new ArrayList<>();
+        }
+        return imageUrls;
     }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls != null ? imageUrls : new ArrayList<>();
     }
 
-    public String getCategoria() {
-        return categoria;
+    public int getCantidadFotos() {
+        return getImageUrls().size();
     }
 
-    public void setCategoria(String categoria) {
-        this.categoria = categoria;
+    public String getFirstImageUrl() {
+        List<String> urls = getImageUrls();
+        if (!urls.isEmpty()) {
+            return urls.get(0);
+        }
+        return null;
     }
 
-    public String getEstado() {
-        return estado;
+    public String getDescription() {
+        return description;
     }
 
-    public void setEstado(String estado) {
-        this.estado = estado;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public double getPrecio() {
-        return precio;
+    public String getCategoryName() {
+        return categoryName;
     }
 
-    public void setPrecio(double precio) {
-        this.precio = precio;
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
-    public String getFechaPublicacion() {
-        return fechaPublicacion;
+    public String getStatus() {
+        return status;
     }
 
-    public void setFechaPublicacion(String fechaPublicacion) {
-        this.fechaPublicacion = fechaPublicacion;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
 
     public Vendedor getVendedor() {
-        return vendedor;
+        if (vendedor != null) {
+            return vendedor;
+        }
+        if (sellerId != null || sellerName != null || location != null) {
+            return new Vendedor(
+                    sellerId != null ? sellerId.toString() : "0",
+                    sellerName,
+                    4.5,
+                    15,
+                    10,
+                    "2 años",
+                    location
+            );
+        }
+        return null;
     }
 
     public void setVendedor(Vendedor vendedor) {
         this.vendedor = vendedor;
+        if (vendedor != null) {
+            this.sellerName = vendedor.getNombre();
+            this.location = vendedor.getUbicacion();
+            if (vendedor.getId() != null) {
+                try {
+                    this.sellerId = Long.parseLong(vendedor.getId());
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
     }
 
-    public int getCantidadFotos() {
-        return fotos != null ? fotos.size() : 0;
+    public Long getSellerId() {
+        if (sellerId != null) return sellerId;
+        if (vendedor != null && vendedor.getId() != null) {
+            try {
+                return Long.parseLong(vendedor.getId());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return null;
+    }
+
+    public void setSellerId(Long sellerId) {
+        this.sellerId = sellerId;
+    }
+
+    public String getSellerName() {
+        if (sellerName != null) return sellerName;
+        if (vendedor != null) return vendedor.getNombre();
+        return null;
+    }
+
+    public void setSellerName(String sellerName) {
+        this.sellerName = sellerName;
+    }
+
+    public String getLocation() {
+        if (location != null) return location;
+        if (vendedor != null) return vendedor.getUbicacion();
+        return null;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public boolean isFavorite() {

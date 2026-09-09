@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.model.Publication;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
@@ -58,7 +57,7 @@ public class ProfileFragment extends Fragment {
     private final List<SavedSearch> savedSearches = new ArrayList<>();
     
     private PublicationAdapter adapter;
-    private final List<Publication> favoritePublications = new ArrayList<>();
+    private final List<Publicacion> favoritePublications = new ArrayList<>();
 
     @Nullable
     @Override
@@ -189,9 +188,9 @@ public class ProfileFragment extends Fragment {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
 
-        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publication>>() {
+        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publicacion>>() {
             @Override
-            public void onResponse(Call<List<Publication>> call, Response<List<Publication>> response) {
+            public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
                     updateFavoritesList(response.body());
@@ -201,17 +200,17 @@ public class ProfileFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<List<Publication>> call, Throwable t) {
+            public void onFailure(Call<List<Publicacion>> call, Throwable t) {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e(TAG, "Failure fetching favorites", t);
             }
         });
     }
 
-    private void updateFavoritesList(List<Publication> favorites) {
+    private void updateFavoritesList(List<Publicacion> favorites) {
         favoritePublications.clear();
         if (favorites != null) {
-            for (Publication p : favorites) {
+            for (Publicacion p : favorites) {
                 p.setFavorite(true); // Asegurar que el estado sea favorito al cargar
             }
             favoritePublications.addAll(favorites);
@@ -225,49 +224,24 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void abrirDetalle(Publication publication) {
+    private void abrirDetalle(Publicacion publicacion) {
         Bundle args = new Bundle();
-        Publicacion p = mapearAPublicacionModel(publication);
-        p.setFavorite(publication.isFavorite());
-        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, p);
+        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
 
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_profile_to_detalle, args);
     }
 
-    private Publicacion mapearAPublicacionModel(Publication publication) {
-        Vendedor vendedor = null;
-        if (publication.getSellerId() != null) {
-            vendedor = new Vendedor(
-                    publication.getSellerId().toString(),
-                    publication.getSellerName(),
-                    4.5, 15, 10, "2 años",
-                    publication.getLocation()
-            );
-        }
-
-        return new Publicacion(
-                publication.getId() != null ? publication.getId().toString() : "0",
-                publication.getTitle(),
-                publication.getImageUrls(),
-                publication.getDescription(),
-                publication.getCategoryName(),
-                publication.getStatus(),
-                publication.getPrice(),
-                publication.getCreatedAt(),
-                vendedor);
-    }
-
-    private void onFavoriteClick(Publication publication, int position) {
-        boolean isFavorite = publication.isFavorite();
-        String pubId = publication.getId().toString();
+    private void onFavoriteClick(Publicacion publicacion, int position) {
+        boolean isFavorite = publicacion.isFavorite();
+        String pubId = publicacion.getId();
 
         Callback<Void> callback = new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    publication.setFavorite(!isFavorite);
-                    if (!publication.isFavorite()) {
+                    publicacion.setFavorite(!isFavorite);
+                    if (!publicacion.isFavorite()) {
                         // Al quitar de favoritos en el perfil, removemos el item de la lista
                         favoritePublications.remove(position);
                         adapter.notifyItemRemoved(position);

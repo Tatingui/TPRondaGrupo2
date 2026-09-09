@@ -21,9 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.model.Publication;
 import com.example.tprondagrupo2.model.SavedSearch;
-import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
@@ -45,9 +43,9 @@ public class HomeFragment extends Fragment {
 
     private RecyclerView rvPublications;
     private PublicationAdapter adapter;
-    private List<Publication> displayedPublications;
+    private List<Publicacion> displayedPublications;
     private EditText etSearch;
-    private Set<Long> favoriteIds = new HashSet<>();
+    private Set<String> favoriteIds = new HashSet<>();
 
     // Filter states
     private String currentSearchText = "";
@@ -97,13 +95,15 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchFavoriteIds() {
-        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publication>>() {
+        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publicacion>>() {
             @Override
-            public void onResponse(Call<List<Publication>> call, Response<List<Publication>> response) {
+            public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     favoriteIds.clear();
-                    for (Publication p : response.body()) {
-                        favoriteIds.add(p.getId());
+                    for (Publicacion p : response.body()) {
+                        if (p.getId() != null) {
+                            favoriteIds.add(p.getId());
+                        }
                     }
                     refreshData();
                 } else if (response.code() == 401 || response.code() == 403) {
@@ -115,7 +115,7 @@ public class HomeFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<List<Publication>> call, Throwable t) {
+            public void onFailure(Call<List<Publicacion>> call, Throwable t) {
                 refreshData();
             }
         });
@@ -164,11 +164,11 @@ public class HomeFragment extends Fragment {
             public void onResponse(Call<PublicationPageResponse> call, Response<PublicationPageResponse> response) {
                 isLoading = false;
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Publication> newItems = response.body().getContent();
+                    List<Publicacion> newItems = response.body().getContent();
                     
                     // Sincronizar estado de favoritos
-                    for (Publication p : newItems) {
-                        p.setFavorite(favoriteIds.contains(p.getId()));
+                    for (Publicacion p : newItems) {
+                        p.setFavorite(p.getId() != null && favoriteIds.contains(p.getId()));
                     }
 
                     if (currentPage == 0) {
@@ -204,30 +204,30 @@ public class HomeFragment extends Fragment {
         fetchPublications();
     }
 
-    private void abrirDetalle(Publication publication) {
+    private void abrirDetalle(Publicacion publicacion) {
         Bundle args = new Bundle();
-        Publicacion p = mapearADetalle(publication);
-        p.setFavorite(publication.isFavorite());
-        Log.d(TAG, "Abriendo detalle para ID: " + p.getId());
-        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, p);
+        Log.d(TAG, "Abriendo detalle para ID: " + publicacion.getId());
+        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
 
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_home_to_detalle, args);
     }
 
-    private void onFavoriteClick(Publication publication, int position) {
-        boolean isFavorite = publication.isFavorite();
-        String pubId = String.valueOf(publication.getId());
+    private void onFavoriteClick(Publicacion publicacion, int position) {
+        boolean isFavorite = publicacion.isFavorite();
+        String pubId = publicacion.getId();
 
         Callback<Void> callback = new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    publication.setFavorite(!isFavorite);
-                    if (publication.isFavorite()) {
-                        favoriteIds.add(publication.getId());
+                    publicacion.setFavorite(!isFavorite);
+                    if (publicacion.isFavorite()) {
+                        if (publicacion.getId() != null) {
+                            favoriteIds.add(publicacion.getId());
+                        }
                     } else {
-                        favoriteIds.remove(publication.getId());
+                        favoriteIds.remove(publicacion.getId());
                     }
                     adapter.notifyItemChanged(position);
                 } else {
@@ -246,32 +246,6 @@ public class HomeFragment extends Fragment {
         } else {
             ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
         }
-    }
-
-    private Publicacion mapearADetalle(Publication publication) {
-        Vendedor vendedor = null;
-        if (publication.getSellerId() != null) {
-            vendedor = new Vendedor(
-                    publication.getSellerId().toString(),
-                    publication.getSellerName(),
-                    4.5, // Reputacion mock
-                    15,  // Ventas mock
-                    10,  // Opiniones mock
-                    "2 años",
-                    publication.getLocation()
-            );
-        }
-
-        return new Publicacion(
-                publication.getId() != null ? publication.getId().toString() : "0",
-                publication.getTitle(),
-                publication.getImageUrls(),
-                publication.getDescription(),
-                publication.getCategoryName(),
-                publication.getStatus(),
-                publication.getPrice(),
-                publication.getCreatedAt(),
-                vendedor);
     }
 
     private void setupSearchLogic() {
