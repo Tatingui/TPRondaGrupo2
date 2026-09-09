@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.util.Log;
 import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.model.Publication;
+import com.example.tprondagrupo2.model.Publicacion;
 
 import java.util.List;
 import java.util.Locale;
@@ -21,31 +21,31 @@ import java.util.Locale;
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.ViewHolder> {
 
     private static final String TAG = "PublicationAdapter";
-    private List<Publication> publications;
+    private List<Publicacion> publications;
     private OnItemClickListener listener;
     private OnFavoriteClickListener favoriteListener;
 
     public interface OnItemClickListener {
-        void onItemClick(Publication publication);
+        void onItemClick(Publicacion publication);
     }
 
     public interface OnFavoriteClickListener {
-        void onFavoriteClick(Publication publication, int position);
+        void onFavoriteClick(Publicacion publication, int position);
     }
 
-    public PublicationAdapter(List<Publication> publications, OnItemClickListener listener, OnFavoriteClickListener favoriteListener) {
+    public PublicationAdapter(List<Publicacion> publications, OnItemClickListener listener, OnFavoriteClickListener favoriteListener) {
         this.publications = publications;
         this.listener = listener;
         this.favoriteListener = favoriteListener;
     }
 
-    public void updateList(List<Publication> newList) {
+    public void updateList(List<Publicacion> newList) {
         this.publications.clear();
         this.publications.addAll(newList);
         notifyDataSetChanged();
     }
 
-    public void addItems(List<Publication> newItems) {
+    public void addItems(List<Publicacion> newItems) {
         int startPos = this.publications.size();
         this.publications.addAll(newItems);
         notifyItemRangeInserted(startPos, newItems.size());
@@ -61,11 +61,11 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Publication pub = publications.get(position);
+        Publicacion pub = publications.get(position);
         holder.tvTitle.setText(pub.getTitle());
         holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
         holder.tvCondition.setText(pub.getStatus());
-        holder.tvLocation.setText("Zona: " + pub.getLocation());
+        holder.tvLocation.setText("Zona: " + (pub.getLocation() != null ? pub.getLocation() : "Sin ubicación"));
 
         String imageUrl = pub.getFirstImageUrl();
         Log.d(TAG, "Cargando imagen para: " + pub.getTitle() + " URL: " + imageUrl);
