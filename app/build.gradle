@@ -55,4 +55,8 @@ dependencies {
 
     // Glide para imagenes
     implementation libs.glide
+
+    // Room
+    implementation libs.room.runtime
+    annotationProcessor libs.room.compiler
 }

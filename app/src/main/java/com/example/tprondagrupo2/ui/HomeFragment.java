@@ -8,7 +8,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,9 +23,12 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.db.AppDatabase;
+import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
@@ -32,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -45,6 +52,8 @@ public class HomeFragment extends Fragment {
     private PublicationAdapter adapter;
     private List<Publicacion> displayedPublications;
     private EditText etSearch;
+    private TextView tvOfflineBanner;
+    private NetworkObserver networkObserver;
     private Set<String> favoriteIds = new HashSet<>();
 
     // Filter states
@@ -79,8 +88,19 @@ public class HomeFragment extends Fragment {
 
         rvPublications = view.findViewById(R.id.rvPublications);
         etSearch = view.findViewById(R.id.etSearch);
+        tvOfflineBanner = view.findViewById(R.id.tvOfflineBanner);
 
         displayedPublications = new ArrayList<>();
+
+        networkObserver = new NetworkObserver(requireContext());
+        networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
+            if (connected) {
+                tvOfflineBanner.setVisibility(View.GONE);
+                refreshData();
+            } else {
+                tvOfflineBanner.setVisibility(View.VISIBLE);
+            }
+        });
 
         setupRecyclerView();
         setupSearchLogic();
@@ -147,6 +167,12 @@ public class HomeFragment extends Fragment {
 
     private void fetchPublications() {
         if (isLoading) return;
+
+        if (!networkObserver.isCurrentlyConnected()) {
+            loadFromCache();
+            return;
+        }
+
         isLoading = true;
 
         ApiClient.getPublicationService().getPublications(
@@ -175,6 +201,7 @@ public class HomeFragment extends Fragment {
                         displayedPublications.clear();
                         displayedPublications.addAll(newItems);
                         adapter.notifyDataSetChanged();
+                        saveToCache(newItems);
                     } else {
                         adapter.addItems(newItems);
                     }
@@ -185,7 +212,7 @@ public class HomeFragment extends Fragment {
                     }
                 } else {
                     Log.e(TAG, "Error en la respuesta: " + response.code());
-                    Toast.makeText(getContext(), "Error al cargar publicaciones", Toast.LENGTH_SHORT).show();
+                    loadFromCache();
                 }
             }
 
@@ -193,9 +220,29 @@ public class HomeFragment extends Fragment {
             public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
                 isLoading = false;
                 Log.e(TAG, "Falla en la peticion", t);
-                Toast.makeText(getContext(), "Error de conexion", Toast.LENGTH_SHORT).show();
+                loadFromCache();
             }
         });
+    }
+
+    private void saveToCache(List<Publicacion> items) {
+        List<PublicacionEntity> entities = items.stream()
+                .map(PublicacionEntity::fromModel)
+                .collect(Collectors.toList());
+        AppDatabase.getInstance(requireContext()).publicacionDao().insertAll(entities);
+    }
+
+    private void loadFromCache() {
+        List<PublicacionEntity> entities = AppDatabase.getInstance(requireContext()).publicacionDao().getAll();
+        List<Publicacion> cachedItems = entities.stream()
+                .map(PublicacionEntity::toModel)
+                .collect(Collectors.toList());
+        
+        displayedPublications.clear();
+        displayedPublications.addAll(cachedItems);
+        adapter.notifyDataSetChanged();
+        isLastPage = true; // No paginamos en offline
+        tvOfflineBanner.setVisibility(View.VISIBLE);
     }
 
     private void refreshData() {
