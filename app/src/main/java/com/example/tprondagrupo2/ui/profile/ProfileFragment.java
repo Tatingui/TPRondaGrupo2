@@ -85,6 +85,13 @@ public class ProfileFragment extends Fragment {
         rvSavedSearches = view.findViewById(R.id.rvSavedSearches);
         tvEmptySavedSearches = view.findViewById(R.id.tvEmptySavedSearches);
 
+        view.findViewById(R.id.btnGoPublish).setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_publish)
+        );
+        view.findViewById(R.id.btnGoMyPublications).setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_publications)
+        );
+
         setupSavedSearchesRecyclerView();
         setupRecyclerView();
         mostrarMiPerfil();
