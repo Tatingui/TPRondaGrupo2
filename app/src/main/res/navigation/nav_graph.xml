@@ -93,7 +93,27 @@
             android:id="@+id/action_profile_to_home"
             app:destination="@id/homeFragment" />
 
+        <action
+            android:id="@+id/action_profile_to_publish"
+            app:destination="@id/publishWizardFragment" />
+
+        <action
+            android:id="@+id/action_profile_to_my_publications"
+            app:destination="@id/myPublicationsFragment" />
+
     </fragment>
+
+    <fragment
+        android:id="@+id/publishWizardFragment"
+        android:name="com.example.tprondagrupo2.ui.publish.PublishWizardFragment"
+        android:label="Publicar Artículo"
+        tools:layout="@layout/fragment_publish_wizard" />
+
+    <fragment
+        android:id="@+id/myPublicationsFragment"
+        android:name="com.example.tprondagrupo2.ui.profile.MyPublicationsFragment"
+        android:label="Mis Publicaciones"
+        tools:layout="@layout/fragment_my_publications" />
 
     <fragment
         android:id="@+id/detallePublicacionFragment"

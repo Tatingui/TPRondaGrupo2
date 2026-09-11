@@ -1,11 +1,15 @@
 package com.ronda.backend.service;
 
+import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
 import com.ronda.backend.exception.ResourceNotFoundException;
+import com.ronda.backend.model.Category;
 import com.ronda.backend.model.Publication;
+import com.ronda.backend.model.PublicationState;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.model.User;
 import com.ronda.backend.model.UserFavorite;
+import com.ronda.backend.repository.CategoryRepository;
 import com.ronda.backend.repository.PublicationRepository;
 import com.ronda.backend.repository.UserFavoriteRepository;
 import com.ronda.backend.repository.UserRepository;
@@ -29,13 +33,16 @@ public class PublicationService {
     private final PublicationRepository publicationRepository;
     private final UserRepository userRepository;
     private final UserFavoriteRepository userFavoriteRepository;
+    private final CategoryRepository categoryRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
                               UserRepository userRepository,
-                              UserFavoriteRepository userFavoriteRepository) {
+                              UserFavoriteRepository userFavoriteRepository,
+                              CategoryRepository categoryRepository) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.userFavoriteRepository = userFavoriteRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -47,6 +54,9 @@ public class PublicationService {
 
         Specification<Publication> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            // Solo mostrar activas en la exploración general si se desea, o todas
+            predicates.add(cb.equal(root.get("state"), PublicationState.ACTIVE));
 
             if (search != null && !search.isEmpty()) {
                 String searchPattern = "%" + search.toLowerCase() + "%";
@@ -80,6 +90,67 @@ public class PublicationService {
         };
 
         return publicationRepository.findAll(spec, pageable).map(pub -> convertToDTO(pub, favoriteIds));
+    }
+
+    @Transactional
+    public PublicationDTO createPublication(PublicationCreateDTO dto, String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
+        User seller = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Category category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada"));
+
+        Publication publication = new Publication();
+        publication.setTitle(dto.getTitle());
+        publication.setDescription(dto.getDescription());
+        publication.setPrice(dto.getPrice());
+        publication.setStatus(dto.getStatus());
+        publication.setState(PublicationState.ACTIVE);
+        publication.setLocation(dto.getLocation());
+        publication.setCategory(category);
+        publication.setSeller(seller);
+        if (dto.getImageUrls() != null) {
+            publication.setImageUrls(new ArrayList<>(dto.getImageUrls()));
+        }
+
+        Publication saved = publicationRepository.save(publication);
+        return convertToDTO(saved, getFavoriteIdsForUser(email));
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicationDTO> getMyPublications(String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Set<Long> favoriteIds = getFavoriteIdsForUser(email);
+
+        List<Publication> userPublications = publicationRepository.findBySeller(user);
+        return userPublications.stream()
+                .map(pub -> convertToDTO(pub, favoriteIds))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PublicationDTO updateStatus(Long publicationId, PublicationState state, String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
+
+        if (publication.getSeller() == null || !publication.getSeller().getId().equals(user.getId())) {
+            throw new RuntimeException("No autorizado para modificar esta publicación");
+        }
+
+        publication.setState(state);
+        Publication updated = publicationRepository.save(publication);
+        return convertToDTO(updated, getFavoriteIdsForUser(email));
     }
 
     @Transactional
@@ -160,6 +231,7 @@ public class PublicationService {
         dto.setDescription(pub.getDescription());
         dto.setPrice(pub.getPrice());
         dto.setStatus(pub.getStatus());
+        dto.setState(pub.getState());
         dto.setLocation(pub.getLocation());
         if (pub.getCategory() != null) {
             dto.setCategoryName(pub.getCategory().getName());

@@ -18,6 +18,8 @@ public class Publicacion implements Serializable {
 
     private String status;
 
+    private String state; // ACTIVA, PAUSADA, VENDIDA
+
     private double price;
 
     private String createdAt;
@@ -142,6 +144,14 @@ public class Publicacion implements Serializable {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public double getPrice() {

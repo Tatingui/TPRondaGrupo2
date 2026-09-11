@@ -1,8 +1,11 @@
 package com.ronda.backend.controller;
 
+import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
+import com.ronda.backend.model.PublicationState;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.service.PublicationService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -37,6 +40,24 @@ public class PublicationController {
                 search, categoryId, minPrice, maxPrice, status, location, pageable);
         
         return ResponseEntity.ok(publications);
+    }
+
+    @PostMapping
+    public ResponseEntity<PublicationDTO> createPublication(@Valid @RequestBody PublicationCreateDTO dto, Authentication authentication) {
+        PublicationDTO created = publicationService.createPublication(dto, authentication.getName());
+        return ResponseEntity.status(201).body(created);
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<PublicationDTO>> getMyPublications(Authentication authentication) {
+        List<PublicationDTO> myPublications = publicationService.getMyPublications(authentication.getName());
+        return ResponseEntity.ok(myPublications);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<PublicationDTO> updateStatus(@PathVariable Long id, @RequestParam PublicationState state, Authentication authentication) {
+        PublicationDTO updated = publicationService.updateStatus(id, state, authentication.getName());
+        return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/{id}/favorite")
