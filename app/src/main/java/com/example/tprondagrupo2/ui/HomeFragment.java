@@ -421,7 +421,7 @@ public class HomeFragment extends Fragment {
 
     private void showConditionDialog() {
         String[] options = {"Cualquiera", "Nuevo", "Como nuevo", "Usado"};
-        String[] values = {null, "NUEVO", "COMO_NUEVO", "USADO"};
+        String[] values = {null, "NEW", "LIKE_NEW", "USED"};
 
         new AlertDialog.Builder(requireContext())
                 .setTitle("Estado del Artículo")
