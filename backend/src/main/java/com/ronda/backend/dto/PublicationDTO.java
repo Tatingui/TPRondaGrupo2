@@ -1,6 +1,7 @@
 package com.ronda.backend.dto;
 
 import com.ronda.backend.model.PublicationStatus;
+import com.ronda.backend.model.PublicationState;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,6 +11,7 @@ public class PublicationDTO {
     private String description;
     private Double price;
     private PublicationStatus status;
+    private PublicationState state;
     private String location;
     private String categoryName;
     private List<String> imageUrls;
@@ -63,6 +65,14 @@ public class PublicationDTO {
 
     public void setStatus(PublicationStatus status) {
         this.status = status;
+    }
+
+    public PublicationState getState() {
+        return state;
+    }
+
+    public void setState(PublicationState state) {
+        this.state = state;
     }
 
     public String getLocation() {

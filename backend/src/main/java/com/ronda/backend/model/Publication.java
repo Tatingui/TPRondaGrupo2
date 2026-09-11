@@ -23,8 +23,12 @@ public class Publication {
     private Double price;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private PublicationStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PublicationState state = PublicationState.ACTIVE;
 
     @Column(nullable = false)
     private String location;
@@ -93,6 +97,14 @@ public class Publication {
 
     public void setStatus(PublicationStatus status) {
         this.status = status;
+    }
+
+    public PublicationState getState() {
+        return state;
+    }
+
+    public void setState(PublicationState state) {
+        this.state = state;
     }
 
     public String getLocation() {
