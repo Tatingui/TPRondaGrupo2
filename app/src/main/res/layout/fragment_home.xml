@@ -153,6 +153,19 @@
 
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
+
+        <!-- Banner de modo offline -->
+        <TextView
+            android:id="@+id/tvOfflineBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFF3E0"
+            android:padding="8dp"
+            android:text="Sin conexión. Mostrando últimos datos vistos."
+            android:textColor="#E65100"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:visibility="gone" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
