@@ -17,10 +17,13 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.db.AppDatabase;
+import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.NetworkObserver;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
@@ -49,6 +52,7 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvDescripcion;
     private ImageButton btnFavorite;
     private Publicacion currentPublicacion;
+    private NetworkObserver networkObserver;
 
     // Sección del vendedor
     private TextView tvVendedorAvatar;
@@ -95,6 +99,22 @@ public class DetallePublicacionFragment extends Fragment {
             btnFavorite.setOnClickListener(v -> toggleFavorite(currentPublicacion));
         }
         mostrarPublicacion(currentPublicacion);
+
+        networkObserver = new NetworkObserver(requireContext());
+        networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
+            if (btnFavorite != null) {
+                btnFavorite.setAlpha(connected ? 1.0f : 0.5f);
+            }
+        });
+
+        if (currentPublicacion != null) {
+            saveToCache(currentPublicacion);
+        }
+    }
+
+    private void saveToCache(Publicacion p) {
+        PublicacionEntity entity = PublicacionEntity.fromModel(p);
+        AppDatabase.getInstance(requireContext()).publicacionDao().insert(entity);
     }
 
     private Publicacion obtenerPublicacion() {
@@ -123,6 +143,11 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void toggleFavorite(@NonNull Publicacion publicacion) {
+        if (!networkObserver.isCurrentlyConnected()) {
+            Toast.makeText(getContext(), "Se necesita conexión para esta acción", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         final boolean wasFavorite = publicacion.isFavorite();
         final String pubId = publicacion.getId();
 
