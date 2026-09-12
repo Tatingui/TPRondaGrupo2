@@ -76,7 +76,13 @@ if !ADB_OK!==0 (
 
 :skip_adb
 
-REM --- 4. Levantar el backend ---
+REM --- 4. Credenciales de email (cuenta compartida del equipo) ---
+REM Cuenta de Gmail dedicada para la app. La App Password ya esta configurada.
+REM Si hay que regenerarla: entrar a rondauade@gmail.com > Seguridad > App Passwords.
+set MAIL_USERNAME=rondauade@gmail.com
+set MAIL_PASSWORD=ukpblecflriqfyyd
+
+REM --- 5. Levantar el backend ---
 echo Levantando el backend...
 echo Para frenarlo: Ctrl+C
 echo.
