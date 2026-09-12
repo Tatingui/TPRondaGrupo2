@@ -48,16 +48,29 @@ echo.
 goto :skip_adb
 
 :adb_encontrado
-REM --- 3. Configurar adb reverse ---
-echo Configurando adb reverse tcp:8081...
-"!ADB_EXE!" reverse tcp:8081 tcp:8081 >nul 2>&1
-if errorlevel 1 (
-    echo [AVISO] No se pudo configurar adb reverse.
-    echo Asegurate de que el emulador este corriendo.
-    echo Despues ejecuta manualmente:  adb reverse tcp:8081 tcp:8081
-    echo.
-) else (
-    echo adb reverse configurado. OK.
+REM --- 3. Esperar a que el emulador este listo y configurar adb reverse ---
+echo Esperando al emulador de Android...
+set "ADB_OK=0"
+for /L %%i in (1,1,30) do (
+    if !ADB_OK!==0 (
+        "!ADB_EXE!" devices 2>nul | findstr /r /c:"emulator.*device" >nul 2>&1
+        if !errorlevel!==0 (
+            "!ADB_EXE!" reverse tcp:8081 tcp:8081 >nul 2>&1
+            if !errorlevel!==0 (
+                echo adb reverse configurado. OK.
+                echo.
+                set "ADB_OK=1"
+            )
+        )
+        if !ADB_OK!==0 (
+            timeout /t 2 /nobreak >nul
+        )
+    )
+)
+if !ADB_OK!==0 (
+    echo [AVISO] No se detecto el emulador despues de 60 segundos.
+    echo Cuando el emulador este corriendo, ejecuta manualmente:
+    echo   adb reverse tcp:8081 tcp:8081
     echo.
 )
 
@@ -70,4 +83,4 @@ echo.
 echo ===============================================
 echo.
 
-call .\mvnw.cmd spring-boot:run
+call .\mvnw.cmd spring-boot:run -Dmaven.test.skip=true

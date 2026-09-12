@@ -28,6 +28,12 @@ public class MainActivity extends AppCompatActivity {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(bottomNav, navController);
 
+            // Si ya hay un token guardado, saltar directo al Home (mantener sesion)
+            String token = TokenManager.getInstance().getToken();
+            if (token != null && !token.isEmpty()) {
+                navController.navigate(R.id.action_login_to_home);
+            }
+
             // Ocultar BottomNav en pantallas de Auth y Detalle
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
                 int id = destination.getId();
