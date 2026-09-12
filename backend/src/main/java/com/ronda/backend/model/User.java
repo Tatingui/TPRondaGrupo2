@@ -39,6 +39,12 @@ public class User {
 
     private LocalDateTime otpExpiresAt;
 
+    /** Telefono de contacto. Opcional, el usuario lo puede completar despues. */
+    private String telefono;
+
+    /** Zona/ubicacion del usuario. Opcional. */
+    private String zona;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserFavorite> favorites = new HashSet<>();
 
@@ -114,6 +120,22 @@ public class User {
 
     public void setOtpExpiresAt(LocalDateTime otpExpiresAt) {
         this.otpExpiresAt = otpExpiresAt;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getZona() {
+        return zona;
+    }
+
+    public void setZona(String zona) {
+        this.zona = zona;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -5,6 +5,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -22,6 +26,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
+import com.example.tprondagrupo2.model.UserProfile;
+import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.TokenManager;
@@ -48,6 +54,9 @@ public class ProfileFragment extends Fragment {
     private TextView tvVentas;
     private TextView tvMiembroDesde;
     private TextView tvUbicacion;
+    private TextView tvEmail;
+    private TextView tvTelefono;
+    private Button btnEditProfile;
     private RecyclerView rvFavorites;
     private ProgressBar progressBar;
     private TextView tvEmpty;
@@ -59,6 +68,9 @@ public class ProfileFragment extends Fragment {
 
     private PublicationAdapter adapter;
     private final List<Publicacion> favoritePublications = new ArrayList<>();
+
+    /** Perfil cargado del backend para usar en edicion */
+    private UserProfile currentProfile;
 
     @Nullable
     @Override
@@ -79,6 +91,9 @@ public class ProfileFragment extends Fragment {
         tvVentas = view.findViewById(R.id.tvPerfilVentas);
         tvMiembroDesde = view.findViewById(R.id.tvPerfilMiembroDesde);
         tvUbicacion = view.findViewById(R.id.tvPerfilUbicacion);
+        tvEmail = view.findViewById(R.id.tvPerfilEmail);
+        tvTelefono = view.findViewById(R.id.tvPerfilTelefono);
+        btnEditProfile = view.findViewById(R.id.btnEditProfile);
         rvFavorites = view.findViewById(R.id.rvFavorites);
         progressBar = view.findViewById(R.id.progressBar);
         tvEmpty = view.findViewById(R.id.tvEmpty);
@@ -100,9 +115,13 @@ public class ProfileFragment extends Fragment {
                     .navigate(R.id.action_profile_to_login);
         });
 
+        if (btnEditProfile != null) {
+            btnEditProfile.setOnClickListener(v -> showEditDialog());
+        }
+
         setupSavedSearchesRecyclerView();
         setupRecyclerView();
-        mostrarMiPerfil();
+        loadProfile();
     }
 
     @Override
@@ -111,6 +130,182 @@ public class ProfileFragment extends Fragment {
         loadSavedSearches();
         fetchFavorites();
     }
+
+    // ==================== PERFIL REAL DESDE API ====================
+
+    private void loadProfile() {
+        ApiClient.getUserService().getMyProfile().enqueue(new Callback<UserProfile>() {
+            @Override
+            public void onResponse(@NonNull Call<UserProfile> call,
+                                   @NonNull Response<UserProfile> response) {
+                if (!isAdded()) return;
+                if (response.isSuccessful() && response.body() != null) {
+                    currentProfile = response.body();
+                    mostrarPerfil(currentProfile);
+                } else {
+                    Log.e(TAG, "Error cargando perfil: " + response.code());
+                    // Fallback: mostrar datos minimos
+                    mostrarPerfilMock();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<UserProfile> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+                Log.e(TAG, "Error de conexion cargando perfil", t);
+                mostrarPerfilMock();
+            }
+        });
+    }
+
+    private void mostrarPerfil(UserProfile perfil) {
+        if (tvNombre != null) tvNombre.setText(perfil.getNombre());
+
+        // Avatar: primera letra del nombre
+        if (tvAvatar != null && perfil.getNombre() != null && !perfil.getNombre().isEmpty()) {
+            tvAvatar.setText(String.valueOf(perfil.getNombre().charAt(0)).toUpperCase());
+        }
+
+        // Email
+        if (tvEmail != null) {
+            tvEmail.setText(perfil.getEmail());
+            tvEmail.setVisibility(View.VISIBLE);
+        }
+
+        // Telefono
+        if (tvTelefono != null) {
+            if (perfil.getTelefono() != null && !perfil.getTelefono().isEmpty()) {
+                tvTelefono.setText(perfil.getTelefono());
+                tvTelefono.setVisibility(View.VISIBLE);
+            } else {
+                tvTelefono.setVisibility(View.GONE);
+            }
+        }
+
+        // Miembro desde
+        if (tvMiembroDesde != null && perfil.getMiembroDesde() != null) {
+            tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, perfil.getMiembroDesde()));
+        }
+
+        // Ubicacion / Zona
+        if (tvUbicacion != null) {
+            if (perfil.getZona() != null && !perfil.getZona().isEmpty()) {
+                tvUbicacion.setVisibility(View.VISIBLE);
+                tvUbicacion.setText(getString(R.string.perfil_vendedor_ubicacion, perfil.getZona()));
+            } else {
+                tvUbicacion.setVisibility(View.GONE);
+            }
+        }
+
+        // Reputacion: sigue siendo mock (responsabilidad del compañero)
+        // Creamos un Vendedor solo para bindear la parte visual de reputacion
+        Vendedor mockReputacion = new Vendedor(
+                String.valueOf(perfil.getId()),
+                perfil.getNombre(),
+                5.0, 10, 5,
+                perfil.getMiembroDesde() != null ? perfil.getMiembroDesde() : "",
+                perfil.getZona() != null ? perfil.getZona() : ""
+        );
+        VendedorViewBinder.bindReputacion(mockReputacion, tvAvatar, rbReputacion, tvReputacion, tvNivel);
+        if (tvVentas != null) tvVentas.setText(getString(R.string.vendedor_ventas, mockReputacion.getCantidadVentas()));
+    }
+
+    /**
+     * Fallback si falla la carga del perfil real.
+     */
+    private void mostrarPerfilMock() {
+        Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 5.0, 10, 5, "Enero 2024", "Mi Ciudad");
+
+        if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
+        VendedorViewBinder.bindReputacion(miPerfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
+
+        if (tvVentas != null) tvVentas.setText(getString(R.string.vendedor_ventas, miPerfil.getCantidadVentas()));
+        if (tvMiembroDesde != null) tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, miPerfil.getMiembroDesde()));
+
+        if (tvUbicacion != null) {
+            if (miPerfil.getUbicacion() != null && !miPerfil.getUbicacion().isEmpty()) {
+                tvUbicacion.setVisibility(View.VISIBLE);
+                tvUbicacion.setText(getString(R.string.perfil_vendedor_ubicacion, miPerfil.getUbicacion()));
+            } else {
+                tvUbicacion.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    // ==================== EDICION DEL PERFIL ====================
+
+    private void showEditDialog() {
+        if (getContext() == null) return;
+
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_profile, null);
+        EditText etEditNombre = dialogView.findViewById(R.id.etEditNombre);
+        EditText etEditTelefono = dialogView.findViewById(R.id.etEditTelefono);
+        AutoCompleteTextView etEditZona = dialogView.findViewById(R.id.etEditZona);
+
+        // Configurar AutoComplete de zonas
+        String[] zonas = getResources().getStringArray(R.array.zonas_argentina);
+        ArrayAdapter<String> zonaAdapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                zonas
+        );
+        etEditZona.setAdapter(zonaAdapter);
+
+        // Pre-cargar con datos actuales
+        if (currentProfile != null) {
+            etEditNombre.setText(currentProfile.getNombre());
+            etEditTelefono.setText(currentProfile.getTelefono());
+            etEditZona.setText(currentProfile.getZona());
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Editar perfil")
+                .setView(dialogView)
+                .setPositiveButton("Guardar", (dialog, which) -> {
+                    String nombre = etEditNombre.getText().toString().trim();
+                    String telefono = etEditTelefono.getText().toString().trim();
+                    String zona = etEditZona.getText().toString().trim();
+
+                    if (nombre.isEmpty()) {
+                        Toast.makeText(getContext(), "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    UserProfileUpdateRequest update = new UserProfileUpdateRequest(
+                            nombre,
+                            telefono.isEmpty() ? null : telefono,
+                            zona.isEmpty() ? null : zona
+                    );
+                    saveProfile(update);
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void saveProfile(UserProfileUpdateRequest request) {
+        ApiClient.getUserService().updateMyProfile(request).enqueue(new Callback<UserProfile>() {
+            @Override
+            public void onResponse(@NonNull Call<UserProfile> call,
+                                   @NonNull Response<UserProfile> response) {
+                if (!isAdded()) return;
+                if (response.isSuccessful() && response.body() != null) {
+                    currentProfile = response.body();
+                    mostrarPerfil(currentProfile);
+                    Toast.makeText(getContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Error al actualizar el perfil", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<UserProfile> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ==================== BUSQUEDAS GUARDADAS ====================
 
     private void setupSavedSearchesRecyclerView() {
         if (rvSavedSearches == null) return;
@@ -191,6 +386,8 @@ public class ProfileFragment extends Fragment {
         });
     }
 
+    // ==================== FAVORITOS ====================
+
     private void setupRecyclerView() {
         if (rvFavorites == null) return;
         adapter = new PublicationAdapter(favoritePublications, this::abrirDetalle, this::onFavoriteClick);
@@ -226,7 +423,7 @@ public class ProfileFragment extends Fragment {
         favoritePublications.clear();
         if (favorites != null) {
             for (Publicacion p : favorites) {
-                p.setFavorite(true); // Asegurar que el estado sea favorito al cargar
+                p.setFavorite(true);
             }
             favoritePublications.addAll(favorites);
         }
@@ -257,7 +454,6 @@ public class ProfileFragment extends Fragment {
                 if (response.isSuccessful()) {
                     publicacion.setFavorite(!isFavorite);
                     if (!publicacion.isFavorite()) {
-                        // Al quitar de favoritos en el perfil, removemos el item de la lista
                         favoritePublications.remove(position);
                         adapter.notifyItemRemoved(position);
                         adapter.notifyItemRangeChanged(position, favoritePublications.size());
@@ -282,25 +478,6 @@ public class ProfileFragment extends Fragment {
             ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
         } else {
             ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
-        }
-    }
-
-    private void mostrarMiPerfil() {
-        Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 5.0, 10, 5, "Enero 2024", "Mi Ciudad");
-
-        if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
-        VendedorViewBinder.bindReputacion(miPerfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
-
-        if (tvVentas != null) tvVentas.setText(getString(R.string.vendedor_ventas, miPerfil.getCantidadVentas()));
-        if (tvMiembroDesde != null) tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, miPerfil.getMiembroDesde()));
-
-        if (tvUbicacion != null) {
-            if (miPerfil.getUbicacion() != null && !miPerfil.getUbicacion().isEmpty()) {
-                tvUbicacion.setVisibility(View.VISIBLE);
-                tvUbicacion.setText(getString(R.string.perfil_vendedor_ubicacion, miPerfil.getUbicacion()));
-            } else {
-                tvUbicacion.setVisibility(View.GONE);
-            }
         }
     }
 }

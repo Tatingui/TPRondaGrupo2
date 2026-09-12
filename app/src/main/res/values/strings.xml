@@ -25,4 +25,41 @@
     <string name="busqueda_guardada_exito">Búsqueda guardada exitosamente</string>
     <string name="busqueda_vacia_error">Aplicá un término de búsqueda o un filtro antes de guardar</string>
     <string name="eliminar_busqueda_confirm">¿Deseas eliminar esta búsqueda guardada?</string>
+
+    <!-- Validación de contraseña -->
+    <string name="password_strength_weak">Débil</string>
+    <string name="password_strength_medium">Media</string>
+    <string name="password_strength_strong">Fuerte</string>
+    <string name="password_too_short">Mínimo 8 caracteres</string>
+
+    <!-- Zonas de Argentina -->
+    <string-array name="zonas_argentina">
+        <item>Buenos Aires - CABA</item>
+        <item>Buenos Aires - GBA Norte</item>
+        <item>Buenos Aires - GBA Oeste</item>
+        <item>Buenos Aires - GBA Sur</item>
+        <item>Buenos Aires - Interior</item>
+        <item>Catamarca</item>
+        <item>Chaco</item>
+        <item>Chubut</item>
+        <item>Córdoba</item>
+        <item>Corrientes</item>
+        <item>Entre Ríos</item>
+        <item>Formosa</item>
+        <item>Jujuy</item>
+        <item>La Pampa</item>
+        <item>La Rioja</item>
+        <item>Mendoza</item>
+        <item>Misiones</item>
+        <item>Neuquén</item>
+        <item>Río Negro</item>
+        <item>Salta</item>
+        <item>San Juan</item>
+        <item>San Luis</item>
+        <item>Santa Cruz</item>
+        <item>Santa Fe</item>
+        <item>Santiago del Estero</item>
+        <item>Tierra del Fuego</item>
+        <item>Tucumán</item>
+    </string-array>
 </resources>

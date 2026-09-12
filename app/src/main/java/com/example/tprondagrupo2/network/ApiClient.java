@@ -85,6 +85,10 @@ public class ApiClient {
         return getClient().create(SavedSearchApiService.class);
     }
 
+    public static UserApiService getUserService() {
+        return getClient().create(UserApiService.class);
+    }
+
     @Nullable
     private static String getStoredToken() {
         try {

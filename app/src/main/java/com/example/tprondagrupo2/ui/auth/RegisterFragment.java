@@ -1,9 +1,14 @@
 package com.example.tprondagrupo2.ui.auth;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -33,10 +38,16 @@ public class RegisterFragment extends Fragment {
     private EditText etEmail;
     private EditText etPassword;
     private EditText etConfirmPassword;
+    private EditText etTelefono;
+    private AutoCompleteTextView etZona;
     private TextView tvError;
+    private TextView tvPasswordStrength;
     private ProgressBar progressBar;
     private Button btnRegister;
     private Button btnGoLogin;
+
+    /** Nivel de fuerza actual de la contraseña (0=vacía, 1=débil, 2=media, 3=fuerte) */
+    private int passwordStrengthLevel = 0;
 
     @Nullable
     @Override
@@ -53,24 +64,147 @@ public class RegisterFragment extends Fragment {
         etEmail = view.findViewById(R.id.etEmail);
         etPassword = view.findViewById(R.id.etPassword);
         etConfirmPassword = view.findViewById(R.id.etConfirmPassword);
+        etTelefono = view.findViewById(R.id.etTelefono);
+        etZona = view.findViewById(R.id.etZona);
         tvError = view.findViewById(R.id.tvError);
+        tvPasswordStrength = view.findViewById(R.id.tvPasswordStrength);
         progressBar = view.findViewById(R.id.progressBar);
         btnRegister = view.findViewById(R.id.btnRegister);
         btnGoLogin = view.findViewById(R.id.btnGoLogin);
+
+        setupPasswordStrengthWatcher();
+        setupZonaAutoComplete();
+        setupPhoneFormatter();
 
         btnRegister.setOnClickListener(v -> doRegister());
         btnGoLogin.setOnClickListener(v ->
                 NavHostFragment.findNavController(this).navigate(R.id.action_register_to_login));
     }
 
+    // ==================== VALIDACIÓN DE CONTRASEÑA ====================
+
+    private void setupPasswordStrengthWatcher() {
+        etPassword.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                updatePasswordStrength(s.toString());
+            }
+        });
+    }
+
+    private void updatePasswordStrength(String password) {
+        if (password.isEmpty()) {
+            tvPasswordStrength.setVisibility(View.GONE);
+            passwordStrengthLevel = 0;
+            return;
+        }
+
+        tvPasswordStrength.setVisibility(View.VISIBLE);
+
+        if (password.length() < 8) {
+            tvPasswordStrength.setText(getString(R.string.password_too_short));
+            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F")); // rojo
+            passwordStrengthLevel = 0;
+            return;
+        }
+
+        // Contar criterios cumplidos
+        int criteria = 0;
+        if (password.matches(".*[a-z].*")) criteria++; // minúscula
+        if (password.matches(".*[A-Z].*")) criteria++; // mayúscula
+        if (password.matches(".*\\d.*"))   criteria++; // número
+        if (password.matches(".*[^a-zA-Z\\d].*")) criteria++; // símbolo
+
+        if (criteria <= 1) {
+            tvPasswordStrength.setText(getString(R.string.password_strength_weak));
+            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F")); // rojo
+            passwordStrengthLevel = 1;
+        } else if (criteria <= 2) {
+            tvPasswordStrength.setText(getString(R.string.password_strength_medium));
+            tvPasswordStrength.setTextColor(Color.parseColor("#F57C00")); // naranja
+            passwordStrengthLevel = 2;
+        } else {
+            tvPasswordStrength.setText(getString(R.string.password_strength_strong));
+            tvPasswordStrength.setTextColor(Color.parseColor("#388E3C")); // verde
+            passwordStrengthLevel = 3;
+        }
+    }
+
+    // ==================== AUTOCOMPLETE DE ZONA ====================
+
+    private void setupZonaAutoComplete() {
+        String[] zonas = getResources().getStringArray(R.array.zonas_argentina);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                zonas
+        );
+        etZona.setAdapter(adapter);
+    }
+
+    // ==================== FORMATEO DE TELÉFONO ====================
+
+    private void setupPhoneFormatter() {
+        etTelefono.addTextChangedListener(new TextWatcher() {
+            private boolean isFormatting = false;
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isFormatting) return;
+                isFormatting = true;
+
+                // Sacar todo lo que no sea dígito
+                String digits = s.toString().replaceAll("[^\\d]", "");
+
+                // Formatear: 11 3050-9485 (2 + 4 + 4)
+                StringBuilder formatted = new StringBuilder();
+                for (int i = 0; i < digits.length() && i < 10; i++) {
+                    if (i == 2 || i == 6) formatted.append(" ");
+                    formatted.append(digits.charAt(i));
+                }
+
+                etTelefono.setText(formatted.toString());
+                etTelefono.setSelection(formatted.length());
+
+                isFormatting = false;
+            }
+        });
+    }
+
+    // ==================== REGISTRO ====================
+
     private void doRegister() {
         String nombre = etNombre.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
+        String telefono = etTelefono.getText().toString().trim();
+        String zona = etZona.getText().toString().trim();
 
         if (nombre.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            showError("Completá todos los campos");
+            showError("Completá todos los campos obligatorios");
+            return;
+        }
+
+        if (password.length() < 8) {
+            showError("La contraseña debe tener al menos 8 caracteres");
+            return;
+        }
+
+        if (passwordStrengthLevel < 2) {
+            showError("La contraseña es muy débil. Usá mayúsculas, minúsculas y números");
             return;
         }
 
@@ -84,8 +218,10 @@ public class RegisterFragment extends Fragment {
 
         Log.d(TAG, "Intentando registro: nombre=" + nombre + " email=" + email);
 
-        RegisterRequest req = new RegisterRequest(nombre, email, password);
-        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService(requireContext()).register()");
+        RegisterRequest req = new RegisterRequest(nombre, email, password,
+                telefono.isEmpty() ? null : telefono,
+                zona.isEmpty() ? null : zona);
+        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService().register()");
 
         ApiClient.getAuthService().register(req)
                 .enqueue(new Callback<AuthResponse>() {
