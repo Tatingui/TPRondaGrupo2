@@ -66,6 +66,10 @@ public class AuthService {
                 request.getEmail(),
                 passwordEncoder.encode(request.getPassword()));
 
+        // Campos opcionales del registro
+        if (request.getTelefono() != null) user.setTelefono(request.getTelefono());
+        if (request.getZona() != null) user.setZona(request.getZona());
+
         asignarNuevoOtp(user);
         userRepository.save(user);
 

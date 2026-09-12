@@ -1,29 +1,27 @@
 package com.ronda.backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
+/**
+ * Datos del perfil del usuario logueado.
+ * Se devuelve en GET /usuarios/me.
+ */
+public class UserProfileResponse {
 
-public class RegisterRequest {
-
-    @NotBlank(message = "El nombre es obligatorio")
+    private Long id;
     private String nombre;
-
-    @NotBlank(message = "El email es obligatorio")
     private String email;
-
-    @NotBlank(message = "La password es obligatoria")
-    private String password;
-
-    /** Opcionales: el usuario puede completarlos en el registro o despues desde el perfil. */
     private String telefono;
     private String zona;
+    private String miembroDesde;  // Ej: "Septiembre 2026"
 
-    public RegisterRequest() {
+    public UserProfileResponse() {
     }
 
-    public RegisterRequest(String nombre, String email, String password) {
-        this.nombre = nombre;
-        this.email = email;
-        this.password = password;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNombre() {
@@ -42,14 +40,6 @@ public class RegisterRequest {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getTelefono() {
         return telefono;
     }
@@ -64,5 +54,13 @@ public class RegisterRequest {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public String getMiembroDesde() {
+        return miembroDesde;
+    }
+
+    public void setMiembroDesde(String miembroDesde) {
+        this.miembroDesde = miembroDesde;
     }
 }

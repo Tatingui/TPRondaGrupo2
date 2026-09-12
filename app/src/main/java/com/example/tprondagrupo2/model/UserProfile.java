@@ -1,26 +1,27 @@
 package com.example.tprondagrupo2.model;
 
-public class RegisterRequest {
+/**
+ * Modelo para la respuesta de GET /usuarios/me.
+ * Contiene los datos del perfil del usuario logueado.
+ */
+public class UserProfile {
 
+    private Long id;
     private String nombre;
     private String email;
-    private String password;
     private String telefono;
     private String zona;
+    private String miembroDesde;  // Ej: "Septiembre 2026"
 
-    public RegisterRequest(String nombre, String email, String password) {
-        this.nombre = nombre;
-        this.email = email;
-        this.password = password;
+    public UserProfile() {
     }
 
-    public RegisterRequest(String nombre, String email, String password,
-                           String telefono, String zona) {
-        this.nombre = nombre;
-        this.email = email;
-        this.password = password;
-        this.telefono = telefono;
-        this.zona = zona;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNombre() {
@@ -39,14 +40,6 @@ public class RegisterRequest {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     public String getTelefono() {
         return telefono;
     }
@@ -61,5 +54,13 @@ public class RegisterRequest {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public String getMiembroDesde() {
+        return miembroDesde;
+    }
+
+    public void setMiembroDesde(String miembroDesde) {
+        this.miembroDesde = miembroDesde;
     }
 }
