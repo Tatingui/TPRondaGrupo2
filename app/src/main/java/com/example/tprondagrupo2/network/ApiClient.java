@@ -48,7 +48,19 @@ public class ApiClient {
                         if (token != null && !token.trim().isEmpty()) {
                             builder.header("Authorization", "Bearer " + token);
                         }
-                        return chain.proceed(builder.build());
+
+                        okhttp3.Response response = chain.proceed(builder.build());
+
+                        // Si el backend devuelve 401, el token venció o es inválido.
+                        // Limpiamos el token y notificamos a la UI para redirigir al login.
+                        if (response.code() == 401) {
+                            try {
+                                TokenManager.getInstance().clearToken();
+                            } catch (IllegalStateException ignored) { }
+                            SessionManager.getInstance().notifySessionExpired();
+                        }
+
+                        return response;
                     })
                     .build();
 
