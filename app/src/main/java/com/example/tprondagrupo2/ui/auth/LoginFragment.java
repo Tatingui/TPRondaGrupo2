@@ -91,7 +91,17 @@ public class LoginFragment extends Fragment {
                             NavHostFragment.findNavController(LoginFragment.this)
                                     .navigate(R.id.action_login_to_home);
                         } else {
-                            showError(extractMessage(body, "No se pudo iniciar sesión"));
+                            // Si el email no esta verificado, el backend reenvio el OTP
+                            // automaticamente. Mandamos al usuario a la pantalla de OTP.
+                            String msg = extractMessage(body, "");
+                            if (msg.contains("no verificado")) {
+                                Bundle args = new Bundle();
+                                args.putString("email", email);
+                                NavHostFragment.findNavController(LoginFragment.this)
+                                        .navigate(R.id.action_login_to_otp, args);
+                            } else {
+                                showError(extractMessage(body, "No se pudo iniciar sesión"));
+                            }
                         }
                     }
 

@@ -28,14 +28,17 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
     private final SecureRandom random = new SecureRandom();
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -126,8 +129,11 @@ public class AuthService {
         user.setOtpCode(otp);
         user.setOtpExpiresAt(LocalDateTime.now().plusMinutes(OTP_VIGENCIA_MINUTOS));
 
-        // No hay envio real de mail ni SMS: el codigo se lee de la consola
-        log.info("========== OTP para {}: {} ==========", user.getEmail(), otp);
+        // Enviar el OTP por email de verdad
+        emailService.enviarOtp(user.getEmail(), otp);
+
+        // Tambien lo dejamos en la consola para desarrollo/debug
+        log.debug("OTP para {}: {}", user.getEmail(), otp);
     }
 
     private String generateOtp() {

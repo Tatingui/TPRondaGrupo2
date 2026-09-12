@@ -82,6 +82,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Envio de emails (OTP, notificaciones) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

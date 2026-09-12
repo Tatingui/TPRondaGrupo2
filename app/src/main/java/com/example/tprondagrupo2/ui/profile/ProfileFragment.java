@@ -24,6 +24,7 @@ import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
@@ -55,7 +56,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvEmptySavedSearches;
     private SavedSearchAdapter savedSearchAdapter;
     private final List<SavedSearch> savedSearches = new ArrayList<>();
-    
+
     private PublicationAdapter adapter;
     private final List<Publicacion> favoritePublications = new ArrayList<>();
 
@@ -91,6 +92,13 @@ public class ProfileFragment extends Fragment {
         view.findViewById(R.id.btnGoMyPublications).setOnClickListener(v ->
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_publications)
         );
+
+        // Cerrar sesion: limpia el token y vuelve al login
+        view.findViewById(R.id.btnLogout).setOnClickListener(v -> {
+            TokenManager.getInstance().clearToken();
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_profile_to_login);
+        });
 
         setupSavedSearchesRecyclerView();
         setupRecyclerView();
@@ -279,7 +287,7 @@ public class ProfileFragment extends Fragment {
 
     private void mostrarMiPerfil() {
         Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 5.0, 10, 5, "Enero 2024", "Mi Ciudad");
-        
+
         if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
         VendedorViewBinder.bindReputacion(miPerfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
