@@ -10,10 +10,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -44,36 +46,54 @@ public class PublicationController {
 
     @PostMapping
     public ResponseEntity<PublicationDTO> createPublication(@Valid @RequestBody PublicationCreateDTO dto, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         PublicationDTO created = publicationService.createPublication(dto, authentication.getName());
         return ResponseEntity.status(201).body(created);
     }
 
     @GetMapping("/my")
     public ResponseEntity<List<PublicationDTO>> getMyPublications(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         List<PublicationDTO> myPublications = publicationService.getMyPublications(authentication.getName());
         return ResponseEntity.ok(myPublications);
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<PublicationDTO> updateStatus(@PathVariable Long id, @RequestParam PublicationState state, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         PublicationDTO updated = publicationService.updateStatus(id, state, authentication.getName());
         return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/{id}/favorite")
     public ResponseEntity<Void> markAsFavorite(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         publicationService.markAsFavorite(id, authentication.getName());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}/favorite")
     public ResponseEntity<Void> unmarkAsFavorite(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         publicationService.unmarkAsFavorite(id, authentication.getName());
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/favorites")
     public ResponseEntity<List<PublicationDTO>> getFavorites(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
         return ResponseEntity.ok(publicationService.getFavorites(authentication.getName()));
     }
 
