@@ -23,6 +23,7 @@ import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.google.gson.Gson;
 
@@ -161,6 +162,11 @@ public class DetallePublicacionFragment extends Fragment {
                     if (response.isSuccessful()) {
                         publicacion.setFavorite(!wasFavorite);
                         actualizarIconoFavorito(publicacion.isFavorite());
+                        if (publicacion.isFavorite()) {
+                            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+                        } else {
+                            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+                        }
                         String mensaje = publicacion.isFavorite() ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
                     } else {

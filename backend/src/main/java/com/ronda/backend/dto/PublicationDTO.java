@@ -1,5 +1,6 @@
 package com.ronda.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.model.PublicationState;
 import java.time.LocalDateTime;
@@ -10,11 +11,14 @@ public class PublicationDTO {
     private String title;
     private String description;
     private Double price;
+    private Double savedPrice;
     private PublicationStatus status;
     private PublicationState state;
     private String location;
     private String categoryName;
     private List<String> imageUrls;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
     
     // Seller info (Resumen)
@@ -57,6 +61,14 @@ public class PublicationDTO {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Double getSavedPrice() {
+        return savedPrice;
+    }
+
+    public void setSavedPrice(Double savedPrice) {
+        this.savedPrice = savedPrice;
     }
 
     public PublicationStatus getStatus() {

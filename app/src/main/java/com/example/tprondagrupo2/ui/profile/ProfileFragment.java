@@ -30,6 +30,7 @@ import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
@@ -37,6 +38,7 @@ import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -421,9 +423,16 @@ public class ProfileFragment extends Fragment {
 
     private void updateFavoritesList(List<Publicacion> favorites) {
         favoritePublications.clear();
-        if (favorites != null) {
+        if (favorites != null && getContext() != null) {
+            Map<String, Boolean> hasUpdatesMap = FavoritesDataStoreManager.getHasUpdatesMap(requireContext());
             for (Publicacion p : favorites) {
                 p.setFavorite(true);
+                if (p.getLastSeenPrice() != null && p.getPrice() < p.getLastSeenPrice()) {
+                    FavoritesDataStoreManager.setHasUpdates(requireContext(), p.getId(), true);
+                    p.setHasUpdates(true);
+                } else if (p.getId() != null && hasUpdatesMap.containsKey(p.getId())) {
+                    p.setHasUpdates(Boolean.TRUE.equals(hasUpdatesMap.get(p.getId())));
+                }
             }
             favoritePublications.addAll(favorites);
         }
@@ -454,6 +463,7 @@ public class ProfileFragment extends Fragment {
                 if (response.isSuccessful()) {
                     publicacion.setFavorite(!isFavorite);
                     if (!publicacion.isFavorite()) {
+                        FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
                         favoritePublications.remove(position);
                         adapter.notifyItemRemoved(position);
                         adapter.notifyItemRangeChanged(position, favoritePublications.size());
@@ -461,6 +471,7 @@ public class ProfileFragment extends Fragment {
                             tvEmpty.setVisibility(View.VISIBLE);
                         }
                     } else {
+                        FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
                         adapter.notifyItemChanged(position);
                     }
                 } else {

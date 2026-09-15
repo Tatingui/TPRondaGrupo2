@@ -55,7 +55,6 @@ public class PublicationService {
         Specification<Publication> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Solo mostrar activas en la exploración general si se desea, o todas
             predicates.add(cb.equal(root.get("state"), PublicationState.ACTIVE));
 
             if (search != null && !search.isEmpty()) {
@@ -196,9 +195,12 @@ public class PublicationService {
                 .collect(Collectors.toSet());
 
         return favorites.stream()
-                .map(uf -> uf.getPublication())
-                .filter(pub -> pub != null)
-                .map(pub -> convertToDTO(pub, favoriteIds))
+                .filter(uf -> uf.getPublication() != null)
+                .map(uf -> {
+                    PublicationDTO dto = convertToDTO(uf.getPublication(), favoriteIds);
+                    dto.setSavedPrice(uf.getSavedPrice());
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

@@ -28,6 +28,7 @@ import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
@@ -273,8 +274,10 @@ public class HomeFragment extends Fragment {
                         if (publicacion.getId() != null) {
                             favoriteIds.add(publicacion.getId());
                         }
+                        FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
                     } else {
                         favoriteIds.remove(publicacion.getId());
+                        FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
                     }
                     adapter.notifyItemChanged(position);
                 } else {
