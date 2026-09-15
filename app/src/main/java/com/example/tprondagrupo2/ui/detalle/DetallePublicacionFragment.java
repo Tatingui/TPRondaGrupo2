@@ -141,6 +141,31 @@ public class DetallePublicacionFragment extends Fragment {
 
         actualizarIconoFavorito(publicacion.isFavorite());
         mostrarVendedor(obtenerVendedor(publicacion));
+
+        registrarVista(publicacion);
+    }
+
+    private void registrarVista(@NonNull Publicacion publicacion) {
+        if (publicacion.getId() == null) return;
+        String pubId = publicacion.getId();
+
+        ApiClient.getPublicationService().recordView(pubId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                // Vista registrada en backend
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                // Ignorar fallo no bloqueante
+            }
+        });
+
+        if (getContext() != null) {
+            FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
+        }
+        publicacion.setHasUpdates(false);
+        publicacion.setLastSeenPrice(publicacion.getPrice());
     }
 
     private void toggleFavorite(@NonNull Publicacion publicacion) {

@@ -76,4 +76,12 @@ public class PublicationController {
     public ResponseEntity<List<PublicationDTO>> getFavorites(Authentication authentication) {
         return ResponseEntity.ok(publicationService.getFavorites(authentication.getName()));
     }
+
+    @PostMapping("/{id}/view")
+    public ResponseEntity<Void> recordView(@PathVariable Long id, Authentication authentication) {
+        if (authentication != null && authentication.getName() != null) {
+            publicationService.updateLastSeenPrice(id, authentication.getName());
+        }
+        return ResponseEntity.ok().build();
+    }
 }

@@ -180,6 +180,23 @@ public class PublicationService {
         userFavoriteRepository.deleteByUserIdAndPublicationId(user.getId(), publicationId);
     }
 
+    @Transactional
+    public void updateLastSeenPrice(Long publicationId, String email) {
+        if (email == null) {
+            return;
+        }
+        userRepository.findByEmail(email).ifPresent(user -> {
+            userFavoriteRepository.findByUserIdAndPublicationId(user.getId(), publicationId).ifPresent(favorite -> {
+                publicationRepository.findById(publicationId).ifPresent(pub -> {
+                    if (pub.getPrice() != null) {
+                        favorite.setLastSeenPrice(pub.getPrice());
+                        userFavoriteRepository.save(favorite);
+                    }
+                });
+            });
+        });
+    }
+
     @Transactional(readOnly = true)
     public List<PublicationDTO> getFavorites(String email) {
         if (email == null) {
@@ -198,7 +215,7 @@ public class PublicationService {
                 .filter(uf -> uf.getPublication() != null)
                 .map(uf -> {
                     PublicationDTO dto = convertToDTO(uf.getPublication(), favoriteIds);
-                    dto.setSavedPrice(uf.getSavedPrice());
+                    dto.setLastSeenPrice(uf.getLastSeenPrice());
                     return dto;
                 })
                 .collect(Collectors.toList());

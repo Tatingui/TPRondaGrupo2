@@ -11,7 +11,7 @@ public class PublicationDTO {
     private String title;
     private String description;
     private Double price;
-    private Double savedPrice;
+    private Double lastSeenPrice;
     private PublicationStatus status;
     private PublicationState state;
     private String location;
@@ -63,12 +63,12 @@ public class PublicationDTO {
         this.price = price;
     }
 
-    public Double getSavedPrice() {
-        return savedPrice;
+    public Double getLastSeenPrice() {
+        return lastSeenPrice;
     }
 
-    public void setSavedPrice(Double savedPrice) {
-        this.savedPrice = savedPrice;
+    public void setLastSeenPrice(Double lastSeenPrice) {
+        this.lastSeenPrice = lastSeenPrice;
     }
 
     public PublicationStatus getStatus() {
