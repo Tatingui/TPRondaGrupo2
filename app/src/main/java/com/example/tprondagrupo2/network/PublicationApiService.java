@@ -46,4 +46,7 @@ public interface PublicationApiService {
 
     @GET("publications/favorites")
     Call<List<Publicacion>> getFavorites();
+
+    @POST("publications/{id}/view")
+    Call<Void> recordView(@Path("id") String id);
 }

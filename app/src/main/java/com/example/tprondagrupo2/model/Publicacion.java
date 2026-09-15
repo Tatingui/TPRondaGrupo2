@@ -1,5 +1,7 @@
 package com.example.tprondagrupo2.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,11 @@ public class Publicacion implements Serializable {
     private String location;
 
     private boolean isFavorite;
+
+    @SerializedName("lastSeenPrice")
+    private Double lastSeenPrice;
+
+    private boolean hasUpdates;
 
     public Publicacion() {
         // Constructor vacio requerido por Gson
@@ -243,5 +250,21 @@ public class Publicacion implements Serializable {
 
     public void setFavorite(boolean favorite) {
         isFavorite = favorite;
+    }
+
+    public Double getLastSeenPrice() {
+        return lastSeenPrice;
+    }
+
+    public void setLastSeenPrice(Double lastSeenPrice) {
+        this.lastSeenPrice = lastSeenPrice;
+    }
+
+    public boolean isHasUpdates() {
+        return hasUpdates;
+    }
+
+    public void setHasUpdates(boolean hasUpdates) {
+        this.hasUpdates = hasUpdates;
     }
 }

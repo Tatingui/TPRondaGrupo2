@@ -29,8 +29,8 @@ public class UserFavorite {
     @JoinColumn(name = "publication_id")
     private Publication publication;
 
-    @Column(name = "saved_price", nullable = false)
-    private Double savedPrice;
+    @Column(name = "last_seen_price", nullable = false)
+    private Double lastSeenPrice;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -38,11 +38,11 @@ public class UserFavorite {
     public UserFavorite() {
     }
 
-    public UserFavorite(User user, Publication publication, Double savedPrice) {
+    public UserFavorite(User user, Publication publication, Double lastSeenPrice) {
         this.id = new UserFavoriteId(user.getId(), publication.getId());
         this.user = user;
         this.publication = publication;
-        this.savedPrice = savedPrice;
+        this.lastSeenPrice = lastSeenPrice;
     }
 
     @PrePersist
@@ -76,12 +76,12 @@ public class UserFavorite {
         this.publication = publication;
     }
 
-    public Double getSavedPrice() {
-        return savedPrice;
+    public Double getLastSeenPrice() {
+        return lastSeenPrice;
     }
 
-    public void setSavedPrice(Double savedPrice) {
-        this.savedPrice = savedPrice;
+    public void setLastSeenPrice(Double lastSeenPrice) {
+        this.lastSeenPrice = lastSeenPrice;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -82,6 +82,10 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 ? android.R.drawable.btn_star_big_on
                 : android.R.drawable.btn_star_big_off);
 
+        if (holder.tvPriceUpdateBadge != null) {
+            holder.tvPriceUpdateBadge.setVisibility(pub.isHasUpdates() ? View.VISIBLE : View.GONE);
+        }
+
         holder.btnFavorite.setOnClickListener(v -> {
             if (favoriteListener != null) {
                 favoriteListener.onFavoriteClick(pub, position);
@@ -98,7 +102,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivProduct;
-        TextView tvTitle, tvPrice, tvCondition, tvLocation;
+        TextView tvTitle, tvPrice, tvCondition, tvLocation, tvPriceUpdateBadge;
         ImageButton btnFavorite;
 
         public ViewHolder(@NonNull View itemView) {
@@ -108,6 +112,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
             tvPrice = itemView.findViewById(R.id.tvPrice);
             tvCondition = itemView.findViewById(R.id.tvCondition);
             tvLocation = itemView.findViewById(R.id.tvLocation);
+            tvPriceUpdateBadge = itemView.findViewById(R.id.tvPriceUpdateBadge);
             btnFavorite = itemView.findViewById(R.id.btnFavorite);
         }
     }

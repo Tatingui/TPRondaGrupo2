@@ -55,7 +55,6 @@ public class PublicationService {
         Specification<Publication> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Solo mostrar activas en la exploración general si se desea, o todas
             predicates.add(cb.equal(root.get("state"), PublicationState.ACTIVE));
 
             if (search != null && !search.isEmpty()) {
@@ -181,6 +180,23 @@ public class PublicationService {
         userFavoriteRepository.deleteByUserIdAndPublicationId(user.getId(), publicationId);
     }
 
+    @Transactional
+    public void updateLastSeenPrice(Long publicationId, String email) {
+        if (email == null) {
+            return;
+        }
+        userRepository.findByEmail(email).ifPresent(user -> {
+            userFavoriteRepository.findByUserIdAndPublicationId(user.getId(), publicationId).ifPresent(favorite -> {
+                publicationRepository.findById(publicationId).ifPresent(pub -> {
+                    if (pub.getPrice() != null) {
+                        favorite.setLastSeenPrice(pub.getPrice());
+                        userFavoriteRepository.save(favorite);
+                    }
+                });
+            });
+        });
+    }
+
     @Transactional(readOnly = true)
     public List<PublicationDTO> getFavorites(String email) {
         if (email == null) {
@@ -196,9 +212,12 @@ public class PublicationService {
                 .collect(Collectors.toSet());
 
         return favorites.stream()
-                .map(uf -> uf.getPublication())
-                .filter(pub -> pub != null)
-                .map(pub -> convertToDTO(pub, favoriteIds))
+                .filter(uf -> uf.getPublication() != null)
+                .map(uf -> {
+                    PublicationDTO dto = convertToDTO(uf.getPublication(), favoriteIds);
+                    dto.setLastSeenPrice(uf.getLastSeenPrice());
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

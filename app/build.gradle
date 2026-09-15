@@ -59,4 +59,10 @@ dependencies {
     // Room
     implementation libs.room.runtime
     annotationProcessor libs.room.compiler
+
+    // DataStore + RxJava3
+    implementation libs.datastore.preferences
+    implementation libs.datastore.preferences.rxjava3
+    implementation libs.rxjava3
+    implementation libs.rxandroid
 }

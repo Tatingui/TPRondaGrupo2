@@ -46,7 +46,7 @@ public class PublicationServiceTest {
         p1.setTitle("Bicicleta");
         p1.setDescription("Rodado 29");
         p1.setPrice(100.0);
-        p1.setStatus(PublicationStatus.NUEVO);
+        p1.setStatus(PublicationStatus.NEW);
         p1.setLocation("Palermo");
         p1.setCategory(catDeportes);
         p1.setSeller(user);
@@ -56,7 +56,7 @@ public class PublicationServiceTest {
         p2.setTitle("Pelota");
         p2.setDescription("Fútbol");
         p2.setPrice(50.0);
-        p2.setStatus(PublicationStatus.USADO);
+        p2.setStatus(PublicationStatus.USED);
         p2.setLocation("Almagro");
         p2.setCategory(catDeportes);
         p2.setSeller(user);
@@ -81,7 +81,7 @@ public class PublicationServiceTest {
 
     @Test
     public void testFilterByStatus() {
-        Page<PublicationDTO> result = publicationService.findAll(null, null, null, null, PublicationStatus.USADO, null, PageRequest.of(0, 10));
+        Page<PublicationDTO> result = publicationService.findAll(null, null, null, null, PublicationStatus.USED, null, PageRequest.of(0, 10));
         assertEquals(1, result.getTotalElements());
         assertEquals("Pelota", result.getContent().get(0).getTitle());
     }

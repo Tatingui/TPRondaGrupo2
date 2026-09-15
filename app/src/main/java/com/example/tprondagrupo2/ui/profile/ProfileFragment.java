@@ -26,10 +26,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
+import com.example.tprondagrupo2.model.SavedSearchDataStoreItem;
 import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
+import com.example.tprondagrupo2.network.PublicationPageResponse;
+import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
@@ -37,6 +41,7 @@ import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -312,6 +317,13 @@ public class ProfileFragment extends Fragment {
         savedSearchAdapter = new SavedSearchAdapter(savedSearches, new SavedSearchAdapter.OnSavedSearchClickListener() {
             @Override
             public void onSearchClick(SavedSearch savedSearch) {
+                if (savedSearch != null && savedSearch.getId() != null && getContext() != null) {
+                    SavedSearchDataStoreItem dsItem = SavedSearchesDataStoreManager.getSavedSearchesMap(requireContext())
+                            .get(String.valueOf(savedSearch.getId()));
+                    List<String> knownIds = dsItem != null ? dsItem.getPublicationIds() : new ArrayList<>();
+                    SavedSearchesDataStoreManager.updateSearchUpdates(requireContext(), String.valueOf(savedSearch.getId()), knownIds, false);
+                    savedSearch.setHasUpdates(false);
+                }
                 Bundle args = new Bundle();
                 args.putSerializable("saved_search", savedSearch);
                 NavHostFragment.findNavController(ProfileFragment.this)
@@ -329,6 +341,7 @@ public class ProfileFragment extends Fragment {
                                 @Override
                                 public void onResponse(Call<Void> call, Response<Void> response) {
                                     if (response.isSuccessful()) {
+                                        SavedSearchesDataStoreManager.removeSearch(requireContext(), String.valueOf(savedSearch.getId()));
                                         if (position >= 0 && position < savedSearches.size()) {
                                             savedSearches.remove(position);
                                             if (savedSearchAdapter != null) {
@@ -376,6 +389,8 @@ public class ProfileFragment extends Fragment {
                     if (tvEmptySavedSearches != null) {
                         tvEmptySavedSearches.setVisibility(savedSearches.isEmpty() ? View.VISIBLE : View.GONE);
                     }
+
+                    checkUpdatesForSavedSearches(savedSearches);
                 }
             }
 
@@ -384,6 +399,73 @@ public class ProfileFragment extends Fragment {
                 Log.e(TAG, "Error al cargar búsquedas guardadas", t);
             }
         });
+    }
+
+    private void checkUpdatesForSavedSearches(List<SavedSearch> list) {
+        if (list == null || getContext() == null) return;
+        Map<String, SavedSearchDataStoreItem> dsMap = SavedSearchesDataStoreManager.getSavedSearchesMap(requireContext());
+
+        for (int i = 0; i < list.size(); i++) {
+            final SavedSearch search = list.get(i);
+            final int pos = i;
+            if (search.getId() == null) continue;
+
+            final String searchIdStr = String.valueOf(search.getId());
+            final SavedSearchDataStoreItem dsItem = dsMap.get(searchIdStr);
+
+            ApiClient.getPublicationService().getPublications(
+                    search.getQuery() != null && !search.getQuery().isEmpty() ? search.getQuery() : null,
+                    search.getCategoryId(),
+                    search.getMinPrice(),
+                    search.getMaxPrice(),
+                    search.getCondition(),
+                    search.getLocation(),
+                    0,
+                    50,
+                    search.getSort() != null ? search.getSort() : "createdAt,desc"
+            ).enqueue(new Callback<PublicationPageResponse>() {
+                @Override
+                public void onResponse(Call<PublicationPageResponse> call, Response<PublicationPageResponse> response) {
+                    if (isAdded() && response.isSuccessful() && response.body() != null) {
+                        List<Publicacion> currentItems = response.body().getContent();
+                        List<String> currentIds = new ArrayList<>();
+                        if (currentItems != null) {
+                            for (Publicacion p : currentItems) {
+                                if (p.getId() != null) {
+                                    currentIds.add(p.getId());
+                                }
+                            }
+                        }
+
+                        List<String> knownIds = dsItem != null ? dsItem.getPublicationIds() : new ArrayList<>();
+                        boolean hasNew = false;
+
+                        if (dsItem == null) {
+                            SavedSearchesDataStoreManager.saveSearch(requireContext(), searchIdStr, currentIds);
+                        } else {
+                            for (String id : currentIds) {
+                                if (!knownIds.contains(id)) {
+                                    hasNew = true;
+                                    break;
+                                }
+                            }
+                            if (hasNew || dsItem.isHasUpdates()) {
+                                search.setHasUpdates(true);
+                                SavedSearchesDataStoreManager.updateSearchUpdates(requireContext(), searchIdStr, currentIds, true);
+                                if (savedSearchAdapter != null && pos >= 0 && pos < savedSearches.size()) {
+                                    savedSearchAdapter.notifyItemChanged(pos);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
+                    // Ignorar fallo de búsqueda en segundo plano
+                }
+            });
+        }
     }
 
     // ==================== FAVORITOS ====================
@@ -421,9 +503,16 @@ public class ProfileFragment extends Fragment {
 
     private void updateFavoritesList(List<Publicacion> favorites) {
         favoritePublications.clear();
-        if (favorites != null) {
+        if (favorites != null && getContext() != null) {
+            Map<String, Boolean> hasUpdatesMap = FavoritesDataStoreManager.getHasUpdatesMap(requireContext());
             for (Publicacion p : favorites) {
                 p.setFavorite(true);
+                if (p.getLastSeenPrice() != null && p.getPrice() < p.getLastSeenPrice()) {
+                    FavoritesDataStoreManager.setHasUpdates(requireContext(), p.getId(), true);
+                    p.setHasUpdates(true);
+                } else if (p.getId() != null && hasUpdatesMap.containsKey(p.getId())) {
+                    p.setHasUpdates(Boolean.TRUE.equals(hasUpdatesMap.get(p.getId())));
+                }
             }
             favoritePublications.addAll(favorites);
         }
@@ -454,6 +543,7 @@ public class ProfileFragment extends Fragment {
                 if (response.isSuccessful()) {
                     publicacion.setFavorite(!isFavorite);
                     if (!publicacion.isFavorite()) {
+                        FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
                         favoritePublications.remove(position);
                         adapter.notifyItemRemoved(position);
                         adapter.notifyItemRangeChanged(position, favoritePublications.size());
@@ -461,6 +551,7 @@ public class ProfileFragment extends Fragment {
                             tvEmpty.setVisibility(View.VISIBLE);
                         }
                     } else {
+                        FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
                         adapter.notifyItemChanged(position);
                     }
                 } else {

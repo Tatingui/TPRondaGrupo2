@@ -23,6 +23,7 @@ import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.google.gson.Gson;
 
@@ -140,6 +141,31 @@ public class DetallePublicacionFragment extends Fragment {
 
         actualizarIconoFavorito(publicacion.isFavorite());
         mostrarVendedor(obtenerVendedor(publicacion));
+
+        registrarVista(publicacion);
+    }
+
+    private void registrarVista(@NonNull Publicacion publicacion) {
+        if (publicacion.getId() == null) return;
+        String pubId = publicacion.getId();
+
+        ApiClient.getPublicationService().recordView(pubId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
+                // Vista registrada en backend
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
+                // Ignorar fallo no bloqueante
+            }
+        });
+
+        if (getContext() != null) {
+            FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
+        }
+        publicacion.setHasUpdates(false);
+        publicacion.setLastSeenPrice(publicacion.getPrice());
     }
 
     private void toggleFavorite(@NonNull Publicacion publicacion) {
@@ -161,6 +187,11 @@ public class DetallePublicacionFragment extends Fragment {
                     if (response.isSuccessful()) {
                         publicacion.setFavorite(!wasFavorite);
                         actualizarIconoFavorito(publicacion.isFavorite());
+                        if (publicacion.isFavorite()) {
+                            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+                        } else {
+                            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+                        }
                         String mensaje = publicacion.isFavorite() ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
                     } else {
