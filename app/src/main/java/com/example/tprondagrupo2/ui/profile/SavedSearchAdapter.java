@@ -43,6 +43,10 @@ public class SavedSearchAdapter extends RecyclerView.Adapter<SavedSearchAdapter.
         holder.tvTitle.setText(item.getDisplayTitle());
         holder.tvSummary.setText(item.getSummaryFilters());
 
+        if (holder.tvBadge != null) {
+            holder.tvBadge.setVisibility(item.isHasUpdates() ? View.VISIBLE : View.GONE);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onSearchClick(item);
         });
@@ -63,12 +67,14 @@ public class SavedSearchAdapter extends RecyclerView.Adapter<SavedSearchAdapter.
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         TextView tvSummary;
+        TextView tvBadge;
         ImageButton btnDelete;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvSavedSearchTitle);
             tvSummary = itemView.findViewById(R.id.tvSavedSearchSummary);
+            tvBadge = itemView.findViewById(R.id.tvSavedSearchBadge);
             btnDelete = itemView.findViewById(R.id.btnDeleteSavedSearch);
         }
     }

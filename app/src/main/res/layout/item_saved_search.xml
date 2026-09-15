@@ -50,6 +50,22 @@
                 android:textSize="12sp"
                 tools:text="Categoría: Deportes • Belgrano • $1000 - $5000" />
 
+            <TextView
+                android:id="@+id/tvSavedSearchBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="#D32F2F"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:text="¡Nuevas publicaciones!"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <ImageButton

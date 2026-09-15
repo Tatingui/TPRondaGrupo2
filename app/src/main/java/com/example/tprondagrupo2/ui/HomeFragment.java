@@ -31,6 +31,7 @@ import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
+import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
 
@@ -348,7 +349,19 @@ public class HomeFragment extends Fragment {
         ApiClient.getSavedSearchService().saveSearch(savedSearch).enqueue(new Callback<SavedSearch>() {
             @Override
             public void onResponse(Call<SavedSearch> call, Response<SavedSearch> response) {
-                if (response.isSuccessful()) {
+                if (response.isSuccessful() && response.body() != null) {
+                    SavedSearch created = response.body();
+                    List<String> pubIds = new ArrayList<>();
+                    if (displayedPublications != null) {
+                        for (Publicacion p : displayedPublications) {
+                            if (p.getId() != null) {
+                                pubIds.add(p.getId());
+                            }
+                        }
+                    }
+                    if (created.getId() != null && getContext() != null) {
+                        SavedSearchesDataStoreManager.saveSearch(requireContext(), String.valueOf(created.getId()), pubIds);
+                    }
                     Toast.makeText(getContext(), R.string.busqueda_guardada_exito, Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getContext(), "Error al guardar la búsqueda", Toast.LENGTH_SHORT).show();

@@ -18,6 +18,7 @@ public class SavedSearch implements Serializable {
     private String sort;
     private String sortName;
     private String createdAt;
+    private boolean hasUpdates;
 
     public SavedSearch() {
     }
@@ -78,6 +79,9 @@ public class SavedSearch implements Serializable {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public boolean isHasUpdates() { return hasUpdates; }
+    public void setHasUpdates(boolean hasUpdates) { this.hasUpdates = hasUpdates; }
 
     public String getDisplayTitle() {
         if (query != null && !query.trim().isEmpty()) {
