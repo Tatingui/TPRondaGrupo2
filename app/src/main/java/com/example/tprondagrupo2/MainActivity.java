@@ -13,6 +13,10 @@ import com.example.tprondagrupo2.network.SessionManager;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+// Esta anotación habilita la inyección en esta Activity. Sin esto, @Inject falla.
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
     @Override
