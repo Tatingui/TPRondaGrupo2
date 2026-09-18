@@ -44,6 +44,11 @@ public class PublicationController {
         return ResponseEntity.ok(publications);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<PublicationDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(publicationService.getById(id));
+    }
+
     @PostMapping
     public ResponseEntity<PublicationDTO> createPublication(@Valid @RequestBody PublicationCreateDTO dto, Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {

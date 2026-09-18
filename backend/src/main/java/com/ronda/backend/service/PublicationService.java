@@ -91,6 +91,13 @@ public class PublicationService {
         return publicationRepository.findAll(spec, pageable).map(pub -> convertToDTO(pub, favoriteIds));
     }
 
+    @Transactional(readOnly = true)
+    public PublicationDTO getById(Long publicationId) {
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
+        return convertToDTO(publication, getFavoriteIdsForUser(getCurrentUserEmail()));
+    }
+
     @Transactional
     public PublicationDTO createPublication(PublicationCreateDTO dto, String email) {
         if (email == null) {
