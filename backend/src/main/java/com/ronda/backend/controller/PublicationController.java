@@ -2,6 +2,7 @@ package com.ronda.backend.controller;
 
 import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
+import com.ronda.backend.dto.PublicationDetailDTO;
 import com.ronda.backend.model.PublicationState;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.service.PublicationService;
@@ -45,7 +46,7 @@ public class PublicationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PublicationDTO> getById(@PathVariable Long id) {
+    public ResponseEntity<PublicationDetailDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(publicationService.getById(id));
     }
 

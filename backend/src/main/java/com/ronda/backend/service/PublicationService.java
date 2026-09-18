@@ -2,6 +2,8 @@ package com.ronda.backend.service;
 
 import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
+import com.ronda.backend.dto.PublicationDetailDTO;
+import com.ronda.backend.dto.SellerDTO;
 import com.ronda.backend.exception.ResourceNotFoundException;
 import com.ronda.backend.model.Category;
 import com.ronda.backend.model.Publication;
@@ -92,10 +94,28 @@ public class PublicationService {
     }
 
     @Transactional(readOnly = true)
-    public PublicationDTO getById(Long publicationId) {
+    public PublicationDetailDTO getById(Long publicationId) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
-        return convertToDTO(publication, getFavoriteIdsForUser(getCurrentUserEmail()));
+
+        PublicationDetailDTO dto = new PublicationDetailDTO();
+        llenarDTO(dto, publication, getFavoriteIdsForUser(getCurrentUserEmail()));
+        dto.setVendedor(convertirVendedor(publication.getSeller()));
+        return dto;
+    }
+
+    private SellerDTO convertirVendedor(User seller) {
+        if (seller == null) return null;
+        SellerDTO dto = new SellerDTO();
+        dto.setId(seller.getId());
+        dto.setNombre(seller.getNombre());
+        dto.setUbicacion(seller.getZona());
+        dto.setMiembroDesde(UserService.formatMiembroDesde(seller.getCreatedAt()));
+        dto.setCantidadVentas((int) publicationRepository.countBySellerIdAndState(seller.getId(), PublicationState.SOLD));
+        // Todavia no hay calificaciones (punto 9): reputacion en 0 = "Sin calificaciones aun"
+        dto.setReputacion(0);
+        dto.setCantidadOpiniones(0);
+        return dto;
     }
 
     @Transactional
@@ -252,6 +272,12 @@ public class PublicationService {
     private PublicationDTO convertToDTO(Publication pub, Set<Long> favoriteIds) {
         if (pub == null) return null;
         PublicationDTO dto = new PublicationDTO();
+        llenarDTO(dto, pub, favoriteIds);
+        return dto;
+    }
+
+    /** Copia los datos de la publicacion al DTO (sirve tambien para el DTO de detalle). */
+    private void llenarDTO(PublicationDTO dto, Publication pub, Set<Long> favoriteIds) {
         dto.setId(pub.getId());
         dto.setTitle(pub.getTitle());
         dto.setDescription(pub.getDescription());
@@ -271,6 +297,5 @@ public class PublicationService {
             dto.setSellerName(pub.getSeller().getNombre());
         }
         dto.setFavorite(favoriteIds != null && pub.getId() != null && favoriteIds.contains(pub.getId()));
-        return dto;
     }
 }
