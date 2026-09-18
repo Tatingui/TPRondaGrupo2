@@ -173,7 +173,6 @@ public class DetallePublicacionFragment extends Fragment {
         saveToCache(currentPublicacion);
         registrarVista(currentPublicacion);
         cargarDetalle(currentPublicacion.getId());
-        cargarPreguntas();
     }
 
     private void cargarDetalle(String id) {
@@ -188,6 +187,9 @@ public class DetallePublicacionFragment extends Fragment {
                     mostrarPublicacion(currentPublicacion);
                     mostrarAcciones(currentPublicacion);
                     saveToCache(currentPublicacion);
+                    // Las preguntas se cargan después del detalle porque necesitan
+                    // saber si quien mira es el vendedor (para mostrar "Responder")
+                    cargarPreguntas();
                 } else if (response.code() == 404) {
                     Toast.makeText(getContext(), "La publicación ya no existe", Toast.LENGTH_SHORT).show();
                 }
