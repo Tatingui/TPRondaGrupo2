@@ -45,6 +45,14 @@ public class Publicacion implements Serializable {
 
     private boolean hasUpdates;
 
+    // Datos que dependen de quién mira (solo vienen en GET /publications/{id})
+    private boolean owner;            // true si quien mira es el vendedor
+    private boolean addressVisible;   // la dirección exacta solo se ve con oferta aceptada
+    private String address;
+    private Double latitude;
+    private Double longitude;
+    private Oferta myOffer;           // última oferta de quien mira (null si no ofertó)
+
     public Publicacion() {
         // Constructor vacio requerido por Gson
         // this.imageUrls = new ArrayList<>();
@@ -270,5 +278,38 @@ public class Publicacion implements Serializable {
 
     public void setHasUpdates(boolean hasUpdates) {
         this.hasUpdates = hasUpdates;
+    }
+
+    public boolean isOwner() {
+        return owner;
+    }
+
+    public boolean isAddressVisible() {
+        return addressVisible;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public Oferta getMyOffer() {
+        return myOffer;
+    }
+
+    public void setMyOffer(Oferta myOffer) {
+        this.myOffer = myOffer;
+    }
+
+    /** ACTIVE, PAUSED o SOLD. Si no viene, se considera activa. */
+    public boolean estaActiva() {
+        return state == null || "ACTIVE".equals(state);
     }
 }
