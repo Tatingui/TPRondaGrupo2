@@ -29,6 +29,11 @@ public class PublicationCreateDTO {
 
     private List<String> imageUrls;
 
+    // Direccion exacta (opcional por ahora, la completa el wizard de publicar)
+    private String address;
+    private Double latitude;
+    private Double longitude;
+
     public PublicationCreateDTO() {
     }
 
@@ -86,5 +91,29 @@ public class PublicationCreateDTO {
 
     public void setImageUrls(List<String> imageUrls) {
         this.imageUrls = imageUrls;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 }

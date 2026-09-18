@@ -1,7 +1,11 @@
 package com.example.tprondagrupo2.network;
 
+import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.OfertaRequest;
+import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
+import com.example.tprondagrupo2.model.TextoRequest;
 
 import java.util.List;
 
@@ -11,6 +15,7 @@ import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -52,4 +57,18 @@ public interface PublicationApiService {
 
     @POST("publications/{id}/view")
     Call<Void> recordView(@Path("id") String id);
+
+    // Preguntas y ofertas desde el detalle
+
+    @GET("publications/{id}/questions")
+    Call<List<Pregunta>> getQuestions(@Path("id") String id);
+
+    @POST("publications/{id}/questions")
+    Call<Pregunta> askQuestion(@Path("id") String id, @Body TextoRequest request);
+
+    @PUT("publications/questions/{questionId}/answer")
+    Call<Pregunta> answerQuestion(@Path("questionId") Long questionId, @Body TextoRequest request);
+
+    @POST("publications/{id}/offers")
+    Call<Oferta> makeOffer(@Path("id") String id, @Body OfertaRequest request);
 }
