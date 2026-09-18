@@ -183,14 +183,16 @@ public class Publicacion implements Serializable {
         if (vendedor != null) {
             return vendedor;
         }
+        // Si solo tenemos los datos del listado (sellerId / sellerName), armamos un
+        // vendedor sin reputación inventada: los datos completos llegan con el detalle.
         if (sellerId != null || sellerName != null || location != null) {
             return new Vendedor(
                     sellerId != null ? sellerId.toString() : "0",
                     sellerName,
-                    4.5,
-                    15,
-                    10,
-                    "2 años",
+                    0,
+                    0,
+                    0,
+                    null,
                     location
             );
         }

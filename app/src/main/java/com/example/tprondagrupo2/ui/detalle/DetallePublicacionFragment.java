@@ -55,6 +55,7 @@ public class DetallePublicacionFragment extends Fragment {
     private NetworkObserver networkObserver;
 
     // Sección del vendedor
+    private View seccionVendedor;
     private TextView tvVendedorAvatar;
     private TextView tvVendedorNombre;
     private TextView tvVendedorNivel;
@@ -85,6 +86,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvDescripcion = view.findViewById(R.id.tvDescripcion);
         btnFavorite = view.findViewById(R.id.btnFavoriteDetail);
 
+        seccionVendedor = view.findViewById(R.id.seccionVendedor);
         tvVendedorAvatar = view.findViewById(R.id.tvVendedorAvatar);
         tvVendedorNombre = view.findViewById(R.id.tvVendedorNombre);
         tvVendedorNivel = view.findViewById(R.id.tvVendedorNivel);
@@ -178,7 +180,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvDescripcion.setText(publicacion.getDescription());
 
         actualizarIconoFavorito(publicacion.isFavorite());
-        mostrarVendedor(obtenerVendedor(publicacion));
+        mostrarVendedor(publicacion.getVendedor());
     }
 
     /** El backend manda NEW / LIKE_NEW / USED. */
@@ -302,14 +304,27 @@ public class DetallePublicacionFragment extends Fragment {
                 : android.R.drawable.btn_star_big_off);
     }
 
-    private void mostrarVendedor(@NonNull Vendedor vendedor) {
+    private void mostrarVendedor(@Nullable Vendedor vendedor) {
+        if (vendedor == null) {
+            seccionVendedor.setVisibility(View.GONE);
+            return;
+        }
+        seccionVendedor.setVisibility(View.VISIBLE);
+
         tvVendedorNombre.setText(vendedor.getNombre());
         VendedorViewBinder.bindReputacion(vendedor, tvVendedorAvatar, rbVendedorReputacion,
                 tvVendedorReputacion, tvVendedorNivel);
 
         tvVendedorVentas.setText(getString(R.string.vendedor_ventas, vendedor.getCantidadVentas()));
-        tvVendedorMiembroDesde.setText(
-                getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+
+        // "Miembro desde" llega recién con el detalle del backend
+        if (vendedor.getMiembroDesde() != null) {
+            tvVendedorMiembroDesde.setVisibility(View.VISIBLE);
+            tvVendedorMiembroDesde.setText(
+                    getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+        } else {
+            tvVendedorMiembroDesde.setVisibility(View.GONE);
+        }
 
         btnVerPerfilVendedor.setOnClickListener(v -> abrirPerfil(vendedor));
     }
@@ -320,21 +335,6 @@ public class DetallePublicacionFragment extends Fragment {
 
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_detalle_to_perfil_vendedor, args);
-    }
-
-    /**
-     * Si la publicación todavía no trae vendedor (mocks previos sin backend),
-     * usamos datos de demo para que la sección se vea con contenido.
-     */
-    private Vendedor obtenerVendedor(@NonNull Publicacion publicacion) {
-        if (publicacion.getVendedor() != null) {
-            return publicacion.getVendedor();
-        }
-        return crearVendedorDemo();
-    }
-
-    private Vendedor crearVendedorDemo() {
-        return new Vendedor("1", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
     }
 
     private void configurarGaleria(@NonNull Publicacion publicacion) {

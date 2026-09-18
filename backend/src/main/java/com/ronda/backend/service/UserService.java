@@ -7,6 +7,7 @@ import com.ronda.backend.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Optional;
@@ -37,17 +38,22 @@ public class UserService {
         response.setTelefono(user.getTelefono());
         response.setZona(user.getZona());
 
-        // Formatear la fecha de creacion como "Septiembre 2026"
-        if (user.getCreatedAt() != null) {
-            String mes = user.getCreatedAt().getMonth()
-                    .getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
-            // Capitalizar primera letra
-            mes = mes.substring(0, 1).toUpperCase() + mes.substring(1);
-            String anio = String.valueOf(user.getCreatedAt().getYear());
-            response.setMiembroDesde(mes + " " + anio);
-        }
+        response.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
 
         return response;
+    }
+
+    /**
+     * Formatea la fecha de creacion como "Septiembre 2026". Null si no hay fecha.
+     */
+    public static String formatMiembroDesde(LocalDateTime createdAt) {
+        if (createdAt == null) {
+            return null;
+        }
+        String mes = createdAt.getMonth().getDisplayName(TextStyle.FULL, new Locale("es", "AR"));
+        // Capitalizar primera letra
+        mes = mes.substring(0, 1).toUpperCase() + mes.substring(1);
+        return mes + " " + createdAt.getYear();
     }
 
     /**
