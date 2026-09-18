@@ -6,18 +6,19 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Vendedor;
 
 /**
  * Perfil público del vendedor: nombre, foto (avatar con inicial), reputación
- * y datos generales. No lista publicaciones porque todavía no hay backend que
- * vincule publicaciones a usuarios.
+ * y datos generales. Recibe el vendedor por Bundle desde el detalle.
  */
 public class PerfilVendedorFragment extends Fragment {
 
@@ -52,7 +53,13 @@ public class PerfilVendedorFragment extends Fragment {
         tvMiembroDesde = view.findViewById(R.id.tvPerfilMiembroDesde);
         tvUbicacion = view.findViewById(R.id.tvPerfilUbicacion);
 
-        mostrarVendedor(obtenerVendedor());
+        Vendedor vendedor = obtenerVendedor();
+        if (vendedor == null) {
+            Toast.makeText(getContext(), "No se encontró el vendedor", Toast.LENGTH_SHORT).show();
+            NavHostFragment.findNavController(this).navigateUp();
+            return;
+        }
+        mostrarVendedor(vendedor);
     }
 
     private Vendedor obtenerVendedor() {
@@ -62,7 +69,7 @@ public class PerfilVendedorFragment extends Fragment {
                 return (Vendedor) extra;
             }
         }
-        return crearVendedorDemo();
+        return null;
     }
 
     private void mostrarVendedor(@NonNull Vendedor vendedor) {
@@ -70,7 +77,12 @@ public class PerfilVendedorFragment extends Fragment {
         VendedorViewBinder.bindReputacion(vendedor, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
         tvVentas.setText(getString(R.string.vendedor_ventas, vendedor.getCantidadVentas()));
-        tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+        if (vendedor.getMiembroDesde() != null) {
+            tvMiembroDesde.setVisibility(View.VISIBLE);
+            tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+        } else {
+            tvMiembroDesde.setVisibility(View.GONE);
+        }
 
         if (vendedor.getUbicacion() != null && !vendedor.getUbicacion().isEmpty()) {
             tvUbicacion.setVisibility(View.VISIBLE);
@@ -78,9 +90,5 @@ public class PerfilVendedorFragment extends Fragment {
         } else {
             tvUbicacion.setVisibility(View.GONE);
         }
-    }
-
-    private Vendedor crearVendedorDemo() {
-        return new Vendedor("1", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
     }
 }
