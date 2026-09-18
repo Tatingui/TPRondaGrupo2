@@ -1,10 +1,15 @@
 package com.ronda.backend.controller;
 
 import com.ronda.backend.dto.PublicationCreateDTO;
+import com.ronda.backend.dto.OfferCreateRequest;
+import com.ronda.backend.dto.OfferDTO;
 import com.ronda.backend.dto.PublicationDTO;
 import com.ronda.backend.dto.PublicationDetailDTO;
+import com.ronda.backend.dto.QuestionDTO;
+import com.ronda.backend.dto.TextRequest;
 import com.ronda.backend.model.PublicationState;
 import com.ronda.backend.model.PublicationStatus;
+import com.ronda.backend.service.PublicationInteractionService;
 import com.ronda.backend.service.PublicationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,9 +29,12 @@ import java.util.List;
 public class PublicationController {
 
     private final PublicationService publicationService;
+    private final PublicationInteractionService interactionService;
 
-    public PublicationController(PublicationService publicationService) {
+    public PublicationController(PublicationService publicationService,
+                                 PublicationInteractionService interactionService) {
         this.publicationService = publicationService;
+        this.interactionService = interactionService;
     }
 
     @GetMapping
@@ -46,8 +54,41 @@ public class PublicationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PublicationDetailDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(publicationService.getById(id));
+    public ResponseEntity<PublicationDetailDTO> getById(@PathVariable Long id, Authentication authentication) {
+        String email = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(publicationService.getById(id, email));
+    }
+
+    @GetMapping("/{id}/questions")
+    public ResponseEntity<List<QuestionDTO>> getQuestions(@PathVariable Long id) {
+        return ResponseEntity.ok(interactionService.getQuestions(id));
+    }
+
+    @PostMapping("/{id}/questions")
+    public ResponseEntity<QuestionDTO> ask(@PathVariable Long id, @Valid @RequestBody TextRequest request,
+                                           Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.status(201).body(interactionService.ask(id, request.getText(), authentication.getName()));
+    }
+
+    @PutMapping("/questions/{questionId}/answer")
+    public ResponseEntity<QuestionDTO> answer(@PathVariable Long questionId, @Valid @RequestBody TextRequest request,
+                                              Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(interactionService.answer(questionId, request.getText(), authentication.getName()));
+    }
+
+    @PostMapping("/{id}/offers")
+    public ResponseEntity<OfferDTO> makeOffer(@PathVariable Long id, @Valid @RequestBody OfferCreateRequest request,
+                                              Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.status(201).body(interactionService.makeOffer(id, request, authentication.getName()));
     }
 
     @PostMapping

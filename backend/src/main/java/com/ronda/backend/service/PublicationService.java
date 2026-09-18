@@ -4,14 +4,18 @@ import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
 import com.ronda.backend.dto.PublicationDetailDTO;
 import com.ronda.backend.dto.SellerDTO;
+import com.ronda.backend.exception.ForbiddenException;
 import com.ronda.backend.exception.ResourceNotFoundException;
 import com.ronda.backend.model.Category;
+import com.ronda.backend.model.Offer;
+import com.ronda.backend.model.OfferStatus;
 import com.ronda.backend.model.Publication;
 import com.ronda.backend.model.PublicationState;
 import com.ronda.backend.model.PublicationStatus;
 import com.ronda.backend.model.User;
 import com.ronda.backend.model.UserFavorite;
 import com.ronda.backend.repository.CategoryRepository;
+import com.ronda.backend.repository.OfferRepository;
 import com.ronda.backend.repository.PublicationRepository;
 import com.ronda.backend.repository.UserFavoriteRepository;
 import com.ronda.backend.repository.UserRepository;
@@ -36,15 +40,18 @@ public class PublicationService {
     private final UserRepository userRepository;
     private final UserFavoriteRepository userFavoriteRepository;
     private final CategoryRepository categoryRepository;
+    private final OfferRepository offerRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
                               UserRepository userRepository,
                               UserFavoriteRepository userFavoriteRepository,
-                              CategoryRepository categoryRepository) {
+                              CategoryRepository categoryRepository,
+                              OfferRepository offerRepository) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.userFavoriteRepository = userFavoriteRepository;
         this.categoryRepository = categoryRepository;
+        this.offerRepository = offerRepository;
     }
 
     @Transactional(readOnly = true)
@@ -93,14 +100,44 @@ public class PublicationService {
         return publicationRepository.findAll(spec, pageable).map(pub -> convertToDTO(pub, favoriteIds));
     }
 
+    /**
+     * Detalle de una publicacion segun quien mira (email es null si no hay sesion).
+     */
     @Transactional(readOnly = true)
-    public PublicationDetailDTO getById(Long publicationId) {
+    public PublicationDetailDTO getById(Long publicationId, String email) {
         Publication publication = publicationRepository.findById(publicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         PublicationDetailDTO dto = new PublicationDetailDTO();
-        llenarDTO(dto, publication, getFavoriteIdsForUser(getCurrentUserEmail()));
+        llenarDTO(dto, publication, getFavoriteIdsForUser(email));
         dto.setVendedor(convertirVendedor(publication.getSeller()));
+
+        User viewer = null;
+        if (email != null) {
+            viewer = userRepository.findByEmail(email).orElse(null);
+        }
+
+        boolean esVendedor = viewer != null && publication.getSeller() != null
+                && publication.getSeller().getId().equals(viewer.getId());
+        dto.setOwner(esVendedor);
+
+        // Ultima oferta de quien mira (si es un interesado)
+        Offer miOferta = null;
+        if (viewer != null && !esVendedor) {
+            miOferta = offerRepository
+                    .findFirstByPublicationIdAndBuyerIdOrderByCreatedAtDesc(publicationId, viewer.getId())
+                    .orElse(null);
+            dto.setMyOffer(PublicationInteractionService.convertirOferta(miOferta));
+        }
+
+        // La direccion exacta solo la ve el vendedor o el comprador con la oferta aceptada
+        boolean ofertaAceptada = miOferta != null && miOferta.getEffectiveStatus() == OfferStatus.ACCEPTED;
+        if (esVendedor || ofertaAceptada) {
+            dto.setAddressVisible(true);
+            dto.setAddress(publication.getAddress());
+            dto.setLatitude(publication.getLatitude());
+            dto.setLongitude(publication.getLongitude());
+        }
         return dto;
     }
 
@@ -135,6 +172,9 @@ public class PublicationService {
         publication.setStatus(dto.getStatus());
         publication.setState(PublicationState.ACTIVE);
         publication.setLocation(dto.getLocation());
+        publication.setAddress(dto.getAddress());
+        publication.setLatitude(dto.getLatitude());
+        publication.setLongitude(dto.getLongitude());
         publication.setCategory(category);
         publication.setSeller(seller);
         if (dto.getImageUrls() != null) {
@@ -171,7 +211,7 @@ public class PublicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
 
         if (publication.getSeller() == null || !publication.getSeller().getId().equals(user.getId())) {
-            throw new RuntimeException("No autorizado para modificar esta publicación");
+            throw new ForbiddenException("No autorizado para modificar esta publicación");
         }
 
         publication.setState(state);

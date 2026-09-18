@@ -33,6 +33,13 @@ public class Publication {
     @Column(nullable = false)
     private String location;
 
+    /** Direccion exacta de entrega. Solo se muestra al vendedor y a quien tenga una oferta aceptada. */
+    private String address;
+
+    private Double latitude;
+
+    private Double longitude;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "category_id")
     private Category category;
@@ -113,6 +120,30 @@ public class Publication {
 
     public void setLocation(String location) {
         this.location = location;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
     }
 
     public Category getCategory() {

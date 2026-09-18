@@ -14,6 +14,25 @@
     <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
     <string name="perfil_vendedor_ubicacion">Ubicación: %1$s</string>
 
+    <!-- Acciones del detalle -->
+    <string name="detalle_preguntar">Preguntar</string>
+    <string name="detalle_ofertar">Ofertar</string>
+    <string name="detalle_gestion_titulo">Gestionar mi publicación</string>
+    <string name="detalle_marcar_vendida">Marcar vendida</string>
+    <string name="detalle_pausar">Pausar</string>
+    <string name="detalle_reactivar">Reactivar</string>
+    <string name="detalle_preguntas_titulo">Preguntas al vendedor</string>
+    <string name="detalle_sin_preguntas">Todavía no hay preguntas</string>
+    <string name="detalle_responder">Responder</string>
+    <string name="detalle_sin_respuesta">Sin responder todavía</string>
+    <string name="detalle_oferta_monto">Monto que ofrecés</string>
+    <string name="detalle_oferta_mensaje">Mensaje para el vendedor (opcional)</string>
+    <string name="detalle_zona">Zona: %1$s</string>
+    <string name="detalle_direccion_oculta">La dirección exacta se muestra cuando el vendedor acepte tu oferta.</string>
+    <string name="detalle_direccion_exacta">Dirección de entrega: %1$s</string>
+    <string name="detalle_mi_oferta">Tu oferta: %1$s (%2$s)</string>
+    <string name="detalle_sin_conexion_accion">Se necesita conexión para esta acción</string>
+
     <!-- Sección de favoritos -->
     <string name="perfil_mis_favoritos">Mis favoritos</string>
     <string name="perfil_favoritos_vacio">Aún no tenés favoritos</string>

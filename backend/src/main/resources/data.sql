@@ -70,3 +70,10 @@ SELECT 5, 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format
 WHERE NOT EXISTS (
     SELECT 1 FROM publication_images WHERE publication_id = 5 AND image_url = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800'
 );
+
+-- 4. Direccion exacta de entrega (solo visible para el vendedor o con oferta aceptada)
+UPDATE publications SET address = 'Av. Santa Fe 3253, Palermo, CABA', latitude = -34.5880, longitude = -58.4110 WHERE id = 1 AND address IS NULL;
+UPDATE publications SET address = 'Av. Corrientes 4050, Almagro, CABA', latitude = -34.6036, longitude = -58.4200 WHERE id = 2 AND address IS NULL;
+UPDATE publications SET address = 'Av. Cabildo 2040, Belgrano, CABA', latitude = -34.5605, longitude = -58.4565 WHERE id = 3 AND address IS NULL;
+UPDATE publications SET address = 'Av. Rivadavia 5100, Caballito, CABA', latitude = -34.6180, longitude = -58.4380 WHERE id = 4 AND address IS NULL;
+UPDATE publications SET address = 'Av. Triunvirato 4500, Villa Urquiza, CABA', latitude = -34.5740, longitude = -58.4870 WHERE id = 5 AND address IS NULL;

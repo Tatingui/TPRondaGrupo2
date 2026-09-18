@@ -119,6 +119,130 @@
                 android:textColor="#9E9E9E"
                 android:textSize="13sp" />
 
+            <!-- Punto de entrega: zona siempre; dirección exacta solo con oferta aceptada -->
+            <TextView
+                android:id="@+id/tvDireccion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="#F5F5F5"
+                android:padding="12dp"
+                android:textColor="#424242"
+                android:textSize="14sp"
+                tools:text="Zona: Palermo\nLa dirección exacta se muestra cuando el vendedor acepte tu oferta." />
+
+            <!-- Aviso cuando la publicación está pausada o vendida -->
+            <TextView
+                android:id="@+id/tvAvisoEstado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="#FFF3E0"
+                android:padding="12dp"
+                android:textColor="#E65100"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="Esta publicación está pausada" />
+
+            <!-- Acciones del interesado: preguntar y ofertar (guardar es la estrella) -->
+            <LinearLayout
+                android:id="@+id/layoutAccionesComprador"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvMiOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#1565C0"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:text="Tu oferta: $ 80.000 (Pendiente)" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnPreguntar"
+                        style="?android:attr/buttonBarButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/detalle_preguntar" />
+
+                    <Button
+                        android:id="@+id/btnOfertar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="@string/detalle_ofertar" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Gestión de la publicación (solo el vendedor) -->
+            <LinearLayout
+                android:id="@+id/layoutGestionVendedor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="#EDE7F6"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/detalle_gestion_titulo"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvEstadoPublicacion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#424242"
+                    android:textSize="14sp"
+                    tools:text="Estado: Activa" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnPausarReactivar"
+                        style="?android:attr/buttonBarButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        tools:text="Pausar" />
+
+                    <Button
+                        android:id="@+id/btnMarcarVendida"
+                        style="?android:attr/buttonBarButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="@string/detalle_marcar_vendida" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -155,6 +279,38 @@
                 android:lineSpacingExtra="4dp"
                 android:textColor="#424242"
                 android:textSize="16sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:background="#E0E0E0" />
+
+            <!-- Preguntas al vendedor -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/detalle_preguntas_titulo"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvSinPreguntas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/detalle_sin_preguntas"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp" />
+
+            <!-- Se llena desde el Fragment con item_pregunta.xml -->
+            <LinearLayout
+                android:id="@+id/layoutPreguntas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
         </LinearLayout>
 
