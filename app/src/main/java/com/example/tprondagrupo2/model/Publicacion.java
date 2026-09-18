@@ -36,6 +36,8 @@ public class Publicacion implements Serializable {
 
     private String location;
 
+    // El backend (Jackson) lo manda como "favorite"
+    @SerializedName(value = "isFavorite", alternate = {"favorite"})
     private boolean isFavorite;
 
     @SerializedName("lastSeenPrice")

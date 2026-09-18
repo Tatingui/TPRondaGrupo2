@@ -217,4 +217,11 @@ public class PublicacionTest {
         assertNotNull(publicacion.getVendedor());
         assertEquals("Ana", publicacion.getVendedor().getNombre());
     }
+
+    @Test
+    public void testGsonLeeFavoriteComoLoMandaElBackend() {
+        // El backend serializa el campo como "favorite" (sin el "is")
+        Publicacion p = new Gson().fromJson("{\"id\":\"1\",\"favorite\":true}", Publicacion.class);
+        assertTrue(p.isFavorite());
+    }
 }

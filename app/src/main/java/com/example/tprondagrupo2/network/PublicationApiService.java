@@ -29,6 +29,9 @@ public interface PublicationApiService {
             @Query("sort") String sort
     );
 
+    @GET("publications/{id}")
+    Call<Publicacion> getPublication(@Path("id") String id);
+
     @POST("publications")
     Call<Publicacion> createPublication(@Body PublicationCreateRequest request);
 
