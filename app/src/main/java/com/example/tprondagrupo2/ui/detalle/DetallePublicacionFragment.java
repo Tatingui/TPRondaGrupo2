@@ -28,7 +28,6 @@ import com.example.tprondagrupo2.network.NetworkObserver;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -96,21 +95,60 @@ public class DetallePublicacionFragment extends Fragment {
         btnVerPerfilVendedor = view.findViewById(R.id.btnVerPerfilVendedor);
 
         currentPublicacion = obtenerPublicacion();
-        if (btnFavorite != null && currentPublicacion != null) {
-            btnFavorite.setOnClickListener(v -> toggleFavorite(currentPublicacion));
+        if (currentPublicacion == null) {
+            Toast.makeText(getContext(), "No se encontró la publicación", Toast.LENGTH_SHORT).show();
+            NavHostFragment.findNavController(this).navigateUp();
+            return;
         }
-        mostrarPublicacion(currentPublicacion);
 
-        networkObserver = new NetworkObserver(requireContext());
-        networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
-            if (btnFavorite != null) {
-                btnFavorite.setAlpha(connected ? 1.0f : 0.5f);
+        btnFavorite.setOnClickListener(v -> toggleFavorite(currentPublicacion));
+
+        vpGaleria.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                actualizarIndicador(position, currentPublicacion.getCantidadFotos());
             }
         });
 
-        if (currentPublicacion != null) {
-            saveToCache(currentPublicacion);
-        }
+        networkObserver = new NetworkObserver(requireContext());
+        networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
+            btnFavorite.setAlpha(connected ? 1.0f : 0.5f);
+        });
+
+        // Primero mostramos lo que llegó por el Bundle (o la caché) y después
+        // lo actualizamos con los datos completos del backend.
+        mostrarPublicacion(currentPublicacion);
+        saveToCache(currentPublicacion);
+        registrarVista(currentPublicacion);
+        cargarDetalle(currentPublicacion.getId());
+    }
+
+    private void cargarDetalle(String id) {
+        if (id == null) return;
+
+        ApiClient.getPublicationService().getPublication(id).enqueue(new Callback<Publicacion>() {
+            @Override
+            public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
+                if (!isAdded()) return;
+                if (response.isSuccessful() && response.body() != null) {
+                    currentPublicacion = response.body();
+                    mostrarPublicacion(currentPublicacion);
+                    saveToCache(currentPublicacion);
+                } else if (response.code() == 404) {
+                    Toast.makeText(getContext(), "La publicación ya no existe", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
+                // Sin conexión: nos quedamos con los datos que ya se muestran
+                if (isAdded()) {
+                    Toast.makeText(getContext(),
+                            "Sin conexión: la información podría no estar actualizada",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void saveToCache(Publicacion p) {
@@ -125,7 +163,7 @@ public class DetallePublicacionFragment extends Fragment {
                 return (Publicacion) extra;
             }
         }
-        return crearPublicacionDemo();
+        return null;
     }
 
     private void mostrarPublicacion(@NonNull Publicacion publicacion) {
@@ -134,15 +172,39 @@ public class DetallePublicacionFragment extends Fragment {
         tvTitulo.setText(publicacion.getTitle());
         tvPrecio.setText(formatearPrecio(publicacion.getPrice()));
         tvCategoria.setText(publicacion.getCategoryName());
-        tvEstado.setText(publicacion.getStatus());
+        tvEstado.setText(traducirEstado(publicacion.getStatus()));
         tvFechaPublicacion.setText(
-                getString(R.string.detalle_publicado_el, publicacion.getCreatedAt()));
+                getString(R.string.detalle_publicado_el, formatearFecha(publicacion.getCreatedAt())));
         tvDescripcion.setText(publicacion.getDescription());
 
         actualizarIconoFavorito(publicacion.isFavorite());
         mostrarVendedor(obtenerVendedor(publicacion));
+    }
 
-        registrarVista(publicacion);
+    /** El backend manda NEW / LIKE_NEW / USED. */
+    private String traducirEstado(String status) {
+        if (status == null) return "";
+        switch (status) {
+            case "NEW":
+                return "Nuevo";
+            case "LIKE_NEW":
+                return "Como nuevo";
+            case "USED":
+                return "Usado";
+            default:
+                return status;
+        }
+    }
+
+    /** El backend manda la fecha como "2026-09-18T10:30:00"; la mostramos como "18/09/2026". */
+    private String formatearFecha(String fecha) {
+        if (fecha == null || fecha.length() < 10 || fecha.charAt(4) != '-') {
+            return fecha != null ? fecha : "";
+        }
+        String anio = fecha.substring(0, 4);
+        String mes = fecha.substring(5, 7);
+        String dia = fecha.substring(8, 10);
+        return dia + "/" + mes + "/" + anio;
     }
 
     private void registrarVista(@NonNull Publicacion publicacion) {
@@ -284,15 +346,7 @@ public class DetallePublicacionFragment extends Fragment {
         });
         vpGaleria.setAdapter(adapter);
 
-        int total = publicacion.getCantidadFotos();
-        actualizarIndicador(0, total);
-
-        vpGaleria.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageSelected(int position) {
-                actualizarIndicador(position, total);
-            }
-        });
+        actualizarIndicador(0, publicacion.getCantidadFotos());
     }
 
     private void actualizarIndicador(int position, int total) {
@@ -306,20 +360,5 @@ public class DetallePublicacionFragment extends Fragment {
 
     private String formatearPrecio(double precio) {
         return NumberFormat.getCurrencyInstance(LOCALE_AR).format(precio);
-    }
-
-    private Publicacion crearPublicacionDemo() {
-        return new Publicacion(
-                "1",
-                "Bicicleta rodado 29 en excelente estado",
-                Arrays.asList("Foto 1", "Foto 2", "Foto 3"),
-                "Bicicleta de montaña rodado 29, cuadro de aluminio, 21 velocidades. "
-                        + "Muy poco uso, siempre guardada en lugar techado. Frenos a disco "
-                        + "delanteros y traseros recién calibrados.",
-                "Deportes",
-                "Usado",
-                185000,
-                "20/08/2026",
-                crearVendedorDemo());
     }
 }
