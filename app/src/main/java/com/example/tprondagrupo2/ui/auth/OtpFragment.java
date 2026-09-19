@@ -20,14 +20,21 @@ import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.OtpRequest;
 import com.example.tprondagrupo2.model.OtpSendRequest;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class OtpFragment extends Fragment {
+
+    @Inject
+    AuthApiService authApiService;
 
     public static final String ARG_EMAIL = "email";
 
@@ -83,7 +90,7 @@ public class OtpFragment extends Fragment {
         hideError();
         setLoading(true);
 
-        ApiClient.getAuthService().verifyOtp(new OtpRequest(email, code))
+        authApiService.verifyOtp(new OtpRequest(email, code))
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,
@@ -120,7 +127,7 @@ public class OtpFragment extends Fragment {
         hideError();
         startResendCooldown();
 
-        ApiClient.getAuthService().resendOtp(new OtpSendRequest(email))
+        authApiService.resendOtp(new OtpSendRequest(email))
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,
