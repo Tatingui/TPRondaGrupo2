@@ -13,6 +13,9 @@
     <string name="vendedor_ver_perfil">Ver perfil público</string>
     <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
     <string name="perfil_vendedor_ubicacion">Ubicación: %1$s</string>
+    <string name="perfil_publicaciones_activas">Publicaciones activas</string>
+    <string name="perfil_sin_publicaciones">No tiene publicaciones activas</string>
+    <string name="perfil_sin_conexion">Sin conexión: no se pudieron cargar las publicaciones</string>
 
     <!-- Acciones del detalle -->
     <string name="detalle_preguntar">Preguntar</string>

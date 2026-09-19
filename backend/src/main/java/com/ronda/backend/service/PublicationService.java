@@ -3,6 +3,7 @@ package com.ronda.backend.service;
 import com.ronda.backend.dto.PublicationCreateDTO;
 import com.ronda.backend.dto.PublicationDTO;
 import com.ronda.backend.dto.PublicationDetailDTO;
+import com.ronda.backend.dto.PublicProfileDTO;
 import com.ronda.backend.dto.SellerDTO;
 import com.ronda.backend.exception.ForbiddenException;
 import com.ronda.backend.exception.ResourceNotFoundException;
@@ -141,9 +142,36 @@ public class PublicationService {
         return dto;
     }
 
+    /**
+     * Perfil publico de un usuario: reputacion, antiguedad, zona y sus publicaciones activas.
+     * email es de quien mira (para marcar sus favoritos); puede ser null.
+     */
+    @Transactional(readOnly = true)
+    public PublicProfileDTO getPerfilPublico(Long userId, String email) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        PublicProfileDTO dto = new PublicProfileDTO();
+        llenarVendedor(dto, user);
+
+        Set<Long> favoriteIds = getFavoriteIdsForUser(email);
+        List<PublicationDTO> activas = publicationRepository
+                .findBySellerIdAndStateOrderByCreatedAtDesc(userId, PublicationState.ACTIVE).stream()
+                .map(pub -> convertToDTO(pub, favoriteIds))
+                .collect(Collectors.toList());
+        dto.setPublicacionesActivas(activas);
+        return dto;
+    }
+
     private SellerDTO convertirVendedor(User seller) {
         if (seller == null) return null;
         SellerDTO dto = new SellerDTO();
+        llenarVendedor(dto, seller);
+        return dto;
+    }
+
+    /** Copia los datos publicos del usuario (sirve tambien para el perfil publico). */
+    private void llenarVendedor(SellerDTO dto, User seller) {
         dto.setId(seller.getId());
         dto.setNombre(seller.getNombre());
         dto.setUbicacion(seller.getZona());
@@ -154,7 +182,6 @@ public class PublicationService {
         dto.setCantidadOpiniones(0);
         dto.setCantidadVentas(0);
         dto.setCantidadCompras(0);
-        return dto;
     }
 
     @Transactional

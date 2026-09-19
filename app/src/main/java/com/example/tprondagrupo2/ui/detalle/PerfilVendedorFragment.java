@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,13 +13,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.model.PerfilPublico;
+import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
+import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.ui.PublicationAdapter;
+
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /**
- * Perfil público del vendedor: nombre, foto (avatar con inicial), reputación
- * y datos generales. Recibe el vendedor por Bundle desde el detalle.
+ * Perfil público de un usuario: nombre, avatar con inicial, reputación,
+ * antigüedad en la plataforma y sus publicaciones activas.
+ * Recibe el vendedor por Bundle y después completa los datos con la API.
  */
 public class PerfilVendedorFragment extends Fragment {
 
@@ -32,6 +46,11 @@ public class PerfilVendedorFragment extends Fragment {
     private TextView tvVentas;
     private TextView tvMiembroDesde;
     private TextView tvUbicacion;
+
+    // Publicaciones activas
+    private ProgressBar pbPublicaciones;
+    private TextView tvSinPublicaciones;
+    private PublicationAdapter adapter;
 
     @Nullable
     @Override
@@ -52,6 +71,14 @@ public class PerfilVendedorFragment extends Fragment {
         tvVentas = view.findViewById(R.id.tvPerfilVentas);
         tvMiembroDesde = view.findViewById(R.id.tvPerfilMiembroDesde);
         tvUbicacion = view.findViewById(R.id.tvPerfilUbicacion);
+        pbPublicaciones = view.findViewById(R.id.pbPerfilPublicaciones);
+        tvSinPublicaciones = view.findViewById(R.id.tvPerfilSinPublicaciones);
+
+        // Reutilizamos el mismo adapter del Home. Tocar una publicación abre su detalle.
+        RecyclerView rvPublicaciones = view.findViewById(R.id.rvPerfilPublicaciones);
+        rvPublicaciones.setLayoutManager(new LinearLayoutManager(requireContext()));
+        adapter = new PublicationAdapter(new ArrayList<>(), this::abrirDetalle, null);
+        rvPublicaciones.setAdapter(adapter);
 
         Vendedor vendedor = obtenerVendedor();
         if (vendedor == null) {
@@ -59,7 +86,10 @@ public class PerfilVendedorFragment extends Fragment {
             NavHostFragment.findNavController(this).navigateUp();
             return;
         }
+
+        // Primero mostramos lo que llegó por el Bundle y después lo completamos con la API
         mostrarVendedor(vendedor);
+        cargarPerfilPublico(vendedor.getId());
     }
 
     private Vendedor obtenerVendedor() {
@@ -70,6 +100,36 @@ public class PerfilVendedorFragment extends Fragment {
             }
         }
         return null;
+    }
+
+    private void cargarPerfilPublico(String id) {
+        if (id == null) return;
+
+        pbPublicaciones.setVisibility(View.VISIBLE);
+        ApiClient.getUserService().getPublicProfile(id).enqueue(new Callback<PerfilPublico>() {
+            @Override
+            public void onResponse(@NonNull Call<PerfilPublico> call, @NonNull Response<PerfilPublico> response) {
+                if (!isAdded()) return;
+                pbPublicaciones.setVisibility(View.GONE);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    PerfilPublico perfil = response.body();
+                    mostrarVendedor(perfil);
+                    mostrarPublicaciones(perfil);
+                } else {
+                    Toast.makeText(getContext(), "No se pudo cargar el perfil", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PerfilPublico> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+                // Sin conexión: nos quedamos con los datos que llegaron por el Bundle
+                pbPublicaciones.setVisibility(View.GONE);
+                tvSinPublicaciones.setVisibility(View.VISIBLE);
+                tvSinPublicaciones.setText(R.string.perfil_sin_conexion);
+            }
+        });
     }
 
     private void mostrarVendedor(@NonNull Vendedor vendedor) {
@@ -91,5 +151,24 @@ public class PerfilVendedorFragment extends Fragment {
         } else {
             tvUbicacion.setVisibility(View.GONE);
         }
+    }
+
+    private void mostrarPublicaciones(@NonNull PerfilPublico perfil) {
+        adapter.updateList(perfil.getPublicacionesActivas());
+
+        if (perfil.getPublicacionesActivas().isEmpty()) {
+            tvSinPublicaciones.setVisibility(View.VISIBLE);
+            tvSinPublicaciones.setText(R.string.perfil_sin_publicaciones);
+        } else {
+            tvSinPublicaciones.setVisibility(View.GONE);
+        }
+    }
+
+    private void abrirDetalle(Publicacion publicacion) {
+        Bundle args = new Bundle();
+        args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
+
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_perfil_vendedor_to_detalle, args);
     }
 }

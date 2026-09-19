@@ -1,7 +1,9 @@
 package com.ronda.backend.controller;
 
+import com.ronda.backend.dto.PublicProfileDTO;
 import com.ronda.backend.dto.UserProfileResponse;
 import com.ronda.backend.dto.UserProfileUpdateRequest;
+import com.ronda.backend.service.PublicationService;
 import com.ronda.backend.service.UserService;
 
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,21 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final PublicationService publicationService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, PublicationService publicationService) {
         this.userService = userService;
+        this.publicationService = publicationService;
+    }
+
+    /**
+     * GET /api/usuarios/{id}/publico
+     * Perfil publico de cualquier usuario: reputacion, antiguedad y publicaciones activas.
+     * No devuelve email ni telefono.
+     */
+    @GetMapping("/{id}/publico")
+    public ResponseEntity<PublicProfileDTO> getPublicProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(publicationService.getPerfilPublico(id, getEmailFromToken()));
     }
 
     /**
