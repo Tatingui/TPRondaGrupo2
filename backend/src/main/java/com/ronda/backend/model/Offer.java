@@ -3,10 +3,6 @@ package com.ronda.backend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-/**
- * Oferta de un interesado por una publicacion, con un precio distinto al publicado.
- * Tiene plazo de vigencia: pasado expiresAt se considera vencida.
- */
 @Entity
 @Table(name = "offers")
 public class Offer {
@@ -23,36 +19,37 @@ public class Offer {
     @JoinColumn(name = "buyer_id")
     private User buyer;
 
-    @Column(nullable = false)
-    private Double amount;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "seller_id")
+    private User seller;
 
-    @Column(length = 300)
+    @Column(nullable = false)
+    private Double offeredPrice;
+
+    @Column(length = 500)
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private OfferStatus status = OfferStatus.PENDING;
-
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime expiresAt;
+
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     public Offer() {
     }
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    /** Una oferta pendiente cuyo plazo ya paso se considera vencida. */
-    public OfferStatus getEffectiveStatus() {
-        if (status == OfferStatus.PENDING && expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
-            return OfferStatus.EXPIRED;
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
         }
-        return status;
+        if (this.expiresAt == null) {
+            this.expiresAt = LocalDateTime.now().plusHours(48);
+        }
     }
 
     public Long getId() {
@@ -79,12 +76,28 @@ public class Offer {
         this.buyer = buyer;
     }
 
+    public User getSeller() {
+        return seller;
+    }
+
+    public void setSeller(User seller) {
+        this.seller = seller;
+    }
+
+    public Double getOfferedPrice() {
+        return offeredPrice;
+    }
+
+    public void setOfferedPrice(Double offeredPrice) {
+        this.offeredPrice = offeredPrice;
+    }
+
     public Double getAmount() {
-        return amount;
+        return offeredPrice;
     }
 
     public void setAmount(Double amount) {
-        this.amount = amount;
+        this.offeredPrice = amount;
     }
 
     public String getMessage() {
@@ -103,12 +116,11 @@ public class Offer {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public OfferStatus getEffectiveStatus() {
+        if (status == OfferStatus.PENDING && expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+            return OfferStatus.EXPIRED;
+        }
+        return status;
     }
 
     public LocalDateTime getExpiresAt() {
@@ -117,5 +129,13 @@ public class Offer {
 
     public void setExpiresAt(LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

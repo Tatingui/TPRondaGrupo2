@@ -102,6 +102,10 @@
             app:destination="@id/myPublicationsFragment" />
 
         <action
+            android:id="@+id/action_profile_to_my_offers"
+            app:destination="@id/myOffersFragment" />
+
+        <action
             android:id="@+id/action_profile_to_login"
             app:destination="@id/loginFragment"
             app:popUpTo="@id/nav_graph"
@@ -124,6 +128,12 @@
         android:name="com.example.tprondagrupo2.ui.profile.MyPublicationsFragment"
         android:label="Mis Publicaciones"
         tools:layout="@layout/fragment_my_publications" />
+
+    <fragment
+        android:id="@+id/myOffersFragment"
+        android:name="com.example.tprondagrupo2.ui.profile.MyOffersFragment"
+        android:label="Mis Ofertas"
+        tools:layout="@layout/fragment_my_offers" />
 
     <fragment
         android:id="@+id/detallePublicacionFragment"

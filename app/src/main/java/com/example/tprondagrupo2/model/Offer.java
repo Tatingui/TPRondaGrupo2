@@ -1,9 +1,8 @@
-package com.ronda.backend.dto;
+package com.example.tprondagrupo2.model;
 
-import com.ronda.backend.model.OfferStatus;
-import java.time.LocalDateTime;
+import java.io.Serializable;
 
-public class OfferDTO {
+public class Offer implements Serializable {
     private Long id;
     private Long publicationId;
     private String publicationTitle;
@@ -14,12 +13,13 @@ public class OfferDTO {
     private Long sellerId;
     private String sellerName;
     private Double offeredPrice;
+    private Double amount;
     private String message;
-    private OfferStatus status;
-    private LocalDateTime expiresAt;
-    private LocalDateTime createdAt;
+    private String status; // PENDING, ACCEPTED, REJECTED, COUNTER_OFFER, EXPIRED
+    private String expiresAt;
+    private String createdAt;
 
-    public OfferDTO() {
+    public Offer() {
     }
 
     public Long getId() { return id; }
@@ -49,21 +49,21 @@ public class OfferDTO {
     public String getSellerName() { return sellerName; }
     public void setSellerName(String sellerName) { this.sellerName = sellerName; }
 
-    public Double getOfferedPrice() { return offeredPrice; }
+    public Double getOfferedPrice() { return offeredPrice != null ? offeredPrice : amount; }
     public void setOfferedPrice(Double offeredPrice) { this.offeredPrice = offeredPrice; }
 
-    public Double getAmount() { return offeredPrice; }
-    public void setAmount(Double amount) { this.offeredPrice = amount; }
+    public Double getAmount() { return amount != null ? amount : offeredPrice; }
+    public void setAmount(Double amount) { this.amount = amount; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
 
-    public OfferStatus getStatus() { return status; }
-    public void setStatus(OfferStatus status) { this.status = status; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public LocalDateTime getExpiresAt() { return expiresAt; }
-    public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+    public String getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(String expiresAt) { this.expiresAt = expiresAt; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }

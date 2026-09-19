@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <ImageView
+                android:id="@+id/ivOfferPubImage"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:scaleType="centerCrop"
+                android:background="#E0E0E0"
+                android:layout_marginEnd="12dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvOfferPubTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Título del producto"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+                <TextView
+                    android:id="@+id/tvOfferDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Ofertado: $120.000 (Original: $150.000)"
+                    android:textColor="@color/purple_700"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp" />
+
+                <TextView
+                    android:id="@+id/tvOfferUser"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Comprador: Juan"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginTop="2dp" />
+
+                <TextView
+                    android:id="@+id/tvOfferStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Estado: PENDING"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvOfferMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mensaje: Hola, te sirve?"
+            android:textSize="13sp"
+            android:fontStyle="italic"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <!-- Seller Action Buttons (Accepted / Rejected / Counter) -->
+        <LinearLayout
+            android:id="@+id/layoutSellerActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btnReject"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Rechazar"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnAccept"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Aceptar"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_marginEnd="4dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
