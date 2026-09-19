@@ -25,16 +25,6 @@ import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
-/**
- * Fragment de login. Solo se ocupa de:
- * - Bindear vistas y manejar estados de UI (loading, error)
- * - Delegar autenticacion biometrica a BiometricHelper
- * - Delegar llamadas de red a AuthRepository
- * - Navegar entre destinos del NavGraph
- *
- * Esto sigue el principio de responsabilidad unica (SRP):
- * el Fragment es un controlador de UI, no un orquestador de logica de negocio.
- */
 @AndroidEntryPoint
 public class LoginFragment extends Fragment {
 
@@ -71,16 +61,12 @@ public class LoginFragment extends Fragment {
         bindViews(view);
         setupListeners();
 
-        // Restaurar estado del switch desde la preferencia guardada
         switchKeepSession.setChecked(tokenManager.isKeepSession());
 
-        // Si corresponde, lanzar el prompt biometrico como modal sobre el login
         if (biometricHelper.shouldPromptBiometric()) {
             biometricHelper.showPrompt(this, biometricCallback);
         }
     }
-
-    // -- Biometric callback --
 
     private final BiometricHelper.BiometricCallback biometricCallback =
             new BiometricHelper.BiometricCallback() {
@@ -98,11 +84,8 @@ public class LoginFragment extends Fragment {
 
                 @Override
                 public void onBiometricCancelled() {
-                    // El usuario cancelo, queda en el login normal
                 }
             };
-
-    // -- Login con credenciales --
 
     private void doLogin() {
         String email = etEmail.getText().toString().trim();
@@ -159,8 +142,6 @@ public class LoginFragment extends Fragment {
         }
     }
 
-    // -- OTP --
-
     private void doSendOtp() {
         String email = etEmail.getText().toString().trim();
 
@@ -196,8 +177,6 @@ public class LoginFragment extends Fragment {
         });
     }
 
-    // -- Navegacion --
-
     private void navigateToHome() {
         if (!isAdded()) return;
         NavHostFragment.findNavController(this).navigate(R.id.action_login_to_home);
@@ -208,8 +187,6 @@ public class LoginFragment extends Fragment {
         args.putString("email", email);
         NavHostFragment.findNavController(this).navigate(R.id.action_login_to_otp, args);
     }
-
-    // -- UI helpers --
 
     private void bindViews(View view) {
         etEmail = view.findViewById(R.id.etEmail);

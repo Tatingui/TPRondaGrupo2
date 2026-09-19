@@ -5,7 +5,9 @@ import androidx.annotation.Nullable;
 
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.LoginRequest;
+import com.example.tprondagrupo2.model.OtpRequest;
 import com.example.tprondagrupo2.model.OtpSendRequest;
+import com.example.tprondagrupo2.model.RegisterRequest;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 
@@ -86,6 +88,65 @@ public class AuthRepository {
     }
 
     /**
+     * Registra un nuevo usuario.
+     * Si el registro es exitoso, el servidor responde con un mensaje
+     * y el fragment navega al OtpFragment para verificar el email.
+     */
+    public void register(RegisterRequest request, SimpleCallback callback) {
+        authApiService.register(request)
+                .enqueue(new Callback<AuthResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<AuthResponse> call,
+                                           @NonNull Response<AuthResponse> response) {
+                        AuthResponse body = response.body();
+                        if (response.isSuccessful() && body != null && body.isSuccess()) {
+                            callback.onSuccess();
+                        } else {
+                            callback.onError(extractMessage(body,
+                                    "No se pudo crear la cuenta"));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<AuthResponse> call,
+                                          @NonNull Throwable t) {
+                        callback.onNetworkError();
+                    }
+                });
+    }
+
+    /**
+     * Verifica el codigo OTP ingresado por el usuario.
+     * Si la verificacion es exitosa, persiste el token JWT recibido.
+     */
+    public void verifyOtp(String email, String code, AuthCallback callback) {
+        authApiService.verifyOtp(new OtpRequest(email, code))
+                .enqueue(new Callback<AuthResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<AuthResponse> call,
+                                           @NonNull Response<AuthResponse> response) {
+                        AuthResponse body = response.body();
+                        if (response.isSuccessful() && body != null && body.isSuccess()) {
+                            String token = body.getToken();
+                            if (token != null) {
+                                tokenManager.saveToken(token);
+                            }
+                            callback.onSuccess(token);
+                        } else {
+                            callback.onError(extractMessage(body,
+                                    "Codigo invalido"));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<AuthResponse> call,
+                                          @NonNull Throwable t) {
+                        callback.onNetworkError();
+                    }
+                });
+    }
+
+    /**
      * Solicita el envio de un codigo OTP al email indicado.
      */
     public void sendOtp(String email, SimpleCallback callback) {
@@ -100,6 +161,32 @@ public class AuthRepository {
                         } else {
                             callback.onError(extractMessage(body,
                                     "No se pudo enviar el codigo"));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<AuthResponse> call,
+                                          @NonNull Throwable t) {
+                        callback.onNetworkError();
+                    }
+                });
+    }
+
+    /**
+     * Reenvia el codigo OTP al email indicado.
+     */
+    public void resendOtp(String email, SimpleCallback callback) {
+        authApiService.resendOtp(new OtpSendRequest(email))
+                .enqueue(new Callback<AuthResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<AuthResponse> call,
+                                           @NonNull Response<AuthResponse> response) {
+                        AuthResponse body = response.body();
+                        if (response.isSuccessful() && body != null && body.isSuccess()) {
+                            callback.onSuccess();
+                        } else {
+                            callback.onError(extractMessage(body,
+                                    "No se pudo reenviar el codigo"));
                         }
                     }
 
