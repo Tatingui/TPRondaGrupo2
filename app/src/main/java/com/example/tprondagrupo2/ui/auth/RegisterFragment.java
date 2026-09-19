@@ -24,15 +24,22 @@ import android.util.Log;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.RegisterRequest;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.AuthApiService;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class RegisterFragment extends Fragment {
 
     private static final String TAG = "RONDA_REGISTER";
+
+    @Inject
+    AuthApiService authApiService;
 
     private EditText etNombre;
     private EditText etEmail;
@@ -221,9 +228,9 @@ public class RegisterFragment extends Fragment {
         RegisterRequest req = new RegisterRequest(nombre, email, password,
                 telefono.isEmpty() ? null : telefono,
                 zona.isEmpty() ? null : zona);
-        Log.d(TAG, "RegisterRequest creado, llamando a ApiClient.getAuthService().register()");
+        Log.d(TAG, "RegisterRequest creado, llamando a authApiService.register()");
 
-        ApiClient.getAuthService().register(req)
+        authApiService.register(req)
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,

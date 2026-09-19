@@ -13,13 +13,17 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.AuthRepository;
+import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Fragment de login. Solo se ocupa de:
@@ -31,7 +35,11 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
  * Esto sigue el principio de responsabilidad unica (SRP):
  * el Fragment es un controlador de UI, no un orquestador de logica de negocio.
  */
+@AndroidEntryPoint
 public class LoginFragment extends Fragment {
+
+    @Inject
+    AuthApiService authApiService;
 
     private EditText etEmail;
     private EditText etPassword;
@@ -58,7 +66,7 @@ public class LoginFragment extends Fragment {
 
         TokenManager tokenManager = TokenManager.getInstance();
         biometricHelper = new BiometricHelper(tokenManager);
-        authRepository = new AuthRepository(tokenManager);
+        authRepository = new AuthRepository(authApiService, tokenManager);
 
         bindViews(view);
         setupListeners();
@@ -74,10 +82,6 @@ public class LoginFragment extends Fragment {
 
     // -- Biometric callback --
 
-    /**
-     * Implementacion del callback de BiometricHelper.
-     * Cada caso se traduce en una accion de UI simple.
-     */
     private final BiometricHelper.BiometricCallback biometricCallback =
             new BiometricHelper.BiometricCallback() {
                 @Override
@@ -144,10 +148,6 @@ public class LoginFragment extends Fragment {
                 });
     }
 
-    /**
-     * Post-login exitoso: si la biometria no esta activada, ofrece activarla.
-     * Si ya esta activada, actualiza el token encriptado y navega al home.
-     */
     private void handleLoginSuccess(String token) {
         TokenManager tm = TokenManager.getInstance();
         if (!tm.isBiometricEnabled()) {

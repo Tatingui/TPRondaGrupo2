@@ -1,9 +1,12 @@
-package com.example.tprondagrupo2.network;
+package com.example.tprondagrupo2.di;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.example.tprondagrupo2.di.NetworkModule;
+import com.example.tprondagrupo2.network.AuthApiService;
+import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.SavedSearchApiService;
+import com.example.tprondagrupo2.network.UserApiService;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -11,10 +14,7 @@ import org.junit.Test;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 
-/**
- * Test que valida la provisión de dependencias de red mediante Hilt (NetworkModule).
- */
-public class ApiClientTest {
+public class NetworkModuleTest {
 
     private static final String BASE_URL_ESPERADA = "http://localhost:8081/api/";
 
@@ -24,7 +24,6 @@ public class ApiClientTest {
 
     @Before
     public void setUp() {
-        // Inicializa el módulo de red e inyecta la instancia de OkHttpClient y Retrofit para los tests
         networkModule = new NetworkModule();
         okHttpClient = networkModule.provideOkHttpClient();
         retrofit = networkModule.provideRetrofit(okHttpClient);
@@ -32,53 +31,45 @@ public class ApiClientTest {
 
     @Test
     public void testProvideOkHttpClientNoDevuelveNull() {
-        // Valida que el método provideOkHttpClient() de Hilt construya e instancie OkHttpClient correctamente
         assertNotNull(okHttpClient);
     }
 
     @Test
     public void testProvideRetrofitNoDevuelveNull() {
-        // Valida que el método provideRetrofit() de Hilt cree la instancia de Retrofit sin fallar ni retornar null
         assertNotNull(retrofit);
     }
 
     @Test
+    public void testBaseUrlEsLaEsperada() {
+        assertEquals(BASE_URL_ESPERADA, retrofit.baseUrl().toString());
+    }
+
+    @Test
+    public void testBaseUrlTerminaConBarra() {
+        assertEquals('/', BASE_URL_ESPERADA.charAt(BASE_URL_ESPERADA.length() - 1));
+    }
+
+    @Test
     public void testProvideAuthServiceNoDevuelveNull() {
-        // Valida que Hilt pueda generar e inyectar la implementación del servicio de autenticación (AuthApiService)
         AuthApiService authApiService = networkModule.provideAuthService(retrofit);
         assertNotNull(authApiService);
     }
 
     @Test
     public void testProvidePublicationServiceNoDevuelveNull() {
-        // Valida que Hilt pueda generar e inyectar la implementación del servicio de publicaciones (PublicationApiService)
         PublicationApiService publicationApiService = networkModule.providePublicationService(retrofit);
         assertNotNull(publicationApiService);
     }
 
     @Test
     public void testProvideSavedSearchServiceNoDevuelveNull() {
-        // Valida que Hilt pueda generar e inyectar la implementación del servicio de búsquedas guardadas (SavedSearchApiService)
         SavedSearchApiService savedSearchApiService = networkModule.provideSavedSearchService(retrofit);
         assertNotNull(savedSearchApiService);
     }
 
     @Test
     public void testProvideUserServiceNoDevuelveNull() {
-        // Valida que Hilt pueda generar e inyectar la implementación del servicio de usuarios y perfiles (UserApiService)
         UserApiService userApiService = networkModule.provideUserService(retrofit);
         assertNotNull(userApiService);
-    }
-
-    @Test
-    public void testBaseUrlEsLaEsperada() {
-        // Valida que la URL base de Retrofit coincida exactamente con la del backend en entorno de desarrollo/local
-        assertEquals(BASE_URL_ESPERADA, retrofit.baseUrl().toString());
-    }
-
-    @Test
-    public void testBaseUrlTerminaConBarra() {
-        // Valida el requisito de Retrofit de que la base URL termine en /
-        assertEquals('/', BASE_URL_ESPERADA.charAt(BASE_URL_ESPERADA.length() - 1));
     }
 }

@@ -27,10 +27,11 @@ import com.example.tprondagrupo2.db.AppDatabase;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
-import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
+import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
+import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.chip.Chip;
@@ -42,13 +43,23 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class HomeFragment extends Fragment {
 
     private static final String TAG = "HomeFragment";
+
+    @Inject
+    PublicationApiService publicationApiService;
+
+    @Inject
+    SavedSearchApiService savedSearchApiService;
 
     private RecyclerView rvPublications;
     private PublicationAdapter adapter;
@@ -117,7 +128,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchFavoriteIds() {
-        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publicacion>>() {
+        publicationApiService.getFavorites().enqueue(new Callback<List<Publicacion>>() {
             @Override
             public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -177,7 +188,7 @@ public class HomeFragment extends Fragment {
 
         isLoading = true;
 
-        ApiClient.getPublicationService().getPublications(
+        publicationApiService.getPublications(
                 currentSearchText.isEmpty() ? null : currentSearchText,
                 selectedCategoryId,
                 minPrice,
@@ -293,9 +304,9 @@ public class HomeFragment extends Fragment {
         };
 
         if (isFavorite) {
-            ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
+            publicationApiService.unmarkAsFavorite(pubId).enqueue(callback);
         } else {
-            ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
+            publicationApiService.markAsFavorite(pubId).enqueue(callback);
         }
     }
 
@@ -346,7 +357,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        ApiClient.getSavedSearchService().saveSearch(savedSearch).enqueue(new Callback<SavedSearch>() {
+        savedSearchApiService.saveSearch(savedSearch).enqueue(new Callback<SavedSearch>() {
             @Override
             public void onResponse(Call<SavedSearch> call, Response<SavedSearch> response) {
                 if (response.isSuccessful() && response.body() != null) {

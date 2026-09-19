@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -65,6 +66,10 @@ dependencies {
     implementation libs.datastore.preferences.rxjava3
     implementation libs.rxjava3
     implementation libs.rxandroid
+
+    // Hilt
+    implementation libs.hilt.android
+    annotationProcessor libs.hilt.compiler
 
     // Biometric + Security Crypto
     implementation libs.biometric
