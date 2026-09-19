@@ -140,6 +140,48 @@
                 android:textSize="15sp"
                 tools:text="Ubicación: Palermo" />
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:background="#E0E0E0" />
+
+            <!-- Publicaciones activas del usuario -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/perfil_publicaciones_activas"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ProgressBar
+                android:id="@+id/pbPerfilPublicaciones"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvPerfilSinPublicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="No tiene publicaciones activas" />
+
+            <!-- Dentro del ScrollView: la lista no scrollea sola, scrollea toda la pantalla -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPerfilPublicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:nestedScrollingEnabled="false" />
+
         </LinearLayout>
 
     </LinearLayout>
