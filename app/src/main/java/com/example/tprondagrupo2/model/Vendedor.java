@@ -3,10 +3,10 @@ package com.example.tprondagrupo2.model;
 import java.io.Serializable;
 
 /**
- * Datos del vendedor que se muestran en el detalle de la publicación
- * y en su perfil público: reputación, cantidad de ventas y antigüedad.
+ * Datos del vendedor que se muestran en el detalle de la publicacion
+ * y en su perfil publico: reputacion, cantidad de ventas y antiguedad.
  */
-public class Vendedor implements Serializable {
+public class Vendedor implements Serializable, ReputacionInfo {
 
     private String id;
     private String nombre;
@@ -40,6 +40,7 @@ public class Vendedor implements Serializable {
         this.id = id;
     }
 
+    @Override
     public String getNombre() {
         return nombre;
     }
@@ -48,6 +49,7 @@ public class Vendedor implements Serializable {
         this.nombre = nombre;
     }
 
+    @Override
     public double getReputacion() {
         return reputacion;
     }
@@ -56,6 +58,7 @@ public class Vendedor implements Serializable {
         this.reputacion = reputacion;
     }
 
+    @Override
     public int getCantidadVentas() {
         return cantidadVentas;
     }
@@ -64,6 +67,7 @@ public class Vendedor implements Serializable {
         this.cantidadVentas = cantidadVentas;
     }
 
+    @Override
     public int getCantidadCompras() {
         return cantidadCompras;
     }
@@ -72,6 +76,7 @@ public class Vendedor implements Serializable {
         this.cantidadCompras = cantidadCompras;
     }
 
+    @Override
     public int getCantidadOpiniones() {
         return cantidadOpiniones;
     }
@@ -80,6 +85,7 @@ public class Vendedor implements Serializable {
         this.cantidadOpiniones = cantidadOpiniones;
     }
 
+    @Override
     public String getMiembroDesde() {
         return miembroDesde;
     }
@@ -107,8 +113,8 @@ public class Vendedor implements Serializable {
     }
 
     /**
-     * Nivel de reputación derivado del puntaje, al estilo de un semáforo:
-     * permite pintar el color y mostrar una etiqueta sin repetir la lógica.
+     * Nivel de reputacion derivado del puntaje, al estilo de un semaforo:
+     * permite pintar el color y mostrar una etiqueta sin repetir la logica.
      */
     public NivelReputacion getNivel() {
         if (cantidadOpiniones == 0) {
@@ -129,9 +135,9 @@ public class Vendedor implements Serializable {
     public enum NivelReputacion {
         EXCELENTE("Excelente vendedor", 0xFF2E7D32),
         BUENO("Buen vendedor", 0xFF9E9D24),
-        REGULAR("Reputación regular", 0xFFEF6C00),
-        MALO("Reputación baja", 0xFFC62828),
-        SIN_CALIFICACIONES("Sin calificaciones aún", 0xFF757575);
+        REGULAR("Reputacion regular", 0xFFEF6C00),
+        MALO("Reputacion baja", 0xFFC62828),
+        SIN_CALIFICACIONES("Sin calificaciones aun", 0xFF757575);
 
         private final String etiqueta;
         private final int color;

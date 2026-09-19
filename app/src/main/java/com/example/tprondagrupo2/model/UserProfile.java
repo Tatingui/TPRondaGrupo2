@@ -4,7 +4,7 @@ package com.example.tprondagrupo2.model;
  * Modelo para la respuesta de GET /usuarios/me.
  * Contiene los datos del perfil del usuario logueado.
  */
-public class UserProfile {
+public class UserProfile implements ReputacionInfo {
 
     private Long id;
     private String nombre;
@@ -13,7 +13,7 @@ public class UserProfile {
     private String zona;
     private String miembroDesde;  // Ej: "Septiembre 2026"
 
-    // Reputación (se completa con las calificaciones del punto 9)
+    // Reputacion (se completa con las calificaciones del punto 9)
     private double reputacion;
     private int cantidadOpiniones;
     private int cantidadVentas;     // Operaciones concretadas como vendedor
@@ -30,6 +30,7 @@ public class UserProfile {
         this.id = id;
     }
 
+    @Override
     public String getNombre() {
         return nombre;
     }
@@ -62,22 +63,27 @@ public class UserProfile {
         this.zona = zona;
     }
 
+    @Override
     public double getReputacion() {
         return reputacion;
     }
 
+    @Override
     public int getCantidadOpiniones() {
         return cantidadOpiniones;
     }
 
+    @Override
     public int getCantidadVentas() {
         return cantidadVentas;
     }
 
+    @Override
     public int getCantidadCompras() {
         return cantidadCompras;
     }
 
+    @Override
     public String getMiembroDesde() {
         return miembroDesde;
     }
