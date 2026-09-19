@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.di;
 import androidx.annotation.Nullable;
 
 import com.example.tprondagrupo2.network.AuthApiService;
+import com.example.tprondagrupo2.network.OfferApiService;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.SessionManager;
@@ -29,9 +30,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
-    // Conexión al backend de la PC mediante adb reverse tcp:8081 tcp:8081.
-    // Configurar el túnel después de iniciar el emulador (start-backend.bat lo hace).
-    private static final String BASE_URL = "http://localhost:8081/api/";
+    // Conexión al backend de la PC mediante emulador (10.0.2.2).
+    private static final String BASE_URL = "http://10.0.2.2:8081/api/";
     private static final long TIMEOUT_SECONDS = 30;
     private static final Logger LOGGER = Logger.getLogger(NetworkModule.class.getName());
 
@@ -102,6 +102,12 @@ public class NetworkModule {
     @Singleton
     public UserApiService provideUserService(Retrofit retrofit) {
         return retrofit.create(UserApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public OfferApiService provideOfferService(Retrofit retrofit) {
+        return retrofit.create(OfferApiService.class);
     }
 
     @Nullable
