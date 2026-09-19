@@ -70,4 +70,8 @@ dependencies {
     // Hilt
     implementation libs.hilt.android
     annotationProcessor libs.hilt.compiler
+
+    // Biometric + Security Crypto
+    implementation libs.biometric
+    implementation libs.security.crypto
 }

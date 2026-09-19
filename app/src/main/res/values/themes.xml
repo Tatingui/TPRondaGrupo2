@@ -11,6 +11,22 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+    </style>
+
+    <!-- Estilo base para todos los campos de texto: línea inferior, sin fondo relleno -->
+    <style name="Ronda.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@android:color/transparent</item>
+        <item name="boxStrokeColor">@color/purple_500</item>
+        <item name="hintTextColor">@color/purple_500</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+    </style>
+
+    <!-- Estilo para títulos de pantalla -->
+    <style name="RondaTitle">
+        <item name="android:textColor">@color/purple_500</item>
+        <item name="android:fontFamily">@font/montserrat_semibold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.05</item>
     </style>
 </resources>

@@ -34,11 +34,14 @@ public class MainActivity extends AppCompatActivity {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(bottomNav, navController);
 
-            // Si ya hay un token guardado, saltar directo al Home (mantener sesion)
-            String token = TokenManager.getInstance().getToken();
-            if (token != null && !token.isEmpty()) {
+            // Solo ir directo al Home si "Mantener sesión" está activo Y hay token
+            TokenManager tm = TokenManager.getInstance();
+            String token = tm.getToken();
+            if (token != null && !token.isEmpty() && tm.isKeepSession()) {
                 navController.navigate(R.id.action_login_to_home);
             }
+            // Si hay token pero NO keepSession → queda en Login (biometría o credenciales)
+            // Si no hay token → queda en Login normalmente
 
             // Si el token venció (el backend devolvió 401), volver al login
             SessionManager.getInstance().onSessionExpired().observe(this, expired -> {
