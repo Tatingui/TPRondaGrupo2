@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/tvTituloDialogCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Calificar usuario"
+        android:textColor="@color/black"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvSubtituloCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Seleccioná de 1 a 5 estrellas y podés dejar un comentario breve."
+        android:textColor="#757575"
+        android:textSize="13sp" />
+
+    <RatingBar
+        android:id="@+id/rbEstrellas"
+        style="?android:attr/ratingBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginVertical="16dp"
+        android:isIndicator="false"
+        android:numStars="5"
+        android:rating="5"
+        android:stepSize="1.0" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Ronda.TextInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:counterEnabled="true"
+        app:counterMaxLength="200">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etComentarioCalificacion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Comentario breve (opcional)"
+            android:inputType="textMultiLine"
+            android:maxLength="200"
+            android:maxLines="3" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelarCalificar"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancelar" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEnviarCalificacion"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Enviar" />
+
+    </LinearLayout>
+
+</LinearLayout>

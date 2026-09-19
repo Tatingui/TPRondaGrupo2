@@ -1,26 +1,163 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp">
+    android:background="#F8F9FA">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- Encabezado y Filtros -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Historial de operaciones"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@color/black" />
+        app:cardCornerRadius="0dp"
+        app:cardElevation="2dp"
+        app:strokeWidth="0dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Próximamente: tu historial de compras y ventas"
-        android:textSize="14sp"
-        android:textColor="@android:color/darker_gray"
-        android:gravity="center" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Historial de Operaciones"
+                android:textColor="@color/purple_700"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Filtra tus transacciones por tipo y rango de fechas"
+                android:textColor="#757575"
+                android:textSize="12sp" />
+
+            <!-- Pestañas de Tipo: Compras / Ventas -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayoutTipo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@android:color/transparent"
+                app:tabIndicatorColor="@color/purple_700"
+                app:tabSelectedTextColor="@color/purple_700"
+                app:tabTextColor="#757575"
+                app:tabMode="fixed"
+                app:tabGravity="fill">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Compras" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ventas" />
+
+            </com.google.android.material.tabs.TabLayout>
+
+            <!-- Filtro Rango de Fechas (Forma de Pill / Chips como en Home) -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:scrollbars="none">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipFechaDesde"
+                        style="@style/Widget.MaterialComponents.Chip.Action"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Desde"
+                        android:textColor="@color/purple_500"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="@color/white"
+                        app:chipIcon="@android:drawable/ic_menu_my_calendar"
+                        app:chipIconTint="@color/purple_500"
+                        app:chipStrokeColor="@color/purple_500"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipFechaHasta"
+                        style="@style/Widget.MaterialComponents.Chip.Action"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hasta"
+                        android:textColor="@color/purple_500"
+                        android:textSize="12sp"
+                        app:chipBackgroundColor="@color/white"
+                        app:chipIcon="@android:drawable/ic_menu_my_calendar"
+                        app:chipIconTint="@color/purple_500"
+                        app:chipStrokeColor="@color/purple_500"
+                        app:chipStrokeWidth="1dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipLimpiarFechas"
+                        style="@style/Widget.MaterialComponents.Chip.Action"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Limpiar fechas"
+                        android:textColor="#D32F2F"
+                        android:textSize="12sp"
+                        android:visibility="gone"
+                        app:chipBackgroundColor="@color/white"
+                        app:chipIcon="@android:drawable/ic_menu_close_clear_cancel"
+                        app:chipIconTint="#D32F2F"
+                        app:chipStrokeColor="#D32F2F"
+                        app:chipStrokeWidth="1dp"
+                        tools:visibility="visible" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Contenido Principal -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ProgressBar
+            android:id="@+id/pbLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvEmptyState"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="24dp"
+            android:gravity="center"
+            android:text="No se encontraron operaciones en el historial"
+            android:textColor="#757575"
+            android:textSize="15sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvHistorial"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingVertical="8dp" />
+
+    </FrameLayout>
 
 </LinearLayout>
