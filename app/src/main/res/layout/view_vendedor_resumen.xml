@@ -102,7 +102,7 @@
         android:layout_marginTop="8dp"
         android:textColor="#616161"
         android:textSize="14sp"
-        tools:text="342 ventas concretadas" />
+        tools:text="0 operaciones como vendedor · 0 como comprador" />
 
     <!-- Antigüedad -->
     <TextView
