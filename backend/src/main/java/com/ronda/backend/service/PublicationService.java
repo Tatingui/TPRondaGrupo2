@@ -42,17 +42,20 @@ public class PublicationService {
     private final UserFavoriteRepository userFavoriteRepository;
     private final CategoryRepository categoryRepository;
     private final OfferRepository offerRepository;
+    private final TransactionService transactionService;
 
     public PublicationService(PublicationRepository publicationRepository,
                               UserRepository userRepository,
                               UserFavoriteRepository userFavoriteRepository,
                               CategoryRepository categoryRepository,
-                              OfferRepository offerRepository) {
+                              OfferRepository offerRepository,
+                              TransactionService transactionService) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.userFavoriteRepository = userFavoriteRepository;
         this.categoryRepository = categoryRepository;
         this.offerRepository = offerRepository;
+        this.transactionService = transactionService;
     }
 
     @Transactional(readOnly = true)
@@ -176,12 +179,11 @@ public class PublicationService {
         dto.setNombre(seller.getNombre());
         dto.setUbicacion(seller.getZona());
         dto.setMiembroDesde(UserService.formatMiembroDesde(seller.getCreatedAt()));
-        // La reputacion se construye con las calificaciones recibidas (punto 9).
-        // Hasta que existan queda todo en 0 = "Sin calificaciones aun"
-        dto.setReputacion(0);
-        dto.setCantidadOpiniones(0);
-        dto.setCantidadVentas(0);
-        dto.setCantidadCompras(0);
+        // Reputación real calculada desde calificaciones recibidas
+        dto.setReputacion(transactionService.getAverageRating(seller.getId()));
+        dto.setCantidadOpiniones(transactionService.getRatingCount(seller.getId()));
+        dto.setCantidadVentas(transactionService.getSaleCount(seller.getId()));
+        dto.setCantidadCompras(transactionService.getPurchaseCount(seller.getId()));
     }
 
     @Transactional

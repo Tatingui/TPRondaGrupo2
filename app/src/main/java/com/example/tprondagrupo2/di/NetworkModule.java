@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.di;
 import androidx.annotation.Nullable;
 
 import com.example.tprondagrupo2.network.AuthApiService;
+import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
@@ -108,6 +109,12 @@ public class NetworkModule {
     @Singleton
     public OfferApiService provideOfferService(Retrofit retrofit) {
         return retrofit.create(OfferApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public HistorialApiService provideHistorialService(Retrofit retrofit) {
+        return retrofit.create(HistorialApiService.class);
     }
 
     @Nullable

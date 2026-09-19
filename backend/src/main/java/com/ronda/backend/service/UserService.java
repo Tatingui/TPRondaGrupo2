@@ -16,9 +16,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final TransactionService transactionService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, TransactionService transactionService) {
         this.userRepository = userRepository;
+        this.transactionService = transactionService;
     }
 
     /**
@@ -40,12 +42,11 @@ public class UserService {
 
         response.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
 
-        // La reputacion se construye con las calificaciones recibidas (punto 9).
-        // Hasta que existan queda todo en 0 = "Sin calificaciones aun"
-        response.setReputacion(0);
-        response.setCantidadOpiniones(0);
-        response.setCantidadVentas(0);
-        response.setCantidadCompras(0);
+        // Reputación real calculada desde calificaciones recibidas
+        response.setReputacion(transactionService.getAverageRating(user.getId()));
+        response.setCantidadOpiniones(transactionService.getRatingCount(user.getId()));
+        response.setCantidadVentas(transactionService.getSaleCount(user.getId()));
+        response.setCantidadCompras(transactionService.getPurchaseCount(user.getId()));
 
         return response;
     }
