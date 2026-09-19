@@ -76,7 +76,8 @@ public class PerfilVendedorFragment extends Fragment {
         tvNombre.setText(vendedor.getNombre());
         VendedorViewBinder.bindReputacion(vendedor, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
-        tvVentas.setText(getString(R.string.vendedor_ventas, vendedor.getCantidadVentas()));
+        tvVentas.setText(getString(R.string.vendedor_operaciones,
+                vendedor.getCantidadVentas(), vendedor.getCantidadCompras()));
         if (vendedor.getMiembroDesde() != null) {
             tvMiembroDesde.setVisibility(View.VISIBLE);
             tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));

@@ -13,7 +13,45 @@ public class UserProfileResponse {
     private String zona;
     private String miembroDesde;  // Ej: "Septiembre 2026"
 
+    // Reputacion: se construye con las calificaciones recibidas (punto 9)
+    private double reputacion;          // Promedio de estrellas
+    private int cantidadOpiniones;      // Calificaciones recibidas
+    private int cantidadVentas;         // Operaciones concretadas como vendedor
+    private int cantidadCompras;        // Operaciones concretadas como comprador
+
     public UserProfileResponse() {
+    }
+
+    public double getReputacion() {
+        return reputacion;
+    }
+
+    public void setReputacion(double reputacion) {
+        this.reputacion = reputacion;
+    }
+
+    public int getCantidadOpiniones() {
+        return cantidadOpiniones;
+    }
+
+    public void setCantidadOpiniones(int cantidadOpiniones) {
+        this.cantidadOpiniones = cantidadOpiniones;
+    }
+
+    public int getCantidadVentas() {
+        return cantidadVentas;
+    }
+
+    public void setCantidadVentas(int cantidadVentas) {
+        this.cantidadVentas = cantidadVentas;
+    }
+
+    public int getCantidadCompras() {
+        return cantidadCompras;
+    }
+
+    public void setCantidadCompras(int cantidadCompras) {
+        this.cantidadCompras = cantidadCompras;
     }
 
     public Long getId() {

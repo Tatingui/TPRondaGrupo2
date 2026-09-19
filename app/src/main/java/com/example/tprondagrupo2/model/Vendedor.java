@@ -11,7 +11,8 @@ public class Vendedor implements Serializable {
     private String id;
     private String nombre;
     private double reputacion;        // Puntaje de 0 a 5 (promedio de opiniones)
-    private int cantidadVentas;       // Operaciones concretadas
+    private int cantidadVentas;       // Operaciones concretadas como vendedor
+    private int cantidadCompras;      // Operaciones concretadas como comprador
     private int cantidadOpiniones;    // Opiniones recibidas
     private String miembroDesde;      // Ej: "Marzo 2023"
     private String ubicacion;         // Zona del vendedor
@@ -61,6 +62,14 @@ public class Vendedor implements Serializable {
 
     public void setCantidadVentas(int cantidadVentas) {
         this.cantidadVentas = cantidadVentas;
+    }
+
+    public int getCantidadCompras() {
+        return cantidadCompras;
+    }
+
+    public void setCantidadCompras(int cantidadCompras) {
+        this.cantidadCompras = cantidadCompras;
     }
 
     public int getCantidadOpiniones() {

@@ -148,10 +148,12 @@ public class PublicationService {
         dto.setNombre(seller.getNombre());
         dto.setUbicacion(seller.getZona());
         dto.setMiembroDesde(UserService.formatMiembroDesde(seller.getCreatedAt()));
-        dto.setCantidadVentas((int) publicationRepository.countBySellerIdAndState(seller.getId(), PublicationState.SOLD));
-        // Todavia no hay calificaciones (punto 9): reputacion en 0 = "Sin calificaciones aun"
+        // La reputacion se construye con las calificaciones recibidas (punto 9).
+        // Hasta que existan queda todo en 0 = "Sin calificaciones aun"
         dto.setReputacion(0);
         dto.setCantidadOpiniones(0);
+        dto.setCantidadVentas(0);
+        dto.setCantidadCompras(0);
         return dto;
     }
 

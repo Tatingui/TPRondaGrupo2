@@ -724,7 +724,8 @@ public class DetallePublicacionFragment extends Fragment {
         VendedorViewBinder.bindReputacion(vendedor, tvVendedorAvatar, rbVendedorReputacion,
                 tvVendedorReputacion, tvVendedorNivel);
 
-        tvVendedorVentas.setText(getString(R.string.vendedor_ventas, vendedor.getCantidadVentas()));
+        tvVendedorVentas.setText(getString(R.string.vendedor_operaciones,
+                vendedor.getCantidadVentas(), vendedor.getCantidadCompras()));
 
         // "Miembro desde" llega recién con el detalle del backend
         if (vendedor.getMiembroDesde() != null) {

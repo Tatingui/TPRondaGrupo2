@@ -202,29 +202,39 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // Reputacion: sigue siendo mock (responsabilidad del compañero)
-        // Creamos un Vendedor solo para bindear la parte visual de reputacion
-        Vendedor mockReputacion = new Vendedor(
+        // Reputacion real que manda el backend (en 0 hasta que existan las calificaciones del punto 9).
+        // Creamos un Vendedor solo para reutilizar VendedorViewBinder en la parte visual
+        Vendedor reputacion = new Vendedor(
                 String.valueOf(perfil.getId()),
                 perfil.getNombre(),
-                5.0, 10, 5,
+                perfil.getReputacion(),
+                perfil.getCantidadVentas(),
+                perfil.getCantidadOpiniones(),
                 perfil.getMiembroDesde() != null ? perfil.getMiembroDesde() : "",
                 perfil.getZona() != null ? perfil.getZona() : ""
         );
-        VendedorViewBinder.bindReputacion(mockReputacion, tvAvatar, rbReputacion, tvReputacion, tvNivel);
-        if (tvVentas != null) tvVentas.setText(getString(R.string.vendedor_ventas, mockReputacion.getCantidadVentas()));
+        reputacion.setCantidadCompras(perfil.getCantidadCompras());
+        VendedorViewBinder.bindReputacion(reputacion, tvAvatar, rbReputacion, tvReputacion, tvNivel);
+        if (tvVentas != null) {
+            tvVentas.setText(getString(R.string.vendedor_operaciones,
+                    reputacion.getCantidadVentas(), reputacion.getCantidadCompras()));
+        }
     }
 
     /**
      * Fallback si falla la carga del perfil real.
      */
     private void mostrarPerfilMock() {
-        Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 5.0, 10, 5, "Enero 2024", "Mi Ciudad");
+        // Sin reputación inventada: si no se pudo cargar el perfil, se muestra en 0
+        Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 0, 0, 0, "Enero 2024", "Mi Ciudad");
 
         if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
         VendedorViewBinder.bindReputacion(miPerfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
-        if (tvVentas != null) tvVentas.setText(getString(R.string.vendedor_ventas, miPerfil.getCantidadVentas()));
+        if (tvVentas != null) {
+            tvVentas.setText(getString(R.string.vendedor_operaciones,
+                    miPerfil.getCantidadVentas(), miPerfil.getCantidadCompras()));
+        }
         if (tvMiembroDesde != null) tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, miPerfil.getMiembroDesde()));
 
         if (tvUbicacion != null) {
