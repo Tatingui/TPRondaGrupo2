@@ -151,6 +151,10 @@
             app:argType="com.example.tprondagrupo2.model.Vendedor"
             app:nullable="true" />
 
+        <action
+            android:id="@+id/action_perfil_vendedor_to_detalle"
+            app:destination="@id/detallePublicacionFragment" />
+
     </fragment>
 
 </navigation>
