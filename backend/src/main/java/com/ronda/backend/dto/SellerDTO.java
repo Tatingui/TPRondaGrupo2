@@ -8,7 +8,8 @@ public class SellerDTO {
     private Long id;
     private String nombre;
     private double reputacion;       // Promedio de estrellas (0 si no tiene calificaciones)
-    private int cantidadVentas;      // Publicaciones vendidas
+    private int cantidadVentas;      // Operaciones concretadas como vendedor
+    private int cantidadCompras;     // Operaciones concretadas como comprador
     private int cantidadOpiniones;   // Calificaciones recibidas
     private String miembroDesde;     // Ej: "Septiembre 2026"
     private String ubicacion;        // Zona del vendedor
@@ -46,6 +47,14 @@ public class SellerDTO {
 
     public void setCantidadVentas(int cantidadVentas) {
         this.cantidadVentas = cantidadVentas;
+    }
+
+    public int getCantidadCompras() {
+        return cantidadCompras;
+    }
+
+    public void setCantidadCompras(int cantidadCompras) {
+        this.cantidadCompras = cantidadCompras;
     }
 
     public int getCantidadOpiniones() {

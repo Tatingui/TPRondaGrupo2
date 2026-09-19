@@ -40,6 +40,13 @@ public class UserService {
 
         response.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
 
+        // La reputacion se construye con las calificaciones recibidas (punto 9).
+        // Hasta que existan queda todo en 0 = "Sin calificaciones aun"
+        response.setReputacion(0);
+        response.setCantidadOpiniones(0);
+        response.setCantidadVentas(0);
+        response.setCantidadCompras(0);
+
         return response;
     }
 

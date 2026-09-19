@@ -13,6 +13,12 @@ public class UserProfile {
     private String zona;
     private String miembroDesde;  // Ej: "Septiembre 2026"
 
+    // Reputación (se completa con las calificaciones del punto 9)
+    private double reputacion;
+    private int cantidadOpiniones;
+    private int cantidadVentas;     // Operaciones concretadas como vendedor
+    private int cantidadCompras;    // Operaciones concretadas como comprador
+
     public UserProfile() {
     }
 
@@ -54,6 +60,22 @@ public class UserProfile {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public double getReputacion() {
+        return reputacion;
+    }
+
+    public int getCantidadOpiniones() {
+        return cantidadOpiniones;
+    }
+
+    public int getCantidadVentas() {
+        return cantidadVentas;
+    }
+
+    public int getCantidadCompras() {
+        return cantidadCompras;
     }
 
     public String getMiembroDesde() {

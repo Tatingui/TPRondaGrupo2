@@ -135,4 +135,21 @@ public class VendedorTest {
             assertEquals(0xFF000000, nivel.getColor() & 0xFF000000);
         }
     }
+
+    @Test
+    public void testComprasEmpiezaEnCeroYSePuedeSetear() {
+        // Operaciones concretadas como comprador (se completan con el punto 9)
+        Vendedor v = new Vendedor("1", "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
+        assertEquals(0, v.getCantidadCompras());
+
+        v.setCantidadCompras(3);
+        assertEquals(3, v.getCantidadCompras());
+    }
+
+    @Test
+    public void testSinCalificacionesMuestraEseNivel() {
+        // Con la reputación en 0 tiene que decir "Sin calificaciones aún"
+        Vendedor v = new Vendedor("1", "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
+        assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, v.getNivel());
+    }
 }
