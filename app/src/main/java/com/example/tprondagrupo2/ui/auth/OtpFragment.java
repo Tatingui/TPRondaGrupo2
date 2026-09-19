@@ -17,18 +17,13 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.model.AuthResponse;
-import com.example.tprondagrupo2.model.OtpRequest;
-import com.example.tprondagrupo2.model.OtpSendRequest;
+import com.example.tprondagrupo2.data.repository.AuthRepository;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class OtpFragment extends Fragment {
@@ -53,6 +48,8 @@ public class OtpFragment extends Fragment {
     private Button btnVerify;
     private Button btnResend;
 
+    private AuthRepository authRepository;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -63,6 +60,9 @@ public class OtpFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        TokenManager tokenManager = TokenManager.getInstance();
+        authRepository = new AuthRepository(authApiService, tokenManager);
 
         email = getArguments() != null ? getArguments().getString(ARG_EMAIL, "") : "";
 
@@ -83,75 +83,66 @@ public class OtpFragment extends Fragment {
         String code = etCode.getText().toString().trim();
 
         if (code.length() != CODE_LENGTH) {
-            showError("El código debe tener 6 dígitos");
+            showError("El codigo debe tener 6 digitos");
             return;
         }
 
         hideError();
         setLoading(true);
 
-        authApiService.verifyOtp(new OtpRequest(email, code))
-                .enqueue(new Callback<AuthResponse>() {
-                    @Override
-                    public void onResponse(@NonNull Call<AuthResponse> call,
-                                           @NonNull Response<AuthResponse> response) {
-                        if (!isAdded()) {
-                            return;
-                        }
-                        setLoading(false);
+        authRepository.verifyOtp(email, code, new AuthRepository.AuthCallback() {
+            @Override
+            public void onSuccess(String token) {
+                if (!isAdded()) return;
+                setLoading(false);
+                NavHostFragment.findNavController(OtpFragment.this)
+                        .navigate(R.id.action_otp_to_home);
+            }
 
-                        AuthResponse body = response.body();
-                        if (response.isSuccessful() && body != null && body.isSuccess()) {
-                            if (body.getToken() != null) {
-                                TokenManager.getInstance().saveToken(body.getToken());
-                            }
-                            NavHostFragment.findNavController(OtpFragment.this)
-                                    .navigate(R.id.action_otp_to_home);
-                        } else {
-                            showError(extractMessage(body, "Código inválido"));
-                        }
-                    }
+            @Override
+            public void onError(String message) {
+                if (!isAdded()) return;
+                setLoading(false);
+                showError(message);
+            }
 
-                    @Override
-                    public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
-                        if (!isAdded()) {
-                            return;
-                        }
-                        setLoading(false);
-                        showError("Error de conexión");
-                    }
-                });
+            @Override
+            public void onUnverified(String email) {
+                // No aplica para verificacion OTP
+            }
+
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                setLoading(false);
+                showError("Error de conexion");
+            }
+        });
     }
 
     private void doResend() {
         hideError();
         startResendCooldown();
 
-        authApiService.resendOtp(new OtpSendRequest(email))
-                .enqueue(new Callback<AuthResponse>() {
-                    @Override
-                    public void onResponse(@NonNull Call<AuthResponse> call,
-                                           @NonNull Response<AuthResponse> response) {
-                        if (!isAdded()) {
-                            return;
-                        }
+        authRepository.resendOtp(email, new AuthRepository.SimpleCallback() {
+            @Override
+            public void onSuccess() {
+                if (!isAdded()) return;
+                showError("Codigo reenviado");
+            }
 
-                        AuthResponse body = response.body();
-                        if (response.isSuccessful() && body != null && body.isSuccess()) {
-                            showError("Código reenviado");
-                        } else {
-                            showError(extractMessage(body, "No se pudo reenviar el código"));
-                        }
-                    }
+            @Override
+            public void onError(String message) {
+                if (!isAdded()) return;
+                showError(message);
+            }
 
-                    @Override
-                    public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
-                        if (!isAdded()) {
-                            return;
-                        }
-                        showError("Error de conexión");
-                    }
-                });
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                showError("Error de conexion");
+            }
+        });
     }
 
     private void startResendCooldown() {
@@ -164,13 +155,6 @@ public class OtpFragment extends Fragment {
         if (btnResend != null) {
             btnResend.setEnabled(true);
         }
-    }
-
-    private String extractMessage(@Nullable AuthResponse body, String fallback) {
-        if (body != null && body.getMessage() != null && !body.getMessage().isEmpty()) {
-            return body.getMessage();
-        }
-        return fallback;
     }
 
     private void setLoading(boolean loading) {
@@ -190,7 +174,6 @@ public class OtpFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        // Evita que el Handler dispare sobre views ya destruidas
         resendHandler.removeCallbacks(enableResendRunnable);
         btnResend = null;
     }

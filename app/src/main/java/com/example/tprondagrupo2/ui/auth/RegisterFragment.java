@@ -22,16 +22,14 @@ import androidx.navigation.fragment.NavHostFragment;
 import android.util.Log;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.model.AuthResponse;
+import com.example.tprondagrupo2.data.repository.AuthRepository;
 import com.example.tprondagrupo2.model.RegisterRequest;
 import com.example.tprondagrupo2.network.AuthApiService;
+import com.example.tprondagrupo2.network.TokenManager;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class RegisterFragment extends Fragment {
@@ -53,7 +51,9 @@ public class RegisterFragment extends Fragment {
     private Button btnRegister;
     private Button btnGoLogin;
 
-    /** Nivel de fuerza actual de la contraseña (0=vacía, 1=débil, 2=media, 3=fuerte) */
+    private AuthRepository authRepository;
+
+    /** Nivel de fuerza actual de la contrasena (0=vacia, 1=debil, 2=media, 3=fuerte) */
     private int passwordStrengthLevel = 0;
 
     @Nullable
@@ -66,6 +66,9 @@ public class RegisterFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        TokenManager tokenManager = TokenManager.getInstance();
+        authRepository = new AuthRepository(authApiService, tokenManager);
 
         etNombre = view.findViewById(R.id.etNombre);
         etEmail = view.findViewById(R.id.etEmail);
@@ -88,7 +91,7 @@ public class RegisterFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.action_register_to_login));
     }
 
-    // ==================== VALIDACIÓN DE CONTRASEÑA ====================
+    // ==================== VALIDACION DE CONTRASENA ====================
 
     private void setupPasswordStrengthWatcher() {
         etPassword.addTextChangedListener(new TextWatcher() {
@@ -116,29 +119,28 @@ public class RegisterFragment extends Fragment {
 
         if (password.length() < 8) {
             tvPasswordStrength.setText(getString(R.string.password_too_short));
-            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F")); // rojo
+            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F"));
             passwordStrengthLevel = 0;
             return;
         }
 
-        // Contar criterios cumplidos
         int criteria = 0;
-        if (password.matches(".*[a-z].*")) criteria++; // minúscula
-        if (password.matches(".*[A-Z].*")) criteria++; // mayúscula
-        if (password.matches(".*\\d.*"))   criteria++; // número
-        if (password.matches(".*[^a-zA-Z\\d].*")) criteria++; // símbolo
+        if (password.matches(".*[a-z].*")) criteria++;
+        if (password.matches(".*[A-Z].*")) criteria++;
+        if (password.matches(".*\d.*"))   criteria++;
+        if (password.matches(".*[^a-zA-Z\d].*")) criteria++;
 
         if (criteria <= 1) {
             tvPasswordStrength.setText(getString(R.string.password_strength_weak));
-            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F")); // rojo
+            tvPasswordStrength.setTextColor(Color.parseColor("#D32F2F"));
             passwordStrengthLevel = 1;
         } else if (criteria <= 2) {
             tvPasswordStrength.setText(getString(R.string.password_strength_medium));
-            tvPasswordStrength.setTextColor(Color.parseColor("#F57C00")); // naranja
+            tvPasswordStrength.setTextColor(Color.parseColor("#F57C00"));
             passwordStrengthLevel = 2;
         } else {
             tvPasswordStrength.setText(getString(R.string.password_strength_strong));
-            tvPasswordStrength.setTextColor(Color.parseColor("#388E3C")); // verde
+            tvPasswordStrength.setTextColor(Color.parseColor("#388E3C"));
             passwordStrengthLevel = 3;
         }
     }
@@ -155,7 +157,7 @@ public class RegisterFragment extends Fragment {
         etZona.setAdapter(adapter);
     }
 
-    // ==================== FORMATEO DE TELÉFONO ====================
+    // ==================== FORMATEO DE TELEFONO ====================
 
     private void setupPhoneFormatter() {
         etTelefono.addTextChangedListener(new TextWatcher() {
@@ -172,10 +174,8 @@ public class RegisterFragment extends Fragment {
                 if (isFormatting) return;
                 isFormatting = true;
 
-                // Sacar todo lo que no sea dígito
-                String digits = s.toString().replaceAll("[^\\d]", "");
+                String digits = s.toString().replaceAll("[^\d]", "");
 
-                // Formatear: 11 3050-9485 (2 + 4 + 4)
                 StringBuilder formatted = new StringBuilder();
                 for (int i = 0; i < digits.length() && i < 10; i++) {
                     if (i == 2 || i == 6) formatted.append(" ");
@@ -201,22 +201,22 @@ public class RegisterFragment extends Fragment {
         String zona = etZona.getText().toString().trim();
 
         if (nombre.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            showError("Completá todos los campos obligatorios");
+            showError("Completa todos los campos obligatorios");
             return;
         }
 
         if (password.length() < 8) {
-            showError("La contraseña debe tener al menos 8 caracteres");
+            showError("La contrasena debe tener al menos 8 caracteres");
             return;
         }
 
         if (passwordStrengthLevel < 2) {
-            showError("La contraseña es muy débil. Usá mayúsculas, minúsculas y números");
+            showError("La contrasena es muy debil. Usa mayusculas, minusculas y numeros");
             return;
         }
 
         if (!password.equals(confirmPassword)) {
-            showError("Las contraseñas no coinciden");
+            showError("Las contrasenas no coinciden");
             return;
         }
 
@@ -228,58 +228,35 @@ public class RegisterFragment extends Fragment {
         RegisterRequest req = new RegisterRequest(nombre, email, password,
                 telefono.isEmpty() ? null : telefono,
                 zona.isEmpty() ? null : zona);
-        Log.d(TAG, "RegisterRequest creado, llamando a authApiService.register()");
 
-        authApiService.register(req)
-                .enqueue(new Callback<AuthResponse>() {
-                    @Override
-                    public void onResponse(@NonNull Call<AuthResponse> call,
-                                           @NonNull Response<AuthResponse> response) {
-                        Log.d(TAG, "onResponse: code=" + response.code());
-                        if (!isAdded()) {
-                            Log.w(TAG, "Fragment not added, ignorando respuesta");
-                            return;
-                        }
-                        setLoading(false);
+        authRepository.register(req, new AuthRepository.SimpleCallback() {
+            @Override
+            public void onSuccess() {
+                if (!isAdded()) return;
+                setLoading(false);
+                Log.d(TAG, "Registro exitoso, navegando a OTP");
+                Bundle args = new Bundle();
+                args.putString("email", email);
+                NavHostFragment.findNavController(RegisterFragment.this)
+                        .navigate(R.id.action_register_to_otp, args);
+            }
 
-                        AuthResponse body = response.body();
-                        if (response.isSuccessful() && body != null && body.isSuccess()) {
-                            Log.d(TAG, "Registro exitoso, navegando a OTP");
-                            Bundle args = new Bundle();
-                            args.putString("email", email);
+            @Override
+            public void onError(String message) {
+                if (!isAdded()) return;
+                setLoading(false);
+                Log.e(TAG, "Registro fallido: " + message);
+                showError(message);
+            }
 
-                            NavHostFragment.findNavController(RegisterFragment.this)
-                                    .navigate(R.id.action_register_to_otp, args);
-                        } else {
-                            String errorBody = "";
-                            try {
-                                if (response.errorBody() != null) {
-                                    errorBody = response.errorBody().string();
-                                }
-                            } catch (Exception ignored) {}
-                            Log.e(TAG, "Registro fallido: code=" + response.code()
-                                    + " body=" + body + " errorBody=" + errorBody);
-                            showError(extractMessage(body, "No se pudo crear la cuenta"));
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
-                        Log.e(TAG, "onFailure: " + t.getClass().getName() + ": " + t.getMessage(), t);
-                        if (!isAdded()) {
-                            return;
-                        }
-                        setLoading(false);
-                        showError("Error de conexión: " + t.getMessage());
-                    }
-                });
-    }
-
-    private String extractMessage(@Nullable AuthResponse body, String fallback) {
-        if (body != null && body.getMessage() != null && !body.getMessage().isEmpty()) {
-            return body.getMessage();
-        }
-        return fallback;
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                setLoading(false);
+                Log.e(TAG, "Error de conexion en registro");
+                showError("Error de conexion");
+            }
+        });
     }
 
     private void setLoading(boolean loading) {
