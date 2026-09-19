@@ -17,9 +17,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.PerfilPublico;
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.model.ReputacionInfo;
 import com.example.tprondagrupo2.model.Vendedor;
+import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.network.UserApiService;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 
@@ -28,14 +31,11 @@ import java.util.ArrayList;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 /**
- * Perfil público de un usuario: nombre, avatar con inicial, reputación,
- * antigüedad en la plataforma y sus publicaciones activas.
- * Recibe el vendedor por Bundle y después completa los datos con la API.
+ * Perfil publico de un usuario: nombre, avatar con inicial, reputacion,
+ * antiguedad en la plataforma y sus publicaciones activas.
+ * Recibe el vendedor por Bundle y despues completa los datos con la API.
  */
 @AndroidEntryPoint
 public class PerfilVendedorFragment extends Fragment {
@@ -44,6 +44,9 @@ public class PerfilVendedorFragment extends Fragment {
 
     @Inject
     UserApiService userApiService;
+
+    /** Repositorio que centraliza las operaciones de perfil */
+    private UserRepository userRepository;
 
     private TextView tvAvatar;
     private TextView tvNombre;
@@ -70,6 +73,8 @@ public class PerfilVendedorFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        userRepository = new UserRepository(userApiService, TokenManager.getInstance());
+
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
         tvNombre = view.findViewById(R.id.tvPerfilNombre);
         tvNivel = view.findViewById(R.id.tvPerfilNivel);
@@ -81,7 +86,7 @@ public class PerfilVendedorFragment extends Fragment {
         pbPublicaciones = view.findViewById(R.id.pbPerfilPublicaciones);
         tvSinPublicaciones = view.findViewById(R.id.tvPerfilSinPublicaciones);
 
-        // Reutilizamos el mismo adapter del Home. Tocar una publicación abre su detalle.
+        // Reutilizamos el mismo adapter del Home. Tocar una publicacion abre su detalle.
         RecyclerView rvPublicaciones = view.findViewById(R.id.rvPerfilPublicaciones);
         rvPublicaciones.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new PublicationAdapter(new ArrayList<>(), this::abrirDetalle, null);
@@ -89,12 +94,12 @@ public class PerfilVendedorFragment extends Fragment {
 
         Vendedor vendedor = obtenerVendedor();
         if (vendedor == null) {
-            Toast.makeText(getContext(), "No se encontró el vendedor", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "No se encontro el vendedor", Toast.LENGTH_SHORT).show();
             NavHostFragment.findNavController(this).navigateUp();
             return;
         }
 
-        // Primero mostramos lo que llegó por el Bundle y después lo completamos con la API
+        // Primero mostramos lo que llego por el Bundle y despues lo completamos con la API
         mostrarVendedor(vendedor);
         cargarPerfilPublico(vendedor.getId());
     }
@@ -113,25 +118,26 @@ public class PerfilVendedorFragment extends Fragment {
         if (id == null) return;
 
         pbPublicaciones.setVisibility(View.VISIBLE);
-        userApiService.getPublicProfile(id).enqueue(new Callback<PerfilPublico>() {
+        userRepository.getPublicProfile(id, new UserRepository.PublicProfileCallback() {
             @Override
-            public void onResponse(@NonNull Call<PerfilPublico> call, @NonNull Response<PerfilPublico> response) {
+            public void onSuccess(PerfilPublico perfil) {
                 if (!isAdded()) return;
                 pbPublicaciones.setVisibility(View.GONE);
-
-                if (response.isSuccessful() && response.body() != null) {
-                    PerfilPublico perfil = response.body();
-                    mostrarVendedor(perfil);
-                    mostrarPublicaciones(perfil);
-                } else {
-                    Toast.makeText(getContext(), "No se pudo cargar el perfil", Toast.LENGTH_SHORT).show();
-                }
+                mostrarVendedor(perfil);
+                mostrarPublicaciones(perfil);
             }
 
             @Override
-            public void onFailure(@NonNull Call<PerfilPublico> call, @NonNull Throwable t) {
+            public void onError(String message) {
                 if (!isAdded()) return;
-                // Sin conexión: nos quedamos con los datos que llegaron por el Bundle
+                pbPublicaciones.setVisibility(View.GONE);
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                // Sin conexion: nos quedamos con los datos que llegaron por el Bundle
                 pbPublicaciones.setVisibility(View.GONE);
                 tvSinPublicaciones.setVisibility(View.VISIBLE);
                 tvSinPublicaciones.setText(R.string.perfil_sin_conexion);
@@ -139,24 +145,28 @@ public class PerfilVendedorFragment extends Fragment {
         });
     }
 
-    private void mostrarVendedor(@NonNull Vendedor vendedor) {
-        tvNombre.setText(vendedor.getNombre());
-        VendedorViewBinder.bindReputacion(vendedor, tvAvatar, rbReputacion, tvReputacion, tvNivel);
+    private void mostrarVendedor(@NonNull ReputacionInfo info) {
+        tvNombre.setText(info.getNombre());
+        VendedorViewBinder.bindReputacion(info, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
         tvVentas.setText(getString(R.string.vendedor_operaciones,
-                vendedor.getCantidadVentas(), vendedor.getCantidadCompras()));
-        if (vendedor.getMiembroDesde() != null) {
+                info.getCantidadVentas(), info.getCantidadCompras()));
+        if (info.getMiembroDesde() != null) {
             tvMiembroDesde.setVisibility(View.VISIBLE);
-            tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, vendedor.getMiembroDesde()));
+            tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, info.getMiembroDesde()));
         } else {
             tvMiembroDesde.setVisibility(View.GONE);
         }
 
-        if (vendedor.getUbicacion() != null && !vendedor.getUbicacion().isEmpty()) {
-            tvUbicacion.setVisibility(View.VISIBLE);
-            tvUbicacion.setText(getString(R.string.perfil_vendedor_ubicacion, vendedor.getUbicacion()));
-        } else {
-            tvUbicacion.setVisibility(View.GONE);
+        // Ubicacion: solo disponible en Vendedor, no en la interfaz general
+        if (info instanceof Vendedor) {
+            Vendedor vendedor = (Vendedor) info;
+            if (vendedor.getUbicacion() != null && !vendedor.getUbicacion().isEmpty()) {
+                tvUbicacion.setVisibility(View.VISIBLE);
+                tvUbicacion.setText(getString(R.string.perfil_vendedor_ubicacion, vendedor.getUbicacion()));
+            } else {
+                tvUbicacion.setVisibility(View.GONE);
+            }
         }
     }
 

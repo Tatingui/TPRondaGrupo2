@@ -127,8 +127,8 @@ public class RegisterFragment extends Fragment {
         int criteria = 0;
         if (password.matches(".*[a-z].*")) criteria++;
         if (password.matches(".*[A-Z].*")) criteria++;
-        if (password.matches(".*\d.*"))   criteria++;
-        if (password.matches(".*[^a-zA-Z\d].*")) criteria++;
+        if (password.matches(".*\\d.*"))   criteria++;
+        if (password.matches(".*[^a-zA-Z\\d].*")) criteria++;
 
         if (criteria <= 1) {
             tvPasswordStrength.setText(getString(R.string.password_strength_weak));
@@ -174,7 +174,7 @@ public class RegisterFragment extends Fragment {
                 if (isFormatting) return;
                 isFormatting = true;
 
-                String digits = s.toString().replaceAll("[^\d]", "");
+                String digits = s.toString().replaceAll("[^\\d]", "");
 
                 StringBuilder formatted = new StringBuilder();
                 for (int i = 0; i < digits.length() && i < 10; i++) {

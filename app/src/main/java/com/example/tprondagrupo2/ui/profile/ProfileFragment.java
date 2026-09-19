@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.model.SavedSearchDataStoreItem;
@@ -66,6 +67,9 @@ public class ProfileFragment extends Fragment {
     @Inject
     PublicationApiService publicationApiService;
 
+    /** Repositorio que centraliza las operaciones de perfil y logout */
+    private UserRepository userRepository;
+
     private TextView tvAvatar;
     private TextView tvNombre;
     private TextView tvNivel;
@@ -103,6 +107,8 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        userRepository = new UserRepository(userApiService, TokenManager.getInstance());
+
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
         tvNombre = view.findViewById(R.id.tvPerfilNombre);
         tvNivel = view.findViewById(R.id.tvPerfilNivel);
@@ -128,9 +134,9 @@ public class ProfileFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_publications)
         );
 
-        // Cerrar sesion: limpia el token y vuelve al login
+        // Cerrar sesion: delega al repositorio y navega al login
         view.findViewById(R.id.btnLogout).setOnClickListener(v -> {
-            TokenManager.getInstance().clearToken();
+            userRepository.logout();
             NavHostFragment.findNavController(this)
                     .navigate(R.id.action_profile_to_login);
         });
@@ -154,25 +160,25 @@ public class ProfileFragment extends Fragment {
     // ==================== PERFIL REAL DESDE API ====================
 
     private void loadProfile() {
-        userApiService.getMyProfile().enqueue(new Callback<UserProfile>() {
+        userRepository.getMyProfile(new UserRepository.ProfileCallback() {
             @Override
-            public void onResponse(@NonNull Call<UserProfile> call,
-                                   @NonNull Response<UserProfile> response) {
+            public void onSuccess(UserProfile profile) {
                 if (!isAdded()) return;
-                if (response.isSuccessful() && response.body() != null) {
-                    currentProfile = response.body();
-                    mostrarPerfil(currentProfile);
-                } else {
-                    Log.e(TAG, "Error cargando perfil: " + response.code());
-                    // Fallback: mostrar datos minimos
-                    mostrarPerfilMock();
-                }
+                currentProfile = profile;
+                mostrarPerfil(currentProfile);
             }
 
             @Override
-            public void onFailure(@NonNull Call<UserProfile> call, @NonNull Throwable t) {
+            public void onError(String message) {
                 if (!isAdded()) return;
-                Log.e(TAG, "Error de conexion cargando perfil", t);
+                Log.e(TAG, message);
+                mostrarPerfilMock();
+            }
+
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                Log.e(TAG, "Error de conexion cargando perfil");
                 mostrarPerfilMock();
             }
         });
@@ -180,11 +186,6 @@ public class ProfileFragment extends Fragment {
 
     private void mostrarPerfil(UserProfile perfil) {
         if (tvNombre != null) tvNombre.setText(perfil.getNombre());
-
-        // Avatar: primera letra del nombre
-        if (tvAvatar != null && perfil.getNombre() != null && !perfil.getNombre().isEmpty()) {
-            tvAvatar.setText(String.valueOf(perfil.getNombre().charAt(0)).toUpperCase());
-        }
 
         // Email
         if (tvEmail != null) {
@@ -217,22 +218,12 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // Reputacion real que manda el backend (en 0 hasta que existan las calificaciones del punto 9).
-        // Creamos un Vendedor solo para reutilizar VendedorViewBinder en la parte visual
-        Vendedor reputacion = new Vendedor(
-                String.valueOf(perfil.getId()),
-                perfil.getNombre(),
-                perfil.getReputacion(),
-                perfil.getCantidadVentas(),
-                perfil.getCantidadOpiniones(),
-                perfil.getMiembroDesde() != null ? perfil.getMiembroDesde() : "",
-                perfil.getZona() != null ? perfil.getZona() : ""
-        );
-        reputacion.setCantidadCompras(perfil.getCantidadCompras());
-        VendedorViewBinder.bindReputacion(reputacion, tvAvatar, rbReputacion, tvReputacion, tvNivel);
+        // Reputacion: UserProfile ahora implementa ReputacionInfo,
+        // se pasa directo a VendedorViewBinder sin crear un Vendedor intermedio
+        VendedorViewBinder.bindReputacion(perfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
         if (tvVentas != null) {
             tvVentas.setText(getString(R.string.vendedor_operaciones,
-                    reputacion.getCantidadVentas(), reputacion.getCantidadCompras()));
+                    perfil.getCantidadVentas(), perfil.getCantidadCompras()));
         }
     }
 
@@ -240,7 +231,7 @@ public class ProfileFragment extends Fragment {
      * Fallback si falla la carga del perfil real.
      */
     private void mostrarPerfilMock() {
-        // Sin reputación inventada: si no se pudo cargar el perfil, se muestra en 0
+        // Sin reputacion inventada: si no se pudo cargar el perfil, se muestra en 0
         Vendedor miPerfil = new Vendedor("me", "Mi Usuario", 0, 0, 0, "Enero 2024", "Mi Ciudad");
 
         if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
@@ -297,7 +288,7 @@ public class ProfileFragment extends Fragment {
                     String zona = etEditZona.getText().toString().trim();
 
                     if (nombre.isEmpty()) {
-                        Toast.makeText(getContext(), "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), "El nombre no puede estar vac\u00edo", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
@@ -313,24 +304,25 @@ public class ProfileFragment extends Fragment {
     }
 
     private void saveProfile(UserProfileUpdateRequest request) {
-        userApiService.updateMyProfile(request).enqueue(new Callback<UserProfile>() {
+        userRepository.updateMyProfile(request, new UserRepository.ProfileCallback() {
             @Override
-            public void onResponse(@NonNull Call<UserProfile> call,
-                                   @NonNull Response<UserProfile> response) {
+            public void onSuccess(UserProfile profile) {
                 if (!isAdded()) return;
-                if (response.isSuccessful() && response.body() != null) {
-                    currentProfile = response.body();
-                    mostrarPerfil(currentProfile);
-                    Toast.makeText(getContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al actualizar el perfil", Toast.LENGTH_SHORT).show();
-                }
+                currentProfile = profile;
+                mostrarPerfil(currentProfile);
+                Toast.makeText(getContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void onFailure(@NonNull Call<UserProfile> call, @NonNull Throwable t) {
+            public void onError(String message) {
                 if (!isAdded()) return;
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
+                Toast.makeText(getContext(), "Error de conexi\u00f3n", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -379,15 +371,15 @@ public class ProfileFragment extends Fragment {
                                         if (savedSearches.isEmpty() && tvEmptySavedSearches != null) {
                                             tvEmptySavedSearches.setVisibility(View.VISIBLE);
                                         }
-                                        Toast.makeText(getContext(), "Búsqueda eliminada", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "B\u00fasqueda eliminada", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        Toast.makeText(getContext(), "Error al eliminar la búsqueda", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "Error al eliminar la b\u00fasqueda", Toast.LENGTH_SHORT).show();
                                     }
                                 }
 
                                 @Override
                                 public void onFailure(Call<Void> call, Throwable t) {
-                                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "Error de conexi\u00f3n", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         })
@@ -421,7 +413,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onFailure(Call<List<SavedSearch>> call, Throwable t) {
-                Log.e(TAG, "Error al cargar búsquedas guardadas", t);
+                Log.e(TAG, "Error al cargar b\u00fasquedas guardadas", t);
             }
         });
     }
@@ -487,7 +479,7 @@ public class ProfileFragment extends Fragment {
 
                 @Override
                 public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
-                    // Ignorar fallo de búsqueda en segundo plano
+                    // Ignorar fallo de busqueda en segundo plano
                 }
             });
         }
@@ -586,7 +578,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error de conexi\u00f3n", Toast.LENGTH_SHORT).show();
             }
         };
 

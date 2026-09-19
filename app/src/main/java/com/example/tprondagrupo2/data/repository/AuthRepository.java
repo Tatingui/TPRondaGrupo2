@@ -205,4 +205,11 @@ public class AuthRepository {
         }
         return fallback;
     }
+
+    /**
+     * Cierra la sesion del usuario: limpia el token almacenado.
+     */
+    public void logout() {
+        tokenManager.clearToken();
+    }
 }
