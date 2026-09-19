@@ -133,6 +133,9 @@ public class ProfileFragment extends Fragment {
         view.findViewById(R.id.btnGoMyPublications).setOnClickListener(v ->
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_publications)
         );
+        view.findViewById(R.id.btnGoMyOffers).setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_offers)
+        );
 
         // Cerrar sesion: delega al repositorio y navega al login
         view.findViewById(R.id.btnLogout).setOnClickListener(v -> {
