@@ -40,7 +40,7 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
     @Override
     public void onBindViewHolder(@NonNull FotoViewHolder holder, int position) {
         String url = fotos.get(position);
-        
+
         Glide.with(holder.itemView.getContext())
                 .load(url)
                 .placeholder(android.R.drawable.ic_menu_gallery)

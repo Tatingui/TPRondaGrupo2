@@ -16,16 +16,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.PublicationApiService;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class MyPublicationsFragment extends Fragment {
+
+    @Inject
+    PublicationApiService publicationApiService;
 
     private RecyclerView rvMyPublications;
     private ProgressBar progressBar;
@@ -76,7 +83,7 @@ public class MyPublicationsFragment extends Fragment {
         progressBar.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
 
-        ApiClient.getPublicationService().getMyPublications().enqueue(new Callback<List<Publicacion>>() {
+        publicationApiService.getMyPublications().enqueue(new Callback<List<Publicacion>>() {
             @Override
             public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 progressBar.setVisibility(View.GONE);
@@ -102,7 +109,7 @@ public class MyPublicationsFragment extends Fragment {
 
     private void updateStatus(Long id, String state, int position) {
         if (id == null) return;
-        ApiClient.getPublicationService().updatePublicationStatus(id, state).enqueue(new Callback<Publicacion>() {
+        publicationApiService.updatePublicationStatus(id, state).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
                 if (response.isSuccessful() && response.body() != null) {

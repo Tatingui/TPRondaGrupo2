@@ -25,22 +25,31 @@ import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.LoginRequest;
 import com.example.tprondagrupo2.model.OtpSendRequest;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import java.util.concurrent.Executor;
 
+import java.util.concurrent.Executor;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class LoginFragment extends Fragment {
 
     private static final String TAG = "LoginFragment";
     private static final int ALLOWED_AUTHENTICATORS =
             BiometricManager.Authenticators.BIOMETRIC_STRONG
                     | BiometricManager.Authenticators.DEVICE_CREDENTIAL;
+
+    @Inject
+    AuthApiService authApiService;
 
     private EditText etEmail;
     private EditText etPassword;
@@ -189,7 +198,7 @@ public class LoginFragment extends Fragment {
         hideError();
         setLoading(true);
 
-        ApiClient.getAuthService().login(new LoginRequest(email, password))
+        authApiService.login(new LoginRequest(email, password))
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,
@@ -249,7 +258,7 @@ public class LoginFragment extends Fragment {
         hideError();
         setLoading(true);
 
-        ApiClient.getAuthService().sendOtp(new OtpSendRequest(email))
+        authApiService.sendOtp(new OtpSendRequest(email))
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<AuthResponse> call,

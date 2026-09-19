@@ -25,17 +25,24 @@ import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.DraftManager;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.PublicationApiService;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class PublishWizardFragment extends Fragment {
+
+    @Inject
+    PublicationApiService publicationApiService;
 
     private int currentStep = 1;
     private DraftManager draftManager;
@@ -240,7 +247,7 @@ public class PublishWizardFragment extends Fragment {
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, imageUrls);
 
-        ApiClient.getPublicationService().createPublication(request).enqueue(new Callback<Publicacion>() {
+        publicationApiService.createPublication(request).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
                 if (response.isSuccessful()) {

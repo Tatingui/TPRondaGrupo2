@@ -20,11 +20,14 @@ import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.PerfilPublico;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Vendedor;
-import com.example.tprondagrupo2.network.ApiClient;
+import com.example.tprondagrupo2.network.UserApiService;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 
 import java.util.ArrayList;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -34,9 +37,13 @@ import retrofit2.Response;
  * antigüedad en la plataforma y sus publicaciones activas.
  * Recibe el vendedor por Bundle y después completa los datos con la API.
  */
+@AndroidEntryPoint
 public class PerfilVendedorFragment extends Fragment {
 
     public static final String ARG_VENDEDOR = "vendedor";
+
+    @Inject
+    UserApiService userApiService;
 
     private TextView tvAvatar;
     private TextView tvNombre;
@@ -106,7 +113,7 @@ public class PerfilVendedorFragment extends Fragment {
         if (id == null) return;
 
         pbPublicaciones.setVisibility(View.VISIBLE);
-        ApiClient.getUserService().getPublicProfile(id).enqueue(new Callback<PerfilPublico>() {
+        userApiService.getPublicProfile(id).enqueue(new Callback<PerfilPublico>() {
             @Override
             public void onResponse(@NonNull Call<PerfilPublico> call, @NonNull Response<PerfilPublico> response) {
                 if (!isAdded()) return;

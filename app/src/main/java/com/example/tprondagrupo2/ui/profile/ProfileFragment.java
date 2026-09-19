@@ -30,11 +30,13 @@ import com.example.tprondagrupo2.model.SavedSearchDataStoreItem;
 import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
-import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
+import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
+import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.network.TokenManager;
+import com.example.tprondagrupo2.network.UserApiService;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
@@ -43,13 +45,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class ProfileFragment extends Fragment {
 
     private static final String TAG = "ProfileFragment";
+
+    @Inject
+    UserApiService userApiService;
+
+    @Inject
+    SavedSearchApiService savedSearchApiService;
+
+    @Inject
+    PublicationApiService publicationApiService;
 
     private TextView tvAvatar;
     private TextView tvNombre;
@@ -139,7 +154,7 @@ public class ProfileFragment extends Fragment {
     // ==================== PERFIL REAL DESDE API ====================
 
     private void loadProfile() {
-        ApiClient.getUserService().getMyProfile().enqueue(new Callback<UserProfile>() {
+        userApiService.getMyProfile().enqueue(new Callback<UserProfile>() {
             @Override
             public void onResponse(@NonNull Call<UserProfile> call,
                                    @NonNull Response<UserProfile> response) {
@@ -298,7 +313,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void saveProfile(UserProfileUpdateRequest request) {
-        ApiClient.getUserService().updateMyProfile(request).enqueue(new Callback<UserProfile>() {
+        userApiService.updateMyProfile(request).enqueue(new Callback<UserProfile>() {
             @Override
             public void onResponse(@NonNull Call<UserProfile> call,
                                    @NonNull Response<UserProfile> response) {
@@ -347,7 +362,7 @@ public class ProfileFragment extends Fragment {
                         .setTitle(R.string.perfil_mis_busquedas)
                         .setMessage(R.string.eliminar_busqueda_confirm)
                         .setPositiveButton("Eliminar", (dialog, which) -> {
-                            ApiClient.getSavedSearchService().deleteSearch(savedSearch.getId()).enqueue(new Callback<Void>() {
+                            savedSearchApiService.deleteSearch(savedSearch.getId()).enqueue(new Callback<Void>() {
                                 @Override
                                 public void onResponse(Call<Void> call, Response<Void> response) {
                                     if (response.isSuccessful()) {
@@ -387,7 +402,7 @@ public class ProfileFragment extends Fragment {
 
     private void loadSavedSearches() {
         if (getContext() == null) return;
-        ApiClient.getSavedSearchService().getSavedSearches().enqueue(new Callback<List<SavedSearch>>() {
+        savedSearchApiService.getSavedSearches().enqueue(new Callback<List<SavedSearch>>() {
             @Override
             public void onResponse(Call<List<SavedSearch>> call, Response<List<SavedSearch>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -423,7 +438,7 @@ public class ProfileFragment extends Fragment {
             final String searchIdStr = String.valueOf(search.getId());
             final SavedSearchDataStoreItem dsItem = dsMap.get(searchIdStr);
 
-            ApiClient.getPublicationService().getPublications(
+            publicationApiService.getPublications(
                     search.getQuery() != null && !search.getQuery().isEmpty() ? search.getQuery() : null,
                     search.getCategoryId(),
                     search.getMinPrice(),
@@ -492,7 +507,7 @@ public class ProfileFragment extends Fragment {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
 
-        ApiClient.getPublicationService().getFavorites().enqueue(new Callback<List<Publicacion>>() {
+        publicationApiService.getFavorites().enqueue(new Callback<List<Publicacion>>() {
             @Override
             public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
@@ -576,9 +591,9 @@ public class ProfileFragment extends Fragment {
         };
 
         if (isFavorite) {
-            ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
+            publicationApiService.unmarkAsFavorite(pubId).enqueue(callback);
         } else {
-            ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
+            publicationApiService.markAsFavorite(pubId).enqueue(callback);
         }
     }
 }

@@ -30,25 +30,32 @@ import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.TextoRequest;
 import com.example.tprondagrupo2.model.Vendedor;
-import com.example.tprondagrupo2.network.ApiClient;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
+import com.example.tprondagrupo2.network.PublicationApiService;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@AndroidEntryPoint
 public class DetallePublicacionFragment extends Fragment {
 
     public static final String ARG_PUBLICACION = "publicacion";
 
     private static final Locale LOCALE_AR = new Locale("es", "AR");
     private static final Gson GSON = new Gson();
+
+    @Inject
+    PublicationApiService publicationApiService;
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -178,7 +185,7 @@ public class DetallePublicacionFragment extends Fragment {
     private void cargarDetalle(String id) {
         if (id == null) return;
 
-        ApiClient.getPublicationService().getPublication(id).enqueue(new Callback<Publicacion>() {
+        publicationApiService.getPublication(id).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                 if (!isAdded()) return;
@@ -315,7 +322,7 @@ public class DetallePublicacionFragment extends Fragment {
     // ---------- Preguntas ----------
 
     private void cargarPreguntas() {
-        ApiClient.getPublicationService().getQuestions(currentPublicacion.getId())
+        publicationApiService.getQuestions(currentPublicacion.getId())
                 .enqueue(new Callback<List<Pregunta>>() {
                     @Override
                     public void onResponse(@NonNull Call<List<Pregunta>> call,
@@ -378,7 +385,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarPregunta(String texto) {
-        ApiClient.getPublicationService()
+        publicationApiService
                 .askQuestion(currentPublicacion.getId(), new TextoRequest(texto))
                 .enqueue(new Callback<Pregunta>() {
                     @Override
@@ -423,7 +430,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarRespuesta(Long preguntaId, String texto) {
-        ApiClient.getPublicationService()
+        publicationApiService
                 .answerQuestion(preguntaId, new TextoRequest(texto))
                 .enqueue(new Callback<Pregunta>() {
                     @Override
@@ -482,7 +489,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     private void enviarOferta(double monto, @Nullable String mensaje) {
         btnOfertar.setEnabled(false);
-        ApiClient.getPublicationService()
+        publicationApiService
                 .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje))
                 .enqueue(new Callback<Oferta>() {
                     @Override
@@ -529,7 +536,7 @@ public class DetallePublicacionFragment extends Fragment {
         Long id = currentPublicacion.getIdLong();
         if (id == null) return;
 
-        ApiClient.getPublicationService().updatePublicationStatus(id, nuevoEstado)
+        publicationApiService.updatePublicationStatus(id, nuevoEstado)
                 .enqueue(new Callback<Publicacion>() {
                     @Override
                     public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
@@ -622,7 +629,7 @@ public class DetallePublicacionFragment extends Fragment {
         if (publicacion.getId() == null) return;
         String pubId = publicacion.getId();
 
-        ApiClient.getPublicationService().recordView(pubId).enqueue(new Callback<Void>() {
+        publicationApiService.recordView(pubId).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 // Vista registrada en backend
@@ -701,9 +708,9 @@ public class DetallePublicacionFragment extends Fragment {
         };
 
         if (wasFavorite) {
-            ApiClient.getPublicationService().unmarkAsFavorite(pubId).enqueue(callback);
+            publicationApiService.unmarkAsFavorite(pubId).enqueue(callback);
         } else {
-            ApiClient.getPublicationService().markAsFavorite(pubId).enqueue(callback);
+            publicationApiService.markAsFavorite(pubId).enqueue(callback);
         }
     }
 
