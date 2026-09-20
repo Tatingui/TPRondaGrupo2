@@ -52,7 +52,8 @@ public class PublishWizardFragment extends Fragment {
     private Button btnBack, btnNext, btnSelectPhoto;
     private TextView tvImageStatus, tvReviewSummary;
 
-    private TextInputEditText etTitle, etDescription, etPrice, etLocation, etCategoryId, etStatus, etImageUrl;
+    private TextInputEditText etTitle, etDescription, etPrice, etLocation, etImageUrl;
+    private android.widget.AutoCompleteTextView autoCompleteCategory, autoCompleteStatus;
 
     private List<String> imageUrls = new ArrayList<>();
 
@@ -93,9 +94,19 @@ public class PublishWizardFragment extends Fragment {
         etDescription = view.findViewById(R.id.etDescription);
         etPrice = view.findViewById(R.id.etPrice);
         etLocation = view.findViewById(R.id.etLocation);
-        etCategoryId = view.findViewById(R.id.etCategoryId);
-        etStatus = view.findViewById(R.id.etStatus);
+        autoCompleteCategory = view.findViewById(R.id.autoCompleteCategory);
+        autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
         etImageUrl = view.findViewById(R.id.etImageUrl);
+
+        String[] categories = {"1 - Deportes", "2 - Hogar", "3 - Electrónica", "4 - Ropa", "5 - Otros"};
+        android.widget.ArrayAdapter<String> catAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
+        autoCompleteCategory.setAdapter(catAdapter);
+        autoCompleteCategory.setText(categories[0], false);
+
+        String[] statuses = {"Nuevo", "Como nuevo", "Usado"};
+        android.widget.ArrayAdapter<String> statusAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, statuses);
+        autoCompleteStatus.setAdapter(statusAdapter);
+        autoCompleteStatus.setText(statuses[0], false);
 
         loadDraft();
         setupTextWatchers();
@@ -128,6 +139,22 @@ public class PublishWizardFragment extends Fragment {
         btnSelectPhoto.setOnClickListener(v -> galleryLauncher.launch("image/*"));
     }
 
+    private Long getSelectedCategoryId() {
+        String sel = autoCompleteCategory.getText() != null ? autoCompleteCategory.getText().toString() : "";
+        if (sel.startsWith("2")) return 2L;
+        if (sel.startsWith("3")) return 3L;
+        if (sel.startsWith("4")) return 4L;
+        if (sel.startsWith("5")) return 5L;
+        return 1L;
+    }
+
+    private String getSelectedStatus() {
+        String sel = autoCompleteStatus.getText() != null ? autoCompleteStatus.getText().toString() : "";
+        if ("Como nuevo".equals(sel)) return "LIKE_NEW";
+        if ("Usado".equals(sel)) return "USED";
+        return "NEW";
+    }
+
     private void loadDraft() {
         PublicationCreateRequest draft = draftManager.loadDraft();
         if (draft != null) {
@@ -135,8 +162,19 @@ public class PublishWizardFragment extends Fragment {
             if (draft.getDescription() != null) etDescription.setText(draft.getDescription());
             if (draft.getPrice() != null) etPrice.setText(String.valueOf(draft.getPrice()));
             if (draft.getLocation() != null) etLocation.setText(draft.getLocation());
-            if (draft.getCategoryId() != null) etCategoryId.setText(String.valueOf(draft.getCategoryId()));
-            if (draft.getStatus() != null) etStatus.setText(draft.getStatus());
+            if (draft.getCategoryId() != null) {
+                int idx = (int) (draft.getCategoryId() - 1);
+                String[] categories = {"1 - Deportes", "2 - Hogar", "3 - Electrónica", "4 - Ropa", "5 - Otros"};
+                if (idx >= 0 && idx < categories.length) {
+                    autoCompleteCategory.setText(categories[idx], false);
+                }
+            }
+            if (draft.getStatus() != null) {
+                String s = draft.getStatus();
+                if ("LIKE_NEW".equals(s)) autoCompleteStatus.setText("Como nuevo", false);
+                else if ("USED".equals(s)) autoCompleteStatus.setText("Usado", false);
+                else autoCompleteStatus.setText("Nuevo", false);
+            }
             if (draft.getImageUrls() != null) {
                 imageUrls = new ArrayList<>(draft.getImageUrls());
                 tvImageStatus.setText(imageUrls.size() + " fotos seleccionadas");
@@ -151,9 +189,8 @@ public class PublishWizardFragment extends Fragment {
         String priceStr = etPrice.getText() != null ? etPrice.getText().toString() : "0";
         double price = priceStr.isEmpty() ? 0.0 : Double.parseDouble(priceStr);
         String loc = etLocation.getText() != null ? etLocation.getText().toString() : "";
-        String catStr = etCategoryId.getText() != null ? etCategoryId.getText().toString() : "1";
-        long catId = catStr.isEmpty() ? 1L : Long.parseLong(catStr);
-        String status = etStatus.getText() != null && !etStatus.getText().toString().isEmpty() ? etStatus.getText().toString().toUpperCase() : "NEW";
+        long catId = getSelectedCategoryId();
+        String status = getSelectedStatus();
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, imageUrls);
         draftManager.saveDraft(request);
@@ -175,8 +212,8 @@ public class PublishWizardFragment extends Fragment {
         etDescription.addTextChangedListener(watcher);
         etPrice.addTextChangedListener(watcher);
         etLocation.addTextChangedListener(watcher);
-        etCategoryId.addTextChangedListener(watcher);
-        etStatus.addTextChangedListener(watcher);
+        autoCompleteCategory.addTextChangedListener(watcher);
+        autoCompleteStatus.addTextChangedListener(watcher);
     }
 
     private boolean validateStep1() {
@@ -228,7 +265,8 @@ public class PublishWizardFragment extends Fragment {
         String summary = "Título: " + (etTitle.getText() != null ? etTitle.getText().toString() : "") + "\n" +
                 "Precio: $" + (etPrice.getText() != null ? etPrice.getText().toString() : "") + "\n" +
                 "Zona: " + (etLocation.getText() != null ? etLocation.getText().toString() : "") + "\n" +
-                "Estado: " + (etStatus.getText() != null ? etStatus.getText().toString() : "") + "\n" +
+                "Categoría: " + autoCompleteCategory.getText().toString() + "\n" +
+                "Estado: " + autoCompleteStatus.getText().toString() + "\n" +
                 "Fotos: " + imageUrls.size() + " adjuntas";
         tvReviewSummary.setText(summary);
     }
@@ -238,8 +276,8 @@ public class PublishWizardFragment extends Fragment {
         String desc = etDescription.getText().toString().trim();
         double price = Double.parseDouble(etPrice.getText().toString().trim());
         String loc = etLocation.getText().toString().trim();
-        long catId = Long.parseLong(etCategoryId.getText().toString().trim());
-        String status = etStatus.getText().toString().trim().toUpperCase();
+        long catId = getSelectedCategoryId();
+        String status = getSelectedStatus();
 
         if (imageUrls.isEmpty()) {
             imageUrls.add("https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800"); // Default fallback
