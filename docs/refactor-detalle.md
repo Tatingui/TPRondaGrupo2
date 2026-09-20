@@ -3,6 +3,10 @@
 Base inicial: `main` en `312ac6c` (arreglo de desplegables al publicar).
 Durante el trabajo se integró `main` en `58b7975`: correcciones de DataStore y tarjetas
 de Perfil/Historial, sin conflictos ni modificaciones a esos cambios.
+Al cerrar el incremento 4 también se integró `dd418b7` (PR #59): aceptación
+de ofertas mediante transacciones y navegación desde Mis Ofertas al detalle.
+Se conserva R1: esa navegación no habilita Cómo llegar al propietario, aunque
+los comentarios nuevos de Mis Ofertas describan ese comportamiento.
 Se trabaja un incremento por vez. Los cambios de comportamiento se identifican
 aparte de las extracciones que deben preservar el funcionamiento existente.
 
@@ -121,6 +125,8 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
 - [ ] Favorito, oferta y pausar/reactivar: botones no se habilitan por una respuesta de lectura en curso.
 - [ ] Comprobar en los registros del backend que rotar no repite POST de visita ni otras escrituras.
 - [ ] Verificar Home offline y Perfil tras las correcciones de DataStore integradas de main.
+- [ ] En Mis Ofertas, aceptar una oferta y comprobar la navegación al detalle y el historial;
+  como vendedor, Cómo llegar sigue oculto. Verificar el destino desde la cuenta compradora.
 
 Comandos utilizados para verificar cada entrega:
 
