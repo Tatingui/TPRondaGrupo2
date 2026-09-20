@@ -56,6 +56,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     private static final Locale LOCALE_AR = new Locale("es", "AR");
     private static final Gson GSON = new Gson();
+    private final ComoLlegarResolver comoLlegarResolver = new ComoLlegarResolver();
 
     @Inject
     PublicationApiService publicationApiService;
@@ -275,10 +276,11 @@ public class DetallePublicacionFragment extends Fragment {
      * o sea cuando al comprador le aceptaron la oferta.
      */
     private void mostrarComoLlegar(@NonNull Publicacion publicacion) {
-        String destino = publicacion.getDestinoParaMapa();
+        String destino = comoLlegarResolver.resolver(publicacion);
 
-        if (publicacion.isOwner() || !publicacion.isAddressVisible() || destino == null) {
+        if (destino == null) {
             btnComoLlegar.setVisibility(View.GONE);
+            btnComoLlegar.setOnClickListener(null);
             return;
         }
 

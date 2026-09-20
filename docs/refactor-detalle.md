@@ -9,7 +9,7 @@ aparte de las extracciones que deben preservar el funcionamiento existente.
 | Incremento | Alcance | Rama | Estado |
 | --- | --- | --- | --- |
 | 0 | Recuperar pruebas y verificar compatibilidad de IDs | `features/refactor-detalle-base` | Implementado y verificado localmente |
-| 1 | Extraer autorización de la acción y resolución del destino | `features/refactor-detalle-base` | Pendiente |
+| 1 | Extraer autorización de la acción y resolución del destino | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 2 | Extraer integración con aplicaciones de mapas | `features/refactor-detalle-base` | Pendiente |
 | 3 | Corregir ciclo de vida, callbacks y cancelación | `features/refactor-detalle-base` | Pendiente |
 | 4 | Separar carga del detalle mediante repositorio y estado de pantalla | `features/refactor-detalle-base` | Pendiente |
@@ -49,6 +49,15 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
   prueba instrumentada de una base instalada. No se ejecutó validación visual en dispositivo.
 - Requisitos abordados: R9 y R10 para esta entrega; compatibilidad de IDs de R7.
   Las demás partes de R7 y los requisitos de mapas, ciclo de vida y arquitectura siguen pendientes.
+
+## Incremento 1: reglas de Cómo llegar
+
+- ComoLlegarResolver reúne R1, R2 y R3 sin depender de Android ni de Google Maps.
+- Se priorizan coordenadas completas y válidas, incluida 0,0; ante valores inválidos
+  se usa la dirección recortada. El permiso se verifica antes de resolver el destino.
+- Publicacion conserva los datos y deja de construir destinos para mapas.
+- Al ocultar el botón se elimina también su listener anterior.
+- 21 casos de reglas; suite total: 120 pruebas aprobadas y APK debug compilado.
 
 ## Mejoras funcionales propuestas, separadas del refactor
 

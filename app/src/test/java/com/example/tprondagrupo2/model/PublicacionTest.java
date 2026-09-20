@@ -231,29 +231,4 @@ public class PublicacionTest {
         assertTrue(p.isFavorite());
     }
 
-    @Test
-    public void testDestinoParaMapaUsaLasCoordenadas() {
-        // Con coordenadas, Google Maps navega al punto exacto
-        Publicacion p = new Gson().fromJson(
-                "{\"id\":\"1\",\"address\":\"Av. Santa Fe 3253\",\"latitude\":-34.588,\"longitude\":-58.411}",
-                Publicacion.class);
-
-        assertEquals("-34.588,-58.411", p.getDestinoParaMapa());
-    }
-
-    @Test
-    public void testDestinoParaMapaUsaLaDireccionSiNoHayCoordenadas() {
-        Publicacion p = new Gson().fromJson(
-                "{\"id\":\"1\",\"address\":\"Av. Santa Fe 3253\"}", Publicacion.class);
-
-        assertEquals("Av. Santa Fe 3253", p.getDestinoParaMapa());
-    }
-
-    @Test
-    public void testDestinoParaMapaEsNuloSinDireccionNiCoordenadas() {
-        // Sin dirección no se muestra el botón "Cómo llegar"
-        Publicacion p = new Gson().fromJson("{\"id\":\"1\"}", Publicacion.class);
-
-        assertNull(p.getDestinoParaMapa());
-    }
 }
