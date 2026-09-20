@@ -96,4 +96,13 @@
         <item>Tierra del Fuego</item>
         <item>Tucumán</item>
     </string-array>
+    <string name="delivery_address_label">Dirección exacta de entrega</string>
+    <string name="delivery_address_help">En Google Maps, buscá el punto de entrega, tocá «Copiar la dirección» y pegala acá, incluyendo ciudad y provincia. No pegues el enlace de compartir. Solo vos y el comprador con oferta aceptada podrán verla.</string>
+    <string name="delivery_address_invalid">Pegá la dirección completa de Google Maps, no un enlace (máximo 255 caracteres).</string>
+    <string name="offers_empty">No hay ofertas para mostrar.</string>
+    <string name="offers_http_error">No se pudieron cargar las ofertas (HTTP %1$d). Reintentá; si continúa, revisá el backend.</string>
+    <string name="offers_auth_error">No se pudo autorizar la consulta de ofertas (HTTP %1$d). Verificá tu sesión y permisos.</string>
+    <string name="offers_network_error">No se pudieron cargar las ofertas. Revisá la conexión y reintentá.</string>
+    <string name="offers_retry">Reintentar</string>
+    <string name="open_offer_publication">Ver publicación</string>
 </resources>

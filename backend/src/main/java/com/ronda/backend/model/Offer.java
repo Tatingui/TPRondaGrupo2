@@ -127,7 +127,8 @@ public class Offer {
     }
 
     public OfferStatus getEffectiveStatus() {
-        if (status == OfferStatus.PENDING && expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
+        if ((status == OfferStatus.PENDING || status == OfferStatus.COUNTER_OFFER)
+                && expiresAt != null && expiresAt.isBefore(LocalDateTime.now())) {
             return OfferStatus.EXPIRED;
         }
         return status;

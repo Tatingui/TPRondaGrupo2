@@ -9,6 +9,7 @@ public class PublicationCreateRequest implements Serializable {
     private Double price;
     private String status; // NUEVO, COMO_NUEVO, USADO
     private String location;
+    private String address;
     private Long categoryId;
     private List<String> imageUrls;
 
@@ -35,6 +36,8 @@ public class PublicationCreateRequest implements Serializable {
     public void setStatus(String status) { this.status = status; }
 
     public String getLocation() { return location; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
     public void setLocation(String location) { this.location = location; }
 
     public Long getCategoryId() { return categoryId; }

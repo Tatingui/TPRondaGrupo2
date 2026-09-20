@@ -141,9 +141,9 @@ verificar con `./gradlew.bat :app:connectedDebugAndroidTest`.
 ## Mejoras funcionales propuestas, separadas del refactor
 
 - Fallback web después de las alternativas de mapas, con sus pruebas específicas.
-- Captura de dirección exacta al publicar, persistencia en borrador y envío al backend.
-  Hoy el formulario y PublicationCreateRequest solo envían la zona. El cierre funcional
-  requiere probar crear publicación, ofertar, aceptar y abrir destino como comprador,
-  manteniendo la dirección oculta para terceros.
+- Captura de dirección exacta: implementada posteriormente por pedido del usuario,
+  como texto copiado de Google Maps (sin autocompletado). Ver `entrega-y-ofertas.md`
+  para alcance, pruebas y comprobaciones pendientes en el entorno real.
 
-Estas mejoras no se consideran implementadas ni incluidas en los incrementos 0 a 4.
+Estas mejoras son entregas funcionales separadas de los incrementos 0 a 4.
+El fallback web continúa pendiente.

@@ -203,7 +203,7 @@ public class PublicationService {
         publication.setStatus(dto.getStatus());
         publication.setState(PublicationState.ACTIVE);
         publication.setLocation(dto.getLocation());
-        publication.setAddress(dto.getAddress());
+        publication.setAddress(dto.getAddress() == null ? null : dto.getAddress().trim());
         publication.setLatitude(dto.getLatitude());
         publication.setLongitude(dto.getLongitude());
         publication.setCategory(category);

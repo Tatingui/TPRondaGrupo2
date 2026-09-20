@@ -26,6 +26,7 @@ import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
 import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.tabs.TabLayout;
 
@@ -55,6 +56,11 @@ public class MyOffersFragment extends Fragment {
     private RecyclerView rvOffers;
     private ProgressBar progressBar;
     private TextView tvEmpty;
+    private View btnRetry;
+    private ViewRequestScope requests;
+    private Call<List<Offer>> loadingCall;
+    private int loadGeneration;
+    private AlertDialog activeDialog;
 
     private MyOffersAdapter adapter;
     private final List<Offer> currentOffers = new ArrayList<>();
@@ -75,6 +81,10 @@ public class MyOffersFragment extends Fragment {
         rvOffers = view.findViewById(R.id.rvOffers);
         progressBar = view.findViewById(R.id.progressBarOffers);
         tvEmpty = view.findViewById(R.id.tvEmptyOffers);
+        btnRetry = view.findViewById(R.id.btnRetryOffers);
+        btnRetry.setOnClickListener(v -> fetchOffers());
+        requests = new ViewRequestScope();
+        isReceivedTab = tabLayoutOffers.getSelectedTabPosition() == 0;
 
         setupRecyclerView();
         setupTabs();
@@ -83,6 +93,10 @@ public class MyOffersFragment extends Fragment {
 
     private void setupRecyclerView() {
         adapter = new MyOffersAdapter(currentOffers, isReceivedTab, new MyOffersAdapter.OnOfferActionListener() {
+            @Override
+            public void onOpenPublication(Offer offer) {
+                navigateToPublicationDetail(offer.getPublicationId());
+            }
             @Override
             public void onAccept(Offer offer, int position) {
                 acceptOffer(offer, position);
@@ -130,46 +144,64 @@ public class MyOffersFragment extends Fragment {
     }
 
     private void fetchOffers() {
+        int generation = ++loadGeneration;
+        if (loadingCall != null) loadingCall.cancel();
+        currentOffers.clear();
+        adapter.notifyDataSetChanged();
         progressBar.setVisibility(View.VISIBLE);
         tvEmpty.setVisibility(View.GONE);
+        btnRetry.setVisibility(View.GONE);
 
         Call<List<Offer>> call = isReceivedTab ? offerApiService.getReceivedOffers() : offerApiService.getSentOffers();
-        call.enqueue(new Callback<List<Offer>>() {
+        loadingCall = call;
+        requests.enqueue(call, new Callback<List<Offer>>() {
             @Override
             public void onResponse(@NonNull Call<List<Offer>> call, @NonNull Response<List<Offer>> response) {
+                if (generation != loadGeneration) return;
                 progressBar.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
                     currentOffers.clear();
                     currentOffers.addAll(response.body());
                     adapter.notifyDataSetChanged();
                     if (currentOffers.isEmpty()) {
+                        tvEmpty.setText(R.string.offers_empty);
                         tvEmpty.setVisibility(View.VISIBLE);
                     }
                 } else {
-                    Toast.makeText(getContext(), "Error al cargar ofertas", Toast.LENGTH_SHORT).show();
+                    if (response.errorBody() != null) response.errorBody().close();
+                    int message = response.code() == 401 || response.code() == 403
+                            ? R.string.offers_auth_error : R.string.offers_http_error;
+                    showLoadError(getString(message, response.code()));
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<List<Offer>> call, @NonNull Throwable t) {
+                if (generation != loadGeneration) return;
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                showLoadError(getString(R.string.offers_network_error));
             }
         });
+    }
+
+    private void showLoadError(String message) {
+        tvEmpty.setText(message);
+        tvEmpty.setVisibility(View.VISIBLE);
+        btnRetry.setVisibility(View.VISIBLE);
     }
 
     /**
      * Acepta la oferta usando el endpoint correcto (PUT /transactions/offers/{id}/accept).
      * Esto crea la transacción en el backend, marca la publicación como SOLD,
-     * y luego navega al detalle de la publicación para que el vendedor vea
-     * la dirección y el botón "Cómo llegar".
+     * y luego navega al detalle. Cómo llegar sigue reservado al comprador autorizado.
      */
     private void acceptOffer(Offer offer, int position) {
-        historialApiService.acceptOffer(offer.getId()).enqueue(new Callback<OperacionHistorial>() {
+        requests.enqueue(historialApiService.acceptOffer(offer.getId()), new Callback<OperacionHistorial>() {
             @Override
             public void onResponse(@NonNull Call<OperacionHistorial> call, @NonNull Response<OperacionHistorial> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(getContext(), "Oferta aceptada", Toast.LENGTH_SHORT).show();
+                    fetchOffers();
                     navigateToPublicationDetail(offer.getPublicationId());
                 } else {
                     Toast.makeText(getContext(), "Error al aceptar oferta", Toast.LENGTH_SHORT).show();
@@ -189,12 +221,11 @@ public class MyOffersFragment extends Fragment {
      */
     private void rejectOffer(Long offerId, int position) {
         OfferRespondRequest request = new OfferRespondRequest("REJECTED", null);
-        offerApiService.respondOffer(offerId, request).enqueue(new Callback<Offer>() {
+        requests.enqueue(offerApiService.respondOffer(offerId, request), new Callback<Offer>() {
             @Override
             public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    currentOffers.set(position, response.body());
-                    adapter.notifyItemChanged(position);
+                    fetchOffers();
                     Toast.makeText(getContext(), "Oferta rechazada", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getContext(), "Error al rechazar oferta", Toast.LENGTH_SHORT).show();
@@ -280,17 +311,17 @@ public class MyOffersFragment extends Fragment {
             });
         });
 
+        activeDialog = dialog;
         dialog.show();
     }
 
     private void sendCounterOffer(Long offerId, double newPrice, int position) {
         OfferRespondRequest request = new OfferRespondRequest("COUNTER_OFFER", newPrice);
-        offerApiService.respondOffer(offerId, request).enqueue(new Callback<Offer>() {
+        requests.enqueue(offerApiService.respondOffer(offerId, request), new Callback<Offer>() {
             @Override
             public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    currentOffers.set(position, response.body());
-                    adapter.notifyItemChanged(position);
+                    fetchOffers();
                     Toast.makeText(getContext(), "Contra-oferta enviada", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getContext(), "Error al enviar contra-oferta", Toast.LENGTH_SHORT).show();
@@ -306,11 +337,11 @@ public class MyOffersFragment extends Fragment {
 
     /**
      * Obtiene la publicación por ID y navega al DetallePublicacionFragment
-     * para que el vendedor vea la dirección y pueda usar "Cómo llegar".
+     * con permisos y dirección calculados por el backend para quien está consultando.
      */
     private void navigateToPublicationDetail(Long publicationId) {
         if (publicationId == null) return;
-        publicationApiService.getPublication(String.valueOf(publicationId)).enqueue(new Callback<Publicacion>() {
+        requests.enqueue(publicationApiService.getPublication(String.valueOf(publicationId)), new Callback<Publicacion>() {
             @Override
             public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                 if (response.isSuccessful() && response.body() != null && isAdded()) {
@@ -318,13 +349,35 @@ public class MyOffersFragment extends Fragment {
                     args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, response.body());
                     NavHostFragment.findNavController(MyOffersFragment.this)
                             .navigate(R.id.action_myOffers_to_detalle, args);
+                } else {
+                    Toast.makeText(getContext(), "No se pudo abrir la publicación (HTTP " + response.code() + ")", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
-                // Si falla la navegación al detalle, al menos la oferta ya fue aceptada
+                Toast.makeText(getContext(), "No se pudo abrir el detalle. Reintentá desde la oferta.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    @Override
+    public void onDestroyView() {
+        ++loadGeneration;
+        if (requests != null) requests.close();
+        if (activeDialog != null) activeDialog.dismiss();
+        if (tabLayoutOffers != null) tabLayoutOffers.clearOnTabSelectedListeners();
+        if (rvOffers != null) rvOffers.setAdapter(null);
+        loadingCall = null;
+        activeDialog = null;
+        requests = null;
+        tabLayoutOffers = null;
+        rvOffers = null;
+        progressBar = null;
+        tvEmpty = null;
+        btnRetry = null;
+        adapter = null;
+        currentOffers.clear();
+        super.onDestroyView();
     }
 }
