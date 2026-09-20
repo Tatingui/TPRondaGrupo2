@@ -11,12 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@color/white"
+        android:background="?attr/colorSurface"
         app:elevation="8dp"
         app:menu="@menu/bottom_nav_menu"
-        app:labelVisibilityMode="unlabeled"
-        app:itemIconTint="@color/purple_500"
-        app:itemTextColor="@color/purple_500" />
+        app:labelVisibilityMode="unlabeled" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment"

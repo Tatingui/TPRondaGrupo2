@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
                     systemBars.left,
                     systemBars.top,
                     systemBars.right,
-                    systemBars.bottom
+                    0
             );
 
             return windowInsets;
@@ -53,6 +53,29 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
 
+        android.util.TypedValue typedValue = new android.util.TypedValue();
+        getTheme().resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true);
+        int primaryColor = typedValue.data;
+
+        android.content.res.ColorStateList tint = new android.content.res.ColorStateList(
+                new int[][]{
+                        new int[]{android.R.attr.state_checked},
+                        new int[]{-android.R.attr.state_checked}
+                },
+                new int[]{
+                        primaryColor,
+                        android.graphics.Color.parseColor("#757575")
+                }
+        );
+        bottomNav.setItemIconTintList(tint);
+        bottomNav.setItemTextColor(tint);
+
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav, (view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            view.setPadding(view.getPaddingLeft(), view.getPaddingTop(), view.getPaddingRight(), insets.bottom);
+            return windowInsets;
+        });
+
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
 
@@ -60,11 +83,13 @@ public class MainActivity extends AppCompatActivity {
             NavController navController = navHostFragment.getNavController();
             NavigationUI.setupWithNavController(bottomNav, navController);
 
-            // Solo ir directo al Home si "Mantener sesión" está activo Y hay token
+            // Solo ir directo al Home si "Mantener sesión" está activo Y hay token Y es la primer creación
             TokenManager tm = TokenManager.getInstance();
             String token = tm.getToken();
-            if (token != null && !token.isEmpty() && tm.isKeepSession()) {
-                navController.navigate(R.id.action_login_to_home);
+            if (savedInstanceState == null && token != null && !token.isEmpty() && tm.isKeepSession()) {
+                if (navController.getCurrentDestination() == null || navController.getCurrentDestination().getId() == R.id.loginFragment) {
+                    navController.navigate(R.id.action_login_to_home);
+                }
             }
             // Si hay token pero NO keepSession → queda en Login (biometría o credenciales)
             // Si no hay token → queda en Login normalmente
