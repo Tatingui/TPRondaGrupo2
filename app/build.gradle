@@ -89,4 +89,7 @@ dependencies {
     // Biometric + Security Crypto
     implementation libs.biometric
     implementation libs.security.crypto
+
+    // UCrop para recortar fotos
+    implementation libs.ucrop
 }
