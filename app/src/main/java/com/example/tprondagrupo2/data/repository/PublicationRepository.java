@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.data.repository;
 import androidx.annotation.NonNull;
 
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 
@@ -19,7 +20,7 @@ import retrofit2.Response;
  *
  * Patron Repository: los Fragments no llaman a Retrofit directamente.
  */
-public class PublicationRepository {
+public class PublicationRepository implements PublicationDetailSource {
 
     public interface FavoritesCallback {
         void onSuccess(List<Publicacion> favorites);
@@ -43,6 +44,55 @@ public class PublicationRepository {
     @Inject
     public PublicationRepository(PublicationApiService apiService) {
         this.apiService = apiService;
+    }
+
+    @Override
+    public Request getDetail(String id, Result<Publicacion> result) {
+        return enqueueDetail(apiService.getPublication(id), result, true);
+    }
+
+    @Override
+    public Request getQuestions(String id, Result<List<Pregunta>> result) {
+        return enqueueDetail(apiService.getQuestions(id), result, true);
+    }
+
+    @Override
+    public Request recordView(String id) {
+        return enqueueDetail(apiService.recordView(id), new Result<Void>() {
+            @Override public void onSuccess(Void value) { }
+            @Override public void onError(LoadError error) { /* Operación no bloqueante. */ }
+        }, false);
+    }
+
+    private <T> Request enqueueDetail(Call<T> call, Result<T> result, boolean requiresBody) {
+        call.enqueue(new Callback<T>() {
+            @Override
+            public void onResponse(@NonNull Call<T> call, @NonNull Response<T> response) {
+                if (call.isCanceled()) {
+                    if (response.errorBody() != null) response.errorBody().close();
+                    return;
+                }
+                if (response.isSuccessful() && (!requiresBody || response.body() != null)) {
+                    result.onSuccess(response.body());
+                } else {
+                    if (response.errorBody() != null) response.errorBody().close();
+                    result.onError(mapError(response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<T> call, @NonNull Throwable error) {
+                if (!call.isCanceled()) result.onError(LoadError.NETWORK);
+            }
+        });
+        return call::cancel;
+    }
+
+    private LoadError mapError(int code) {
+        if (code == 404) return LoadError.NOT_FOUND;
+        if (code == 401) return LoadError.UNAUTHORIZED;
+        if (code == 403) return LoadError.FORBIDDEN;
+        return LoadError.SERVER;
     }
 
     public void getFavorites(FavoritesCallback callback) {

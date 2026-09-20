@@ -133,6 +133,51 @@ public class PublicationDetailTest {
     }
 
     @Test
+    public void unaOfertaPosteriorNoOcultaLaAceptadaDelMismoComprador() {
+        Offer accepted = oferta(OfferStatus.ACCEPTED, java.time.LocalDateTime.now().minusDays(1));
+        oferta(OfferStatus.REJECTED, java.time.LocalDateTime.now());
+        publication.setState(PublicationState.SOLD);
+        entityManager.flush();
+        entityManager.clear();
+
+        PublicationDetailDTO dto = publicationService.getById(publication.getId(), buyer.getEmail());
+        assertTrue(dto.isAddressVisible());
+        assertEquals("Av. Santa Fe 3253", dto.getAddress());
+        assertEquals(accepted.getId(), dto.getMyOffer().getId());
+
+        User outsider = new User("Tercero", "tercero-direccion@test.com", "pass");
+        entityManager.persist(outsider);
+        assertFalse(publicationService.getById(publication.getId(), outsider.getEmail()).isAddressVisible());
+    }
+
+    @Test
+    public void publicacionAntiguaSinDireccionConservaAutorizacionPeroNoInventaDestinoDesdeZona() {
+        oferta(OfferStatus.ACCEPTED, java.time.LocalDateTime.now());
+        publication.setAddress(null);
+        publication.setLatitude(null);
+        publication.setLongitude(null);
+        publication.setLocation("Av. Carabobo 07");
+        entityManager.flush();
+        PublicationDetailDTO dto = publicationService.getById(publication.getId(), buyer.getEmail());
+        assertTrue(dto.isAddressVisible());
+        assertNull(dto.getAddress());
+        assertNull(dto.getLatitude());
+        assertEquals("Av. Carabobo 07", dto.getLocation());
+    }
+
+    private Offer oferta(OfferStatus status, java.time.LocalDateTime createdAt) {
+        Offer offer = new Offer();
+        offer.setPublication(publication);
+        offer.setSeller(seller);
+        offer.setBuyer(buyer);
+        offer.setAmount(80.0);
+        offer.setStatus(status);
+        offer.setCreatedAt(createdAt);
+        entityManager.persist(offer);
+        return offer;
+    }
+
+    @Test
     public void elVendedorNoPuedeOfertarNiPreguntarEnLoSuyo() {
         OfferCreateRequest request = new OfferCreateRequest();
         request.setAmount(80.0);

@@ -18,7 +18,7 @@ public class PublicationDetailDTO extends PublicationDTO {
     private Double latitude;
     private Double longitude;
 
-    // Ultima oferta que hizo quien mira (null si no oferto)
+    // Oferta aceptada de quien mira; si no tiene una, su ultima oferta (null si no oferto).
     private OfferDTO myOffer;
 
     public PublicationDetailDTO() {

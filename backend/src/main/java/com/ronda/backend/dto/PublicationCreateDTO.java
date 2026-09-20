@@ -29,7 +29,12 @@ public class PublicationCreateDTO {
 
     private List<String> imageUrls;
 
-    // Direccion exacta (opcional por ahora, la completa el wizard de publicar)
+    // Texto copiado desde Maps; separado de la zona publica. Obligatorio para nuevas publicaciones.
+    @NotBlank(message = "La dirección exacta de entrega es obligatoria")
+    @jakarta.validation.constraints.Size(max = 255, message = "La dirección admite hasta 255 caracteres")
+    @jakarta.validation.constraints.Pattern(
+            regexp = "(?is)^(?!.*(?:://|www\\.|maps\\.app\\.goo\\.gl|goo\\.gl/maps)).*$",
+            message = "Pegá la dirección de Google Maps, no un enlace")
     private String address;
     private Double latitude;
     private Double longitude;

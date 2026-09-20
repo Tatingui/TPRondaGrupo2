@@ -105,4 +105,15 @@ public class GsonSerializationTest {
         assertEquals("abc", response.getToken());
         assertTrue(response.isSuccess());
     }
+
+    @Test
+    public void testDetalleLeeIdNumericoDelVendedor() {
+        String json = "{\"id\":42,\"vendedor\":{\"id\":7,\"nombre\":\"Ana\"}}";
+
+        Publicacion publicacion = gson.fromJson(json, Publicacion.class);
+
+        assertEquals(Long.valueOf(7L), publicacion.getVendedor().getId());
+        assertEquals(Long.valueOf(7L), publicacion.getSellerId());
+        assertEquals("Ana", publicacion.getVendedor().getNombre());
+    }
 }
