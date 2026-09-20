@@ -137,6 +137,14 @@ public class ProfileFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_offers)
         );
 
+        com.google.android.material.switchmaterial.SwitchMaterial switchDarkMode = view.findViewById(R.id.switchDarkMode);
+        com.example.tprondagrupo2.data.ThemePreferenceManager themeManager = new com.example.tprondagrupo2.data.ThemePreferenceManager(requireContext());
+        switchDarkMode.setChecked(themeManager.isDarkModeEnabled());
+        switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            themeManager.setDarkModeEnabled(isChecked);
+            requireActivity().recreate();
+        });
+
         // Cerrar sesion: delega al repositorio y navega al login
         view.findViewById(R.id.btnLogout).setOnClickListener(v -> {
             userRepository.logout();

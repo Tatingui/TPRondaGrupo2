@@ -11,7 +11,7 @@
         android:text="Hacer una Oferta"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="@color/purple_700"
+        android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="16dp" />
 
     <com.google.android.material.textfield.TextInputLayout

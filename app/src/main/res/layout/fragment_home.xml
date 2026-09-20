@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="?android:attr/colorBackground">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -67,7 +67,7 @@
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
+            android:background="?attr/colorSurface"
             android:paddingVertical="8dp"
             android:scrollbars="none">
 
@@ -95,12 +95,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Ordenar por"
-                    android:textColor="@color/purple_500"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/white"
+                    app:chipBackgroundColor="?attr/colorSurface"
                     app:chipIcon="@android:drawable/ic_menu_sort_alphabetically"
-                    app:chipIconTint="@color/purple_500"
-                    app:chipStrokeColor="@color/purple_500"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorPrimary"
                     app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
@@ -109,10 +109,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Categoría"
-                    android:textColor="@color/purple_500"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/white"
-                    app:chipStrokeColor="@color/purple_500"
+                    app:chipBackgroundColor="?attr/colorSurface"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorPrimary"
                     app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
@@ -121,10 +122,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Precio"
-                    android:textColor="@color/purple_500"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/white"
-                    app:chipStrokeColor="@color/purple_500"
+                    app:chipBackgroundColor="?attr/colorSurface"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorPrimary"
                     app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
@@ -133,10 +135,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Estado"
-                    android:textColor="@color/purple_500"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/white"
-                    app:chipStrokeColor="@color/purple_500"
+                    app:chipBackgroundColor="?attr/colorSurface"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorPrimary"
                     app:chipStrokeWidth="1dp" />
 
                 <com.google.android.material.chip.Chip
@@ -145,10 +148,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Zona"
-                    android:textColor="@color/purple_500"
+                    android:textColor="?attr/colorPrimary"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/white"
-                    app:chipStrokeColor="@color/purple_500"
+                    app:chipBackgroundColor="?attr/colorSurface"
+                    app:chipIconTint="?attr/colorPrimary"
+                    app:chipStrokeColor="?attr/colorPrimary"
                     app:chipStrokeWidth="1dp" />
 
             </com.google.android.material.chip.ChipGroup>
