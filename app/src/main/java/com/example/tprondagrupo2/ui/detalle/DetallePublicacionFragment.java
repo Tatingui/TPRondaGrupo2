@@ -1,8 +1,5 @@
 package com.example.tprondagrupo2.ui.detalle;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -57,6 +54,7 @@ public class DetallePublicacionFragment extends Fragment {
     private static final Locale LOCALE_AR = new Locale("es", "AR");
     private static final Gson GSON = new Gson();
     private final ComoLlegarResolver comoLlegarResolver = new ComoLlegarResolver();
+    private MapaNavigator mapaNavigator;
 
     @Inject
     PublicationApiService publicationApiService;
@@ -111,6 +109,7 @@ public class DetallePublicacionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        mapaNavigator = new MapaNavigator(new AndroidMapaLauncher(this::startActivity));
 
         vpGaleria = view.findViewById(R.id.vpGaleria);
         tvIndicadorFotos = view.findViewById(R.id.tvIndicadorFotos);
@@ -294,24 +293,7 @@ public class DetallePublicacionFragment extends Fragment {
      * Si no está Google Maps, se intenta con la app de mapas del dispositivo.
      */
     private void abrirEnMapa(@NonNull String destino) {
-        Uri ruta = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
-                .appendQueryParameter("api", "1")
-                .appendQueryParameter("destination", destino)
-                .build();
-        Intent intent = new Intent(Intent.ACTION_VIEW, ruta);
-        intent.setPackage("com.google.android.apps.maps");
-
-        try {
-            startActivity(intent);
-            return;
-        } catch (ActivityNotFoundException e) {
-            // No está Google Maps: probamos con la app de mapas por defecto
-        }
-
-        Uri mapa = Uri.parse("geo:0,0?q=" + Uri.encode(destino));
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, mapa));
-        } catch (ActivityNotFoundException e) {
+        if (!mapaNavigator.abrir(destino)) {
             Toast.makeText(getContext(), R.string.detalle_sin_app_mapas, Toast.LENGTH_SHORT).show();
         }
     }

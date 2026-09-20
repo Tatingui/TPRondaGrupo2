@@ -10,7 +10,7 @@ aparte de las extracciones que deben preservar el funcionamiento existente.
 | --- | --- | --- | --- |
 | 0 | Recuperar pruebas y verificar compatibilidad de IDs | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 1 | Extraer autorización de la acción y resolución del destino | `features/refactor-detalle-base` | Implementado y verificado localmente |
-| 2 | Extraer integración con aplicaciones de mapas | `features/refactor-detalle-base` | Pendiente |
+| 2 | Extraer integración con aplicaciones de mapas | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 3 | Corregir ciclo de vida, callbacks y cancelación | `features/refactor-detalle-base` | Pendiente |
 | 4 | Separar carga del detalle mediante repositorio y estado de pantalla | `features/refactor-detalle-base` | Pendiente |
 | 5 | Extraer acciones en entregas separadas: preguntas, ofertas, gestión y favoritos | `features/refactor-detalle-acciones` | Pendiente |
@@ -58,6 +58,16 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
 - Publicacion conserva los datos y deja de construir destinos para mapas.
 - Al ocultar el botón se elimina también su listener anterior.
 - 21 casos de reglas; suite total: 120 pruebas aprobadas y APK debug compilado.
+
+## Incremento 2: apertura de mapas
+
+- MapaNavigator decide Google Maps y fallback geo; AndroidMapaLauncher adapta a intents.
+- El Fragment solo solicita la apertura y presenta el error (R4). Se conserva el fallback
+  existente; no se incorporó navegación web ni permisos de ubicación.
+- Pruebas de orden de alternativas, fallos, destino vacío y codificación de caracteres.
+- Suite total: 125 pruebas aprobadas; APK debug y APK de pruebas instrumentadas compilados.
+- Dos pruebas instrumentadas cubren ACTION_VIEW, paquete, URI y ActivityNotFoundException;
+  quedan para ejecución en dispositivo junto con la prueba manual de aplicaciones reales.
 
 ## Mejoras funcionales propuestas, separadas del refactor
 
