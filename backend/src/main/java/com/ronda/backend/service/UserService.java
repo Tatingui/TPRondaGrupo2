@@ -65,6 +65,7 @@ public class UserService {
         response.setEmail(user.getEmail());
         response.setTelefono(user.getTelefono());
         response.setZona(user.getZona());
+        response.setProfileImageUrl(user.getProfileImageUrl());
 
         response.setMiembroDesde(formatMiembroDesde(user.getCreatedAt()));
 
@@ -114,6 +115,20 @@ public class UserService {
         userRepository.save(user);
 
         // Devolvemos el perfil actualizado
+        return getProfile(email);
+    }
+
+    /**
+     * Actualiza solo la foto de perfil del usuario.
+     */
+    public UserProfileResponse updateProfileImage(String email, String imageUrl) {
+        Optional<User> encontrado = userRepository.findByEmail(email);
+        if (encontrado.isEmpty()) {
+            return null;
+        }
+        User user = encontrado.get();
+        user.setProfileImageUrl(imageUrl);
+        userRepository.save(user);
         return getProfile(email);
     }
 

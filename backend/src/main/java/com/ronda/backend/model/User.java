@@ -45,6 +45,9 @@ public class User {
     /** Zona/ubicacion del usuario. Opcional. */
     private String zona;
 
+    /** URL de la foto de perfil. Null si no tiene. */
+    private String profileImageUrl;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserFavorite> favorites = new HashSet<>();
 
@@ -136,6 +139,14 @@ public class User {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

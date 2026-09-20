@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -22,16 +23,45 @@
             android:paddingTop="32dp"
             android:paddingBottom="32dp">
 
-            <TextView
-                android:id="@+id/tvPerfilAvatar"
-                android:layout_width="96dp"
-                android:layout_height="96dp"
-                android:background="@drawable/bg_avatar_vendedor"
-                android:gravity="center"
-                android:textColor="@android:color/white"
-                android:textSize="40sp"
-                android:textStyle="bold"
-                tools:text="J" />
+            <!-- Avatar con foto de perfil + boton camara -->
+            <FrameLayout
+                android:layout_width="100dp"
+                android:layout_height="100dp">
+
+                <ImageView
+                    android:id="@+id/ivPerfilAvatar"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/bg_avatar_vendedor"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tvPerfilAvatar"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/bg_avatar_vendedor"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="40sp"
+                    android:textStyle="bold"
+                    tools:text="J" />
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabChangePhoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:contentDescription="Cambiar foto"
+                    app:fabSize="mini"
+                    app:fabCustomSize="32dp"
+                    app:maxImageSize="16dp"
+                    app:backgroundTint="@color/white"
+                    app:tint="@color/purple_500" />
+
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvPerfilNombre"

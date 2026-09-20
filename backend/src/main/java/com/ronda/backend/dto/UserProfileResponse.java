@@ -11,6 +11,7 @@ public class UserProfileResponse {
     private String email;
     private String telefono;
     private String zona;
+    private String profileImageUrl;
     private String miembroDesde;  // Ej: "Septiembre 2026"
 
     // Reputacion: se construye con las calificaciones recibidas (punto 9)
@@ -92,6 +93,14 @@ public class UserProfileResponse {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public String getMiembroDesde() {
