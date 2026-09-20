@@ -26,6 +26,9 @@ public class Offer {
     @Column(nullable = false)
     private Double offeredPrice;
 
+    @Column(nullable = false)
+    private Double amount;
+
     @Column(length = 500)
     private String message;
 
@@ -49,6 +52,11 @@ public class Offer {
         }
         if (this.expiresAt == null) {
             this.expiresAt = LocalDateTime.now().plusHours(48);
+        }
+        if (this.amount == null && this.offeredPrice != null) {
+            this.amount = this.offeredPrice;
+        } else if (this.offeredPrice == null && this.amount != null) {
+            this.offeredPrice = this.amount;
         }
     }
 
@@ -85,18 +93,20 @@ public class Offer {
     }
 
     public Double getOfferedPrice() {
-        return offeredPrice;
+        return offeredPrice != null ? offeredPrice : amount;
     }
 
     public void setOfferedPrice(Double offeredPrice) {
         this.offeredPrice = offeredPrice;
+        this.amount = offeredPrice;
     }
 
     public Double getAmount() {
-        return offeredPrice;
+        return amount != null ? amount : offeredPrice;
     }
 
     public void setAmount(Double amount) {
+        this.amount = amount;
         this.offeredPrice = amount;
     }
 
