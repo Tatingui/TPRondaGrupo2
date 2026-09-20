@@ -33,6 +33,7 @@ import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
@@ -55,6 +56,9 @@ public class DetallePublicacionFragment extends Fragment {
     private static final Gson GSON = new Gson();
     private final ComoLlegarResolver comoLlegarResolver = new ComoLlegarResolver();
     private MapaNavigator mapaNavigator;
+    private ViewRequestScope viewRequests;
+    private ViewPager2.OnPageChangeCallback pageChangeCallback;
+    private AlertDialog activeDialog;
 
     @Inject
     PublicationApiService publicationApiService;
@@ -109,6 +113,7 @@ public class DetallePublicacionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        viewRequests = new ViewRequestScope();
         mapaNavigator = new MapaNavigator(new AndroidMapaLauncher(this::startActivity));
 
         vpGaleria = view.findViewById(R.id.vpGaleria);
@@ -161,17 +166,18 @@ public class DetallePublicacionFragment extends Fragment {
         });
         btnMarcarVendida.setOnClickListener(v -> confirmarMarcarVendida());
 
-        vpGaleria.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+        pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
                 actualizarIndicador(position, currentPublicacion.getCantidadFotos());
             }
-        });
+        };
+        vpGaleria.registerOnPageChangeCallback(pageChangeCallback);
 
         networkObserver = new NetworkObserver(requireContext());
         networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
             // Sin conexión las acciones se ven deshabilitadas; al tocarlas se avisa
-            float alpha = connected ? 1.0f : 0.5f;
+            float alpha = Boolean.TRUE.equals(connected) ? 1.0f : 0.5f;
             btnFavorite.setAlpha(alpha);
             btnPreguntar.setAlpha(alpha);
             btnOfertar.setAlpha(alpha);
@@ -190,7 +196,7 @@ public class DetallePublicacionFragment extends Fragment {
     private void cargarDetalle(String id) {
         if (id == null) return;
 
-        publicationApiService.getPublication(id).enqueue(new Callback<Publicacion>() {
+        viewRequests.enqueue(publicationApiService.getPublication(id), new Callback<Publicacion>() {
             @Override
             public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                 if (!isAdded()) return;
@@ -357,8 +363,8 @@ public class DetallePublicacionFragment extends Fragment {
     // ---------- Preguntas ----------
 
     private void cargarPreguntas() {
-        publicationApiService.getQuestions(currentPublicacion.getId())
-                .enqueue(new Callback<List<Pregunta>>() {
+        viewRequests.enqueue(publicationApiService.getQuestions(currentPublicacion.getId()),
+                new Callback<List<Pregunta>>() {
                     @Override
                     public void onResponse(@NonNull Call<List<Pregunta>> call,
                                            @NonNull Response<List<Pregunta>> response) {
@@ -404,7 +410,7 @@ public class DetallePublicacionFragment extends Fragment {
         if (!hayConexion()) return;
 
         EditText etPregunta = crearCampoTexto("Escribí tu pregunta");
-        new AlertDialog.Builder(requireContext())
+        activeDialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Preguntar al vendedor")
                 .setView(etPregunta)
                 .setPositiveButton("Enviar", (dialog, which) -> {
@@ -420,9 +426,9 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarPregunta(String texto) {
-        publicationApiService
-                .askQuestion(currentPublicacion.getId(), new TextoRequest(texto))
-                .enqueue(new Callback<Pregunta>() {
+        viewRequests.enqueue(publicationApiService
+                .askQuestion(currentPublicacion.getId(), new TextoRequest(texto)),
+                new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
                         if (!isAdded()) return;
@@ -449,7 +455,7 @@ public class DetallePublicacionFragment extends Fragment {
         if (!hayConexion()) return;
 
         EditText etRespuesta = crearCampoTexto("Escribí tu respuesta");
-        new AlertDialog.Builder(requireContext())
+        activeDialog = new AlertDialog.Builder(requireContext())
                 .setTitle(pregunta.getText())
                 .setView(etRespuesta)
                 .setPositiveButton("Responder", (dialog, which) -> {
@@ -465,9 +471,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarRespuesta(Long preguntaId, String texto) {
-        publicationApiService
-                .answerQuestion(preguntaId, new TextoRequest(texto))
-                .enqueue(new Callback<Pregunta>() {
+        viewRequests.enqueue(publicationApiService
+                .answerQuestion(preguntaId, new TextoRequest(texto)), new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
                         if (!isAdded()) return;
@@ -501,7 +506,7 @@ public class DetallePublicacionFragment extends Fragment {
         EditText etMensaje = dialogView.findViewById(R.id.etMensajeOferta);
         tvPrecioPublicado.setText("Precio publicado: " + formatearPrecio(currentPublicacion.getPrice()));
 
-        new AlertDialog.Builder(requireContext())
+        activeDialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Hacer una oferta")
                 .setView(dialogView)
                 .setPositiveButton("Ofertar", (dialog, which) -> {
@@ -524,9 +529,9 @@ public class DetallePublicacionFragment extends Fragment {
 
     private void enviarOferta(double monto, @Nullable String mensaje) {
         btnOfertar.setEnabled(false);
-        publicationApiService
-                .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje))
-                .enqueue(new Callback<Oferta>() {
+        viewRequests.enqueue(publicationApiService
+                .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
+                new Callback<Oferta>() {
                     @Override
                     public void onResponse(@NonNull Call<Oferta> call, @NonNull Response<Oferta> response) {
                         if (!isAdded()) return;
@@ -556,7 +561,7 @@ public class DetallePublicacionFragment extends Fragment {
     private void confirmarMarcarVendida() {
         if (!hayConexion()) return;
 
-        new AlertDialog.Builder(requireContext())
+        activeDialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Marcar como vendida")
                 .setMessage("La publicación deja de mostrarse en el listado. ¿Continuar?")
                 .setPositiveButton("Sí", (dialog, which) -> cambiarEstadoPublicacion("SOLD"))
@@ -571,8 +576,8 @@ public class DetallePublicacionFragment extends Fragment {
         Long id = currentPublicacion.getIdLong();
         if (id == null) return;
 
-        publicationApiService.updatePublicationStatus(id, nuevoEstado)
-                .enqueue(new Callback<Publicacion>() {
+        viewRequests.enqueue(publicationApiService.updatePublicationStatus(id, nuevoEstado),
+                new Callback<Publicacion>() {
                     @Override
                     public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                         if (!isAdded()) return;
@@ -664,7 +669,7 @@ public class DetallePublicacionFragment extends Fragment {
         if (publicacion.getId() == null) return;
         String pubId = publicacion.getId();
 
-        publicationApiService.recordView(pubId).enqueue(new Callback<Void>() {
+        viewRequests.enqueue(publicationApiService.recordView(pubId), new Callback<Void>() {
             @Override
             public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
                 // Vista registrada en backend
@@ -743,9 +748,9 @@ public class DetallePublicacionFragment extends Fragment {
         };
 
         if (wasFavorite) {
-            publicationApiService.unmarkAsFavorite(pubId).enqueue(callback);
+            viewRequests.enqueue(publicationApiService.unmarkAsFavorite(pubId), callback);
         } else {
-            publicationApiService.markAsFavorite(pubId).enqueue(callback);
+            viewRequests.enqueue(publicationApiService.markAsFavorite(pubId), callback);
         }
     }
 
@@ -812,5 +817,52 @@ public class DetallePublicacionFragment extends Fragment {
 
     private String formatearPrecio(double precio) {
         return NumberFormat.getCurrencyInstance(LOCALE_AR).format(precio);
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (viewRequests != null) viewRequests.close();
+        if (activeDialog != null) activeDialog.dismiss();
+        if (vpGaleria != null) {
+            if (pageChangeCallback != null) vpGaleria.unregisterOnPageChangeCallback(pageChangeCallback);
+            vpGaleria.setAdapter(null);
+        }
+        activeDialog = null;
+        pageChangeCallback = null;
+        mapaNavigator = null;
+        networkObserver = null;
+        currentPublicacion = null;
+        vpGaleria = null;
+        tvIndicadorFotos = null;
+        tvTitulo = null;
+        tvPrecio = null;
+        tvCategoria = null;
+        tvEstado = null;
+        tvFechaPublicacion = null;
+        tvDescripcion = null;
+        btnFavorite = null;
+        seccionVendedor = null;
+        tvVendedorAvatar = null;
+        tvVendedorNombre = null;
+        tvVendedorNivel = null;
+        rbVendedorReputacion = null;
+        tvVendedorReputacion = null;
+        tvVendedorVentas = null;
+        tvVendedorMiembroDesde = null;
+        btnVerPerfilVendedor = null;
+        tvDireccion = null;
+        btnComoLlegar = null;
+        tvAvisoEstado = null;
+        layoutAccionesComprador = null;
+        tvMiOferta = null;
+        btnPreguntar = null;
+        btnOfertar = null;
+        layoutGestionVendedor = null;
+        tvEstadoPublicacion = null;
+        btnPausarReactivar = null;
+        btnMarcarVendida = null;
+        tvSinPreguntas = null;
+        layoutPreguntas = null;
+        super.onDestroyView();
     }
 }

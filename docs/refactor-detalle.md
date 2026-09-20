@@ -11,7 +11,7 @@ aparte de las extracciones que deben preservar el funcionamiento existente.
 | 0 | Recuperar pruebas y verificar compatibilidad de IDs | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 1 | Extraer autorización de la acción y resolución del destino | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 2 | Extraer integración con aplicaciones de mapas | `features/refactor-detalle-base` | Implementado y verificado localmente |
-| 3 | Corregir ciclo de vida, callbacks y cancelación | `features/refactor-detalle-base` | Pendiente |
+| 3 | Corregir ciclo de vida, callbacks y cancelación | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 4 | Separar carga del detalle mediante repositorio y estado de pantalla | `features/refactor-detalle-base` | Pendiente |
 | 5 | Extraer acciones en entregas separadas: preguntas, ofertas, gestión y favoritos | `features/refactor-detalle-acciones` | Pendiente |
 | 6 | Ordenar persistencia, ejecución fuera del hilo principal y favoritos | `features/refactor-detalle-acciones` | Pendiente |
@@ -68,6 +68,18 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
 - Suite total: 125 pruebas aprobadas; APK debug y APK de pruebas instrumentadas compilados.
 - Dos pruebas instrumentadas cubren ACTION_VIEW, paquete, URI y ActivityNotFoundException;
   quedan para ejecución en dispositivo junto con la prueba manual de aplicaciones reales.
+
+## Incremento 3: ciclo de vida
+
+- ViewRequestScope cancela solicitudes pendientes y descarta resultados de una vista cerrada.
+  Cada vista tiene su propio grupo; no se cancelan solicitudes ajenas.
+- onDestroyView libera referencias, adaptador, callback de galería y diálogo activo.
+- NetworkObserver registra al primer observador activo y desregistra al salir el último.
+  Reconsulta conectividad validada en vez de inferirla de la pérdida de una red secundaria.
+- Siete pruebas de cancelación, respuestas tardías y observadores. Suite total: 132 aprobadas;
+  APK debug y pruebas instrumentadas compilados.
+- R5 queda cubierto respecto de recursos de la vista. La conservación del estado de carga
+  y el registro de visita frente a recreaciones se completan en el incremento 4.
 
 ## Mejoras funcionales propuestas, separadas del refactor
 
