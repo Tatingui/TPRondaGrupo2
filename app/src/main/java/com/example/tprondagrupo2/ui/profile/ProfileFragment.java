@@ -32,6 +32,7 @@ import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
+import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
@@ -203,7 +204,7 @@ public class ProfileFragment extends Fragment {
     // ==================== PERFIL REAL DESDE API ====================
 
     private void loadProfile() {
-        if (!new com.example.tprondagrupo2.network.NetworkObserver(requireContext()).isCurrentlyConnected()) {
+        if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
             android.widget.Toast.makeText(getContext(), "Sin conexión: no se puede cargar el perfil", android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
@@ -442,7 +443,7 @@ public class ProfileFragment extends Fragment {
 
     private void loadSavedSearches() {
         if (getContext() == null) return;
-        if (!new com.example.tprondagrupo2.network.NetworkObserver(requireContext()).isCurrentlyConnected()) {
+        if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
             android.widget.Toast.makeText(getContext(), "Sin conexión: no se pueden cargar búsquedas guardadas", android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
