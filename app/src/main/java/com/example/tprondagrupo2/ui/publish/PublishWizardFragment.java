@@ -57,7 +57,7 @@ public class PublishWizardFragment extends Fragment {
     private Button btnBack, btnNext, btnSelectPhoto;
     private TextView tvImageStatus, tvReviewSummary;
 
-    private TextInputEditText etTitle, etDescription, etPrice, etLocation, etImageUrl;
+    private TextInputEditText etTitle, etDescription, etPrice, etLocation, etImageUrl, etDeliveryAddress;
     private android.widget.AutoCompleteTextView autoCompleteCategory, autoCompleteStatus;
 
     private List<Uri> imageUris = new ArrayList<>();
@@ -130,7 +130,8 @@ public class PublishWizardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        draftManager = new DraftManager(requireContext());
+        draftManager = new DraftManager(requireContext(),
+                com.example.tprondagrupo2.network.TokenManager.getInstance().getToken());
 
         tvStepTitle = view.findViewById(R.id.tvStepTitle);
         layoutStep1 = view.findViewById(R.id.layoutStep1);
@@ -146,6 +147,7 @@ public class PublishWizardFragment extends Fragment {
         etDescription = view.findViewById(R.id.etDescription);
         etPrice = view.findViewById(R.id.etPrice);
         etLocation = view.findViewById(R.id.etLocation);
+        etDeliveryAddress = view.findViewById(R.id.etDeliveryAddress);
         autoCompleteCategory = view.findViewById(R.id.autoCompleteCategory);
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
         etImageUrl = view.findViewById(R.id.etImageUrl);
@@ -229,6 +231,7 @@ public class PublishWizardFragment extends Fragment {
             if (draft.getDescription() != null) etDescription.setText(draft.getDescription());
             if (draft.getPrice() != null) etPrice.setText(String.valueOf(draft.getPrice()));
             if (draft.getLocation() != null) etLocation.setText(draft.getLocation());
+            if (draft.getAddress() != null) etDeliveryAddress.setText(draft.getAddress());
             if (draft.getCategoryId() != null) {
                 int idx = (int) (draft.getCategoryId() - 1);
                 String[] categories = {"Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
@@ -257,7 +260,9 @@ public class PublishWizardFragment extends Fragment {
         String title = etTitle.getText() != null ? etTitle.getText().toString() : "";
         String desc = etDescription.getText() != null ? etDescription.getText().toString() : "";
         String priceStr = etPrice.getText() != null ? etPrice.getText().toString() : "0";
-        double price = priceStr.isEmpty() ? 0.0 : Double.parseDouble(priceStr);
+        double price;
+        try { price = Double.parseDouble(priceStr); }
+        catch (NumberFormatException e) { price = 0.0; }
         String loc = etLocation.getText() != null ? etLocation.getText().toString() : "";
         long catId = getSelectedCategoryId();
         String status = getSelectedStatus();
@@ -267,6 +272,7 @@ public class PublishWizardFragment extends Fragment {
             urls.add(u.toString());
         }
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, urls);
+        request.setAddress(etDeliveryAddress.getText() == null ? "" : etDeliveryAddress.getText().toString().trim());
         draftManager.saveDraft(request);
     }
 
@@ -286,6 +292,7 @@ public class PublishWizardFragment extends Fragment {
         etDescription.addTextChangedListener(watcher);
         etPrice.addTextChangedListener(watcher);
         etLocation.addTextChangedListener(watcher);
+        etDeliveryAddress.addTextChangedListener(watcher);
         autoCompleteCategory.addTextChangedListener(watcher);
         autoCompleteStatus.addTextChangedListener(watcher);
     }
@@ -305,6 +312,10 @@ public class PublishWizardFragment extends Fragment {
         }
         if (etLocation.getText() == null || etLocation.getText().toString().trim().isEmpty()) {
             etLocation.setError("Ingrese una zona");
+            return false;
+        }
+        if (!DeliveryAddress.isValid(etDeliveryAddress.getText() == null ? null : etDeliveryAddress.getText().toString())) {
+            etDeliveryAddress.setError(getString(R.string.delivery_address_invalid));
             return false;
         }
         return true;
@@ -339,6 +350,7 @@ public class PublishWizardFragment extends Fragment {
         String summary = "Título: " + (etTitle.getText() != null ? etTitle.getText().toString() : "") + "\n" +
                 "Precio: $" + (etPrice.getText() != null ? etPrice.getText().toString() : "") + "\n" +
                 "Zona: " + (etLocation.getText() != null ? etLocation.getText().toString() : "") + "\n" +
+                "Dirección de entrega (privada): " + etDeliveryAddress.getText() + "\n" +
                 "Categoría: " + autoCompleteCategory.getText().toString() + "\n" +
                 "Estado: " + autoCompleteStatus.getText().toString() + "\n" +
                 "Fotos: " + imageUris.size() + " adjuntas";
@@ -346,6 +358,11 @@ public class PublishWizardFragment extends Fragment {
     }
 
     private void submitPublication() {
+        if (!validateStep1()) {
+            currentStep = 1;
+            updateStepUI();
+            return;
+        }
         String title = etTitle.getText().toString().trim();
         String desc = etDescription.getText().toString().trim();
         double price = Double.parseDouble(etPrice.getText().toString().trim());
@@ -362,7 +379,7 @@ public class PublishWizardFragment extends Fragment {
         }
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);
-
+        request.setAddress(etDeliveryAddress.getText().toString().trim());
         publicationApiService.createPublication(request).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {

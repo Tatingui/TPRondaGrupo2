@@ -14,7 +14,6 @@ import com.ronda.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -66,8 +65,6 @@ public class OfferService {
         User buyer = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        checkAndUpdateExpirations();
-
         return offerRepository.findByBuyer(buyer).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -78,8 +75,6 @@ public class OfferService {
         if (email == null) return List.of();
         User seller = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
-        checkAndUpdateExpirations();
 
         return offerRepository.findBySeller(seller).stream()
                 .map(this::convertToDTO)
@@ -101,7 +96,7 @@ public class OfferService {
             throw new RuntimeException("No autorizado para responder esta oferta");
         }
 
-        if (offer.getStatus() != OfferStatus.PENDING && offer.getStatus() != OfferStatus.COUNTER_OFFER) {
+        if (offer.getEffectiveStatus() != OfferStatus.PENDING && offer.getEffectiveStatus() != OfferStatus.COUNTER_OFFER) {
             throw new RuntimeException("Esta oferta ya no está pendiente de respuesta");
         }
 
@@ -117,20 +112,6 @@ public class OfferService {
 
         Offer updated = offerRepository.save(offer);
         return convertToDTO(updated);
-    }
-
-    private void checkAndUpdateExpirations() {
-        List<Offer> pendingOffers = offerRepository.findAll().stream()
-                .filter(o -> o.getStatus() == OfferStatus.PENDING || o.getStatus() == OfferStatus.COUNTER_OFFER)
-                .collect(Collectors.toList());
-
-        LocalDateTime now = LocalDateTime.now();
-        for (Offer offer : pendingOffers) {
-            if (offer.getExpiresAt() != null && offer.getExpiresAt().isBefore(now)) {
-                offer.setStatus(OfferStatus.EXPIRED);
-                offerRepository.save(offer);
-            }
-        }
     }
 
     private OfferDTO convertToDTO(Offer offer) {
@@ -155,7 +136,7 @@ public class OfferService {
         }
         dto.setOfferedPrice(offer.getOfferedPrice());
         dto.setMessage(offer.getMessage());
-        dto.setStatus(offer.getStatus());
+        dto.setStatus(offer.getEffectiveStatus());
         dto.setExpiresAt(offer.getExpiresAt());
         dto.setCreatedAt(offer.getCreatedAt());
         return dto;

@@ -20,6 +20,7 @@ import java.util.List;
 public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHolder> {
 
     public interface OnOfferActionListener {
+        void onOpenPublication(Offer offer);
         void onAccept(Offer offer, int position);
         void onReject(Offer offer, int position);
         void onCounterOffer(Offer offer, int position);
@@ -47,6 +48,7 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Offer offer = offers.get(position);
+        holder.btnOpenPublication.setOnClickListener(v -> listener.onOpenPublication(offer));
         holder.tvTitle.setText(offer.getPublicationTitle() != null ? offer.getPublicationTitle() : "Publicación #" + offer.getPublicationId());
         holder.tvDetails.setText("Ofertado: $" + offer.getOfferedPrice() + " (Original: $" + offer.getPublicationOriginalPrice() + ")");
         
@@ -112,6 +114,7 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
         TextView tvTitle, tvDetails, tvUser, tvStatus, tvMessage;
         LinearLayout layoutSellerActions, layoutBuyerActions;
         Button btnAccept, btnReject, btnCounterOffer;
+        Button btnOpenPublication;
         Button btnBuyerAccept, btnBuyerReject;
 
         ViewHolder(@NonNull View itemView) {
@@ -126,6 +129,7 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
             btnAccept = itemView.findViewById(R.id.btnAccept);
             btnReject = itemView.findViewById(R.id.btnReject);
             btnCounterOffer = itemView.findViewById(R.id.btnCounterOffer);
+            btnOpenPublication = itemView.findViewById(R.id.btnOpenOfferPublication);
             layoutBuyerActions = itemView.findViewById(R.id.layoutBuyerActions);
             btnBuyerAccept = itemView.findViewById(R.id.btnBuyerAccept);
             btnBuyerReject = itemView.findViewById(R.id.btnBuyerReject);

@@ -12,60 +12,33 @@ import androidx.lifecycle.MutableLiveData;
 
 public class NetworkObserver {
 
-    private final ConnectivityManager connectivityManager;
-    private final MutableLiveData<Boolean> isConnected;
+    interface Source {
+        boolean isConnected();
+        void start(Runnable onChange);
+        void stop();
+    }
+
+    private final Source source;
+    private final LiveData<Boolean> isConnected;
 
     public NetworkObserver(Context context) {
-        Context appContext = context.getApplicationContext();
-        connectivityManager = (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
-        isConnected = new MutableLiveData<>(hasValidatedInternet(connectivityManager));
-        registerCallback();
+        this(new AndroidSource(context));
     }
 
-    private static boolean hasValidatedInternet(ConnectivityManager connectivityManager) {
-        Network activeNetwork = connectivityManager.getActiveNetwork();
-        if (activeNetwork == null) {
-            return false;
-        }
-        NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-        return capabilities != null &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-    }
-
-    private void registerCallback() {
-        NetworkRequest request = new NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .build();
-
-        connectivityManager.registerNetworkCallback(request, new ConnectivityManager.NetworkCallback() {
+    NetworkObserver(Source source) {
+        this.source = source;
+        isConnected = new MutableLiveData<Boolean>(source.isConnected()) {
             @Override
-            public void onAvailable(@NonNull Network network) {
-                // A veces onAvailable se dispara antes de que se valide el internet.
-                // Lo marcamos temporalmente como true, pero onCapabilitiesChanged es mas preciso.
-                isConnected.postValue(true);
+            protected void onActive() {
+                source.start(() -> postValue(source.isConnected()));
+                setValue(source.isConnected());
             }
 
             @Override
-            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
-                super.onCapabilitiesChanged(network, networkCapabilities);
-                boolean hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-                // Soportamos explicitamente VPN y Bluetooth
-                boolean validTransport = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH);
-                
-                isConnected.postValue(hasInternet && validTransport);
+            protected void onInactive() {
+                source.stop();
             }
-
-            @Override
-            public void onLost(@NonNull Network network) {
-                isConnected.postValue(false);
-            }
-        });
+        };
     }
 
     public LiveData<Boolean> getIsConnected() {
@@ -73,16 +46,59 @@ public class NetworkObserver {
     }
 
     public boolean isCurrentlyConnected() {
-        return hasValidatedInternet(connectivityManager);
+        return source.isConnected();
     }
 
-    /**
-     * Consulta puntual que no registra un callback. Usar cuando solo se necesita
-     * validar la red antes de una operacion y no observar cambios posteriores.
-     */
+    /** Consulta puntual, sin registrar callbacks. */
     public static boolean isCurrentlyConnected(Context context) {
-        ConnectivityManager manager = (ConnectivityManager) context.getApplicationContext()
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        return hasValidatedInternet(manager);
+        return new AndroidSource(context).isConnected();
+    }
+
+    private static final class AndroidSource implements Source {
+        private final ConnectivityManager manager;
+        private ConnectivityManager.NetworkCallback callback;
+
+        AndroidSource(Context context) {
+            manager = (ConnectivityManager) context.getApplicationContext()
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+        }
+
+        @Override
+        public boolean isConnected() {
+            if (manager == null) return false;
+            Network active = manager.getActiveNetwork();
+            NetworkCapabilities caps = active == null ? null : manager.getNetworkCapabilities(active);
+            return caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        }
+
+        @Override
+        public void start(Runnable onChange) {
+            if (manager == null || callback != null) return;
+            callback = new ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(@NonNull Network network) { onChange.run(); }
+
+                @Override
+                public void onCapabilitiesChanged(@NonNull Network network,
+                                                  @NonNull NetworkCapabilities capabilities) {
+                    onChange.run();
+                }
+
+                @Override
+                public void onLost(@NonNull Network network) { onChange.run(); }
+            };
+            // Consultar la red activa evita marcar offline al perder una red secundaria.
+            // La validación es independiente del transporte (incluye VPN y Bluetooth).
+            manager.registerNetworkCallback(new NetworkRequest.Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build(), callback);
+        }
+
+        @Override
+        public void stop() {
+            if (callback == null) return;
+            manager.unregisterNetworkCallback(callback);
+            callback = null;
+        }
     }
 }

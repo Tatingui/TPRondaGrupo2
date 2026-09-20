@@ -129,6 +129,7 @@ public class PublicacionTest {
         assertEquals("Palermo", publicacion.getLocation());
         assertNotNull(publicacion.getVendedor());
         assertEquals("Carlos", publicacion.getVendedor().getNombre());
+        assertEquals(Long.valueOf(5L), publicacion.getVendedor().getId());
     }
 
     @Test
@@ -164,6 +165,7 @@ public class PublicacionTest {
         assertTrue(p.isFavorite());
         assertNotNull(p.getVendedor());
         assertEquals("María", p.getVendedor().getNombre());
+        assertEquals(Long.valueOf(7L), p.getVendedor().getId());
     }
 
     @Test
@@ -190,13 +192,15 @@ public class PublicacionTest {
 
     @Test
     public void testConstructorConVendedorLoAsigna() {
-        Vendedor vendedor = new Vendedor("7", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
+        Vendedor vendedor = new Vendedor(7L, "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
         Publicacion p = new Publicacion("10", "Bicicleta", Arrays.asList("f.jpg"), "Desc",
                 "Deportes", "Usado", 185000, "20/08/2026", vendedor);
 
         assertNotNull(p.getVendedor());
         assertEquals("Juan Pérez", p.getVendedor().getNombre());
         assertEquals("Juan Pérez", p.getSellerName());
+        assertEquals(Long.valueOf(7L), p.getSellerId());
+        assertEquals(Long.valueOf(7L), p.getVendedor().getId());
         assertEquals("Palermo", p.getLocation());
     }
 
@@ -211,11 +215,13 @@ public class PublicacionTest {
     @Test
     public void testSetVendedor() {
         Vendedor vendedor = new Vendedor();
+        vendedor.setId(11L);
         vendedor.setNombre("Ana");
         publicacion.setVendedor(vendedor);
 
         assertNotNull(publicacion.getVendedor());
         assertEquals("Ana", publicacion.getVendedor().getNombre());
+        assertEquals(Long.valueOf(11L), publicacion.getSellerId());
     }
 
     @Test
@@ -225,29 +231,4 @@ public class PublicacionTest {
         assertTrue(p.isFavorite());
     }
 
-    @Test
-    public void testDestinoParaMapaUsaLasCoordenadas() {
-        // Con coordenadas, Google Maps navega al punto exacto
-        Publicacion p = new Gson().fromJson(
-                "{\"id\":\"1\",\"address\":\"Av. Santa Fe 3253\",\"latitude\":-34.588,\"longitude\":-58.411}",
-                Publicacion.class);
-
-        assertEquals("-34.588,-58.411", p.getDestinoParaMapa());
-    }
-
-    @Test
-    public void testDestinoParaMapaUsaLaDireccionSiNoHayCoordenadas() {
-        Publicacion p = new Gson().fromJson(
-                "{\"id\":\"1\",\"address\":\"Av. Santa Fe 3253\"}", Publicacion.class);
-
-        assertEquals("Av. Santa Fe 3253", p.getDestinoParaMapa());
-    }
-
-    @Test
-    public void testDestinoParaMapaEsNuloSinDireccionNiCoordenadas() {
-        // Sin dirección no se muestra el botón "Cómo llegar"
-        Publicacion p = new Gson().fromJson("{\"id\":\"1\"}", Publicacion.class);
-
-        assertNull(p.getDestinoParaMapa());
-    }
 }

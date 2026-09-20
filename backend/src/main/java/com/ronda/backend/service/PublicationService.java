@@ -125,11 +125,13 @@ public class PublicationService {
                 && publication.getSeller().getId().equals(viewer.getId());
         dto.setOwner(esVendedor);
 
-        // Ultima oferta de quien mira (si es un interesado)
+        // La aceptada determina acceso; una oferta posterior no revoca la compra.
         Offer miOferta = null;
         if (viewer != null && !esVendedor) {
+            final Long buyerId = viewer.getId();
             miOferta = offerRepository
-                    .findFirstByPublicationIdAndBuyerIdOrderByCreatedAtDesc(publicationId, viewer.getId())
+                    .findFirstByPublicationIdAndBuyerIdAndStatusOrderByCreatedAtDesc(publicationId, buyerId, OfferStatus.ACCEPTED)
+                    .or(() -> offerRepository.findFirstByPublicationIdAndBuyerIdOrderByCreatedAtDesc(publicationId, buyerId))
                     .orElse(null);
             dto.setMyOffer(PublicationInteractionService.convertirOferta(miOferta));
         }
@@ -203,7 +205,7 @@ public class PublicationService {
         publication.setStatus(dto.getStatus());
         publication.setState(PublicationState.ACTIVE);
         publication.setLocation(dto.getLocation());
-        publication.setAddress(dto.getAddress());
+        publication.setAddress(dto.getAddress() == null ? null : dto.getAddress().trim());
         publication.setLatitude(dto.getLatitude());
         publication.setLongitude(dto.getLongitude());
         publication.setCategory(category);

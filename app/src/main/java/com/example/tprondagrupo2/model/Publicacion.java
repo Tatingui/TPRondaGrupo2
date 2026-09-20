@@ -283,20 +283,6 @@ public class Publicacion implements Serializable {
         return address;
     }
 
-    /**
-     * Destino para abrir el mapa: las coordenadas si la publicación las tiene,
-     * y si no la dirección escrita. Devuelve null si no hay ninguna de las dos.
-     */
-    public String getDestinoParaMapa() {
-        if (latitude != null && longitude != null) {
-            return latitude + "," + longitude;
-        }
-        if (address != null && !address.trim().isEmpty()) {
-            return address.trim();
-        }
-        return null;
-    }
-
     public Double getLatitude() {
         return latitude;
     }

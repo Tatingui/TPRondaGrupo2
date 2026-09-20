@@ -24,7 +24,7 @@ public class VendedorTest {
 
     @Test
     public void testCamposPorDefecto() {
-        // Los String arrancan en null y los numéricos en 0
+        // Las referencias (incluido el ID Long) arrancan en null y los primitivos en 0
         assertNull(vendedor.getId());
         assertNull(vendedor.getNombre());
         assertNull(vendedor.getMiembroDesde());
@@ -36,9 +36,9 @@ public class VendedorTest {
 
     @Test
     public void testConstructorCompletoAsignaTodosLosCampos() {
-        Vendedor v = new Vendedor("7", "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
+        Vendedor v = new Vendedor(7L, "Juan Pérez", 4.5, 342, 128, "Marzo 2023", "Palermo");
 
-        assertEquals("7", v.getId());
+        assertEquals(Long.valueOf(7L), v.getId());
         assertEquals("Juan Pérez", v.getNombre());
         assertEquals(4.5, v.getReputacion(), 0.0001);
         assertEquals(342, v.getCantidadVentas());
@@ -49,7 +49,7 @@ public class VendedorTest {
 
     @Test
     public void testSettersYGetters() {
-        vendedor.setId("99");
+        vendedor.setId(99L);
         vendedor.setNombre("Ana Gómez");
         vendedor.setReputacion(3.8);
         vendedor.setCantidadVentas(50);
@@ -57,7 +57,7 @@ public class VendedorTest {
         vendedor.setMiembroDesde("Enero 2024");
         vendedor.setUbicacion("Belgrano");
 
-        assertEquals("99", vendedor.getId());
+        assertEquals(Long.valueOf(99L), vendedor.getId());
         assertEquals("Ana Gómez", vendedor.getNombre());
         assertEquals(3.8, vendedor.getReputacion(), 0.0001);
         assertEquals(50, vendedor.getCantidadVentas());
@@ -139,7 +139,7 @@ public class VendedorTest {
     @Test
     public void testComprasEmpiezaEnCeroYSePuedeSetear() {
         // Operaciones concretadas como comprador (se completan con el punto 9)
-        Vendedor v = new Vendedor("1", "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
+        Vendedor v = new Vendedor(1L, "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
         assertEquals(0, v.getCantidadCompras());
 
         v.setCantidadCompras(3);
@@ -149,7 +149,7 @@ public class VendedorTest {
     @Test
     public void testSinCalificacionesMuestraEseNivel() {
         // Con la reputación en 0 tiene que decir "Sin calificaciones aún"
-        Vendedor v = new Vendedor("1", "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
+        Vendedor v = new Vendedor(1L, "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
         assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, v.getNivel());
     }
 }
