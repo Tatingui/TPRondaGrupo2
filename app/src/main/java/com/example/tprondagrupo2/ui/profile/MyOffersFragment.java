@@ -11,13 +11,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.OfferRespondRequest;
+import com.example.tprondagrupo2.model.OperacionHistorial;
+import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
+import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
@@ -35,6 +41,12 @@ public class MyOffersFragment extends Fragment {
 
     @Inject
     OfferApiService offerApiService;
+
+    @Inject
+    HistorialApiService historialApiService;
+
+    @Inject
+    PublicationApiService publicationApiService;
 
     private TabLayout tabLayoutOffers;
     private RecyclerView rvOffers;
@@ -70,12 +82,12 @@ public class MyOffersFragment extends Fragment {
         adapter = new MyOffersAdapter(currentOffers, isReceivedTab, new MyOffersAdapter.OnOfferActionListener() {
             @Override
             public void onAccept(Offer offer, int position) {
-                respondOffer(offer.getId(), "ACCEPTED", position);
+                acceptOffer(offer, position);
             }
 
             @Override
             public void onReject(Offer offer, int position) {
-                respondOffer(offer.getId(), "REJECTED", position);
+                rejectOffer(offer.getId(), position);
             }
         });
         rvOffers.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -128,23 +140,76 @@ public class MyOffersFragment extends Fragment {
         });
     }
 
-    private void respondOffer(Long offerId, String status, int position) {
-        OfferRespondRequest request = new OfferRespondRequest(status, null);
+    /**
+     * Acepta la oferta usando el endpoint correcto (PUT /transactions/offers/{id}/accept).
+     * Esto crea la transacción en el backend, marca la publicación como SOLD,
+     * y luego navega al detalle de la publicación para que el vendedor vea
+     * la dirección y el botón "Cómo llegar".
+     */
+    private void acceptOffer(Offer offer, int position) {
+        historialApiService.acceptOffer(offer.getId()).enqueue(new Callback<OperacionHistorial>() {
+            @Override
+            public void onResponse(@NonNull Call<OperacionHistorial> call, @NonNull Response<OperacionHistorial> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getContext(), "Oferta aceptada", Toast.LENGTH_SHORT).show();
+                    navigateToPublicationDetail(offer.getPublicationId());
+                } else {
+                    Toast.makeText(getContext(), "Error al aceptar oferta", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<OperacionHistorial> call, @NonNull Throwable t) {
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Rechaza la oferta usando el endpoint original (PATCH /offers/{id}/respond).
+     * Para rechazar solo se necesita cambiar el estado, no crear transacción.
+     */
+    private void rejectOffer(Long offerId, int position) {
+        OfferRespondRequest request = new OfferRespondRequest("REJECTED", null);
         offerApiService.respondOffer(offerId, request).enqueue(new Callback<Offer>() {
             @Override
             public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     currentOffers.set(position, response.body());
                     adapter.notifyItemChanged(position);
-                    Toast.makeText(getContext(), "Oferta " + status.toLowerCase(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Oferta rechazada", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getContext(), "Error al responder oferta", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Error al rechazar oferta", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Obtiene la publicación por ID y navega al DetallePublicacionFragment
+     * para que el vendedor vea la dirección y pueda usar "Cómo llegar".
+     */
+    private void navigateToPublicationDetail(Long publicationId) {
+        if (publicationId == null) return;
+        publicationApiService.getPublication(String.valueOf(publicationId)).enqueue(new Callback<Publicacion>() {
+            @Override
+            public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
+                if (response.isSuccessful() && response.body() != null && isAdded()) {
+                    Bundle args = new Bundle();
+                    args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, response.body());
+                    NavHostFragment.findNavController(MyOffersFragment.this)
+                            .navigate(R.id.action_myOffers_to_detalle, args);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
+                // Si falla la navegación al detalle, al menos la oferta ya fue aceptada
             }
         });
     }
