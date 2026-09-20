@@ -118,4 +118,28 @@ public class UserRepository {
     public void logout() {
         tokenManager.clearToken();
     }
+
+    public interface DeleteAccountCallback {
+        void onSuccess();
+        void onError(String message);
+    }
+
+    public void deleteAccount(DeleteAccountCallback callback) {
+        userApiService.deleteMyAccount().enqueue(new retrofit2.Callback<Void>() {
+            @Override
+            public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {
+                if (response.isSuccessful()) {
+                    tokenManager.clearToken();
+                    callback.onSuccess();
+                } else {
+                    callback.onError("Error al eliminar la cuenta");
+                }
+            }
+
+            @Override
+            public void onFailure(retrofit2.Call<Void> call, Throwable t) {
+                callback.onError("Error de red: " + t.getMessage());
+            }
+        });
+    }
 }

@@ -279,5 +279,18 @@
             android:backgroundTint="#D32F2F"
             style="@style/Widget.MaterialComponents.Button" />
 
+        <!-- Borrar cuenta -->
+        <Button
+            android:id="@+id/btnDeleteAccount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="32dp"
+            android:text="Borrar mi cuenta"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#B71C1C"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
     </LinearLayout>
 </ScrollView>

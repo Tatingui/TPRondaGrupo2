@@ -4,6 +4,14 @@ import com.ronda.backend.dto.UserProfileResponse;
 import com.ronda.backend.dto.UserProfileUpdateRequest;
 import com.ronda.backend.model.User;
 import com.ronda.backend.repository.UserRepository;
+import com.ronda.backend.repository.OfferRepository;
+import com.ronda.backend.repository.PublicationRepository;
+import com.ronda.backend.repository.QuestionRepository;
+import com.ronda.backend.repository.RatingRepository;
+import com.ronda.backend.repository.SavedSearchRepository;
+import com.ronda.backend.repository.TransactionRepository;
+import com.ronda.backend.repository.UserFavoriteRepository;
+import jakarta.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
@@ -16,11 +24,29 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final OfferRepository offerRepository;
+    private final PublicationRepository publicationRepository;
+    private final QuestionRepository questionRepository;
+    private final RatingRepository ratingRepository;
+    private final SavedSearchRepository savedSearchRepository;
+    private final TransactionRepository transactionRepository;
+    private final UserFavoriteRepository userFavoriteRepository;
     private final TransactionService transactionService;
 
-    public UserService(UserRepository userRepository, TransactionService transactionService) {
+    public UserService(UserRepository userRepository, TransactionService transactionService,
+                       OfferRepository offerRepository, PublicationRepository publicationRepository,
+                       QuestionRepository questionRepository, RatingRepository ratingRepository,
+                       SavedSearchRepository savedSearchRepository, TransactionRepository transactionRepository,
+                       UserFavoriteRepository userFavoriteRepository) {
         this.userRepository = userRepository;
         this.transactionService = transactionService;
+        this.offerRepository = offerRepository;
+        this.publicationRepository = publicationRepository;
+        this.questionRepository = questionRepository;
+        this.ratingRepository = ratingRepository;
+        this.savedSearchRepository = savedSearchRepository;
+        this.transactionRepository = transactionRepository;
+        this.userFavoriteRepository = userFavoriteRepository;
     }
 
     /**
@@ -89,5 +115,30 @@ public class UserService {
 
         // Devolvemos el perfil actualizado
         return getProfile(email);
+    }
+
+    /**
+     * Borra la cuenta del usuario y todos sus datos asociados.
+     */
+    @Transactional
+    public boolean deleteAccount(String email) {
+        Optional<User> encontrado = userRepository.findByEmail(email);
+        if (encontrado.isEmpty()) {
+            return false;
+        }
+        User user = encontrado.get();
+
+        ratingRepository.deleteAll(ratingRepository.findByFromUser(user));
+        ratingRepository.deleteAll(ratingRepository.findByToUser(user));
+        transactionRepository.deleteAll(transactionRepository.findByBuyer(user));
+        transactionRepository.deleteAll(transactionRepository.findBySeller(user));
+        offerRepository.deleteAll(offerRepository.findByBuyer(user));
+        offerRepository.deleteAll(offerRepository.findBySeller(user));
+        questionRepository.deleteAll(questionRepository.findByAsker(user));
+        userFavoriteRepository.deleteAll(userFavoriteRepository.findByUser(user));
+        savedSearchRepository.deleteAll(savedSearchRepository.findByUserOrderByCreatedAtDesc(user));
+        publicationRepository.deleteAll(publicationRepository.findBySeller(user));
+        userRepository.delete(user);
+        return true;
     }
 }
