@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.rxjava3.core.Single;
 
@@ -24,6 +25,8 @@ public class SavedSearchesDataStoreManager {
 
     public static final Preferences.Key<String> SAVED_SEARCHES_KEY = PreferencesKeys.stringKey("savedSearches");
     private static RxDataStore<Preferences> dataStore;
+    private static final Map<String, SavedSearchDataStoreItem> memoryCache = new ConcurrentHashMap<>();
+    private static boolean isInitialized = false;
 
     private SavedSearchesDataStoreManager() {
     }
@@ -31,93 +34,99 @@ public class SavedSearchesDataStoreManager {
     public static synchronized RxDataStore<Preferences> getInstance(Context context) {
         if (dataStore == null) {
             dataStore = new RxPreferenceDataStoreBuilder(context.getApplicationContext(), "saved_searches_datastore").build();
+            loadCacheAsync();
         }
         return dataStore;
     }
 
+    private static synchronized void loadCacheAsync() {
+        if (isInitialized || dataStore == null) return;
+        dataStore.data().firstOrError().subscribe(prefs -> {
+            String json = prefs.get(SAVED_SEARCHES_KEY);
+            List<SavedSearchDataStoreItem> list = parseList(json);
+            synchronized (memoryCache) {
+                memoryCache.clear();
+                for (SavedSearchDataStoreItem item : list) {
+                    if (item.getId() != null) {
+                        memoryCache.put(item.getId(), item);
+                    }
+                }
+                isInitialized = true;
+            }
+        }, throwable -> {
+            // ignore
+        });
+    }
+
     public static void saveSearch(Context context, String searchId, List<String> pubIds) {
         if (context == null || searchId == null) return;
+        synchronized (memoryCache) {
+            SavedSearchDataStoreItem item = memoryCache.get(searchId);
+            if (item != null) {
+                item.setPublicationIds(pubIds);
+                item.setHasUpdates(false);
+            } else {
+                memoryCache.put(searchId, new SavedSearchDataStoreItem(searchId, pubIds, false));
+            }
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(SAVED_SEARCHES_KEY);
-            List<SavedSearchDataStoreItem> list = parseList(json);
-
-            boolean found = false;
-            for (SavedSearchDataStoreItem item : list) {
-                if (searchId.equals(item.getId())) {
-                    item.setPublicationIds(pubIds);
-                    item.setHasUpdates(false);
-                    found = true;
-                    break;
-                }
+            synchronized (memoryCache) {
+                List<SavedSearchDataStoreItem> list = new ArrayList<>(memoryCache.values());
+                mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
             }
-            if (!found) {
-                list.add(new SavedSearchDataStoreItem(searchId, pubIds, false));
-            }
-
-            mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static void removeSearch(Context context, String searchId) {
         if (context == null || searchId == null) return;
+        synchronized (memoryCache) {
+            memoryCache.remove(searchId);
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(SAVED_SEARCHES_KEY);
-            List<SavedSearchDataStoreItem> list = parseList(json);
-
-            list.removeIf(item -> searchId.equals(item.getId()));
-
-            mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
+            synchronized (memoryCache) {
+                List<SavedSearchDataStoreItem> list = new ArrayList<>(memoryCache.values());
+                mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
+            }
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static void updateSearchUpdates(Context context, String searchId, List<String> newPubIds, boolean hasUpdates) {
         if (context == null || searchId == null) return;
+        synchronized (memoryCache) {
+            SavedSearchDataStoreItem item = memoryCache.get(searchId);
+            if (item != null) {
+                item.setPublicationIds(newPubIds);
+                item.setHasUpdates(hasUpdates);
+            } else {
+                memoryCache.put(searchId, new SavedSearchDataStoreItem(searchId, newPubIds, hasUpdates));
+            }
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(SAVED_SEARCHES_KEY);
-            List<SavedSearchDataStoreItem> list = parseList(json);
-
-            boolean found = false;
-            for (SavedSearchDataStoreItem item : list) {
-                if (searchId.equals(item.getId())) {
-                    item.setPublicationIds(newPubIds);
-                    item.setHasUpdates(hasUpdates);
-                    found = true;
-                    break;
-                }
+            synchronized (memoryCache) {
+                List<SavedSearchDataStoreItem> list = new ArrayList<>(memoryCache.values());
+                mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
             }
-            if (!found) {
-                list.add(new SavedSearchDataStoreItem(searchId, newPubIds, hasUpdates));
-            }
-
-            mutable.set(SAVED_SEARCHES_KEY, new Gson().toJson(list));
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static Map<String, SavedSearchDataStoreItem> getSavedSearchesMap(Context context) {
-        if (context == null) return new HashMap<>();
-        try {
-            RxDataStore<Preferences> ds = getInstance(context);
-            Preferences prefs = ds.data().blockingFirst();
-            String json = prefs.get(SAVED_SEARCHES_KEY);
-            List<SavedSearchDataStoreItem> list = parseList(json);
-            Map<String, SavedSearchDataStoreItem> map = new HashMap<>();
-            for (SavedSearchDataStoreItem item : list) {
-                if (item.getId() != null) {
-                    map.put(item.getId(), item);
-                }
-            }
-            return map;
-        } catch (Exception e) {
-            return new HashMap<>();
+        if (context != null) {
+            getInstance(context);
+        }
+        synchronized (memoryCache) {
+            return new HashMap<>(memoryCache);
         }
     }
 
