@@ -108,6 +108,7 @@ public class PublicationInteractionService {
         Offer offer = new Offer();
         offer.setPublication(pub);
         offer.setBuyer(buyer);
+        offer.setSeller(pub.getSeller());
         offer.setAmount(request.getAmount());
         String message = request.getMessage();
         offer.setMessage(message != null && !message.isBlank() ? message.trim() : null);
