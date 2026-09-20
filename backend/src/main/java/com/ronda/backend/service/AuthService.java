@@ -52,6 +52,10 @@ public class AuthService {
             return AuthResponse.error("Contraseña incorrecta");
         }
 
+        if (!user.isEmailVerified()) {
+            return AuthResponse.error("Email no verificado. Ingresá el código OTP enviado a tu correo.");
+        }
+
         String token = jwtUtil.generateToken(user.getEmail());
         return AuthResponse.ok(token, "Login exitoso");
     }
