@@ -246,14 +246,41 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadFromCache() {
-        List<PublicacionEntity> entities = AppDatabase.getInstance(requireContext()).publicacionDao().getAll();
+        List<PublicacionEntity> entities;
+        if (currentSearchText != null && !currentSearchText.isEmpty()) {
+            entities = AppDatabase.getInstance(requireContext()).publicacionDao().searchByTitle(currentSearchText);
+        } else {
+            entities = AppDatabase.getInstance(requireContext()).publicacionDao().getAll();
+        }
+
         List<Publicacion> cachedItems = entities.stream()
                 .map(PublicacionEntity::toModel)
                 .collect(Collectors.toList());
         
+        // Aplicar filtros locales si los hay
+        List<Publicacion> filtered = new ArrayList<>();
+        for (Publicacion p : cachedItems) {
+            boolean matches = true;
+            if (selectedCategoryId != null && !p.getCategoryName().equals(selectedCategoryName)) matches = false;
+            if (matches && selectedCondition != null && !p.getStatus().equals(selectedCondition)) matches = false;
+            if (matches && minPrice != null && p.getPrice() < minPrice) matches = false;
+            if (matches && maxPrice != null && p.getPrice() > maxPrice) matches = false;
+            if (matches && selectedLocation != null && !p.getLocation().equals(selectedLocation)) matches = false;
+            
+            if (matches) filtered.add(p);
+        }
+
+        // Ordenamiento local
+        if (currentSort.equals("price,asc")) {
+            filtered.sort((p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
+        } else if (currentSort.equals("price,desc")) {
+            filtered.sort((p1, p2) -> Double.compare(p2.getPrice(), p1.getPrice()));
+        }
+
         displayedPublications.clear();
-        displayedPublications.addAll(cachedItems);
+        displayedPublications.addAll(filtered);
         adapter.notifyDataSetChanged();
+        
         isLastPage = true; // No paginamos en offline
         tvOfflineBanner.setVisibility(View.VISIBLE);
     }
