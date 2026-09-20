@@ -62,6 +62,20 @@ public class UserController {
         return ResponseEntity.ok(updated);
     }
 
+    /**
+     * DELETE /api/usuarios/me
+     * Borra la cuenta del usuario logueado y todos sus datos.
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMyAccount() {
+        String email = getEmailFromToken();
+        boolean deleted = userService.deleteAccount(email);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     private String getEmailFromToken() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth.getName();

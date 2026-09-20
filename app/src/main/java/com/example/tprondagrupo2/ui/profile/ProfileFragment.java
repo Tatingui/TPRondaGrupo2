@@ -144,6 +144,38 @@ public class ProfileFragment extends Fragment {
                     .navigate(R.id.action_profile_to_login);
         });
 
+        // Borrar cuenta: muestra dialogo de confirmacion
+        view.findViewById(R.id.btnDeleteAccount).setOnClickListener(v -> {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Borrar cuenta")
+                    .setMessage("¿Estás seguro? Se eliminarán todos tus datos, publicaciones, ofertas y calificaciones. Esta acción no se puede deshacer.")
+                    .setPositiveButton("Sí, borrar", (dialog, which) -> {
+                        userRepository.deleteAccount(new com.example.tprondagrupo2.data.repository.UserRepository.DeleteAccountCallback() {
+                            @Override
+                            public void onSuccess() {
+                                if (getActivity() != null) {
+                                    getActivity().runOnUiThread(() -> {
+                                        android.widget.Toast.makeText(requireContext(), "Cuenta eliminada", android.widget.Toast.LENGTH_SHORT).show();
+                                        NavHostFragment.findNavController(ProfileFragment.this)
+                                                .navigate(R.id.action_profile_to_login);
+                                    });
+                                }
+                            }
+
+                            @Override
+                            public void onError(String message) {
+                                if (getActivity() != null) {
+                                    getActivity().runOnUiThread(() ->
+                                            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+                                    );
+                                }
+                            }
+                        });
+                    })
+                    .setNegativeButton("Cancelar", null)
+                    .show();
+        });
+
         if (btnEditProfile != null) {
             btnEditProfile.setOnClickListener(v -> showEditDialog());
         }

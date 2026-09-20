@@ -2,6 +2,7 @@ package com.example.tprondagrupo2.di;
 
 import androidx.annotation.Nullable;
 
+import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
@@ -31,8 +32,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
-    // Conexión al backend de la PC mediante emulador (10.0.2.2).
-    private static final String BASE_URL = "http://10.0.2.2:8081/api/";
+    // URL del backend: se lee de local.properties via BuildConfig.
+    // Cada dev configura la suya en local.properties (archivo ignorado por git).
+    private static final String BASE_URL = BuildConfig.BASE_URL;
     private static final long TIMEOUT_SECONDS = 30;
     private static final Logger LOGGER = Logger.getLogger(NetworkModule.class.getName());
 
