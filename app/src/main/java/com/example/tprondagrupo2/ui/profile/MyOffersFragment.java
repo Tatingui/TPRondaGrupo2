@@ -6,7 +6,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -87,6 +90,21 @@ public class MyOffersFragment extends Fragment {
 
             @Override
             public void onReject(Offer offer, int position) {
+                rejectOffer(offer.getId(), position);
+            }
+
+            @Override
+            public void onCounterOffer(Offer offer, int position) {
+                showCounterOfferDialog(offer, position);
+            }
+
+            @Override
+            public void onBuyerAcceptCounter(Offer offer, int position) {
+                acceptOffer(offer, position);
+            }
+
+            @Override
+            public void onBuyerRejectCounter(Offer offer, int position) {
                 rejectOffer(offer.getId(), position);
             }
         });
@@ -180,6 +198,102 @@ public class MyOffersFragment extends Fragment {
                     Toast.makeText(getContext(), "Oferta rechazada", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getContext(), "Error al rechazar oferta", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * Muestra un diálogo para que el vendedor haga una contra-oferta.
+     */
+    private void showCounterOfferDialog(Offer offer, int position) {
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_ofertar, null);
+        TextView tvPrecio = dialogView.findViewById(R.id.tvPrecioPublicado);
+        EditText etMonto = dialogView.findViewById(R.id.etMontoOferta);
+        EditText etMensaje = dialogView.findViewById(R.id.etMensajeOferta);
+        TextView tvPorcentaje = dialogView.findViewById(R.id.tvPorcentajeOferta);
+
+        double ofertaComprador = offer.getOfferedPrice();
+        double precioOriginal = offer.getPublicationOriginalPrice() != null ? offer.getPublicationOriginalPrice() : Double.MAX_VALUE;
+
+        tvPrecio.setText("Oferta del comprador: $" + String.format("%.2f", ofertaComprador)
+                + "\nPrecio original: $" + String.format("%.2f", precioOriginal));
+        etMensaje.setVisibility(View.GONE);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setTitle("Contra-oferta")
+                .setView(dialogView)
+                .setPositiveButton("Enviar", null)
+                .setNegativeButton("Cancelar", null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            android.widget.Button btnPositive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            btnPositive.setEnabled(false);
+
+            etMonto.addTextChangedListener(new android.text.TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override
+                public void afterTextChanged(android.text.Editable s) {
+                    try {
+                        double monto = Double.parseDouble(s.toString().trim());
+                        tvPorcentaje.setVisibility(View.VISIBLE);
+                        if (monto < ofertaComprador) {
+                            tvPorcentaje.setText("No podés contraofertar a un precio menor al del comprador");
+                            tvPorcentaje.setTextColor(0xFFD32F2F);
+                            btnPositive.setEnabled(false);
+                        } else if (monto > precioOriginal) {
+                            tvPorcentaje.setText("No podés contraofertar a un precio mayor al publicado");
+                            tvPorcentaje.setTextColor(0xFFD32F2F);
+                            btnPositive.setEnabled(false);
+                        } else {
+                            int porcentaje = (int) Math.round((monto / precioOriginal) * 100);
+                            tvPorcentaje.setText(porcentaje + "% del precio publicado");
+                            tvPorcentaje.setTextColor(0xFF888888);
+                            btnPositive.setEnabled(true);
+                        }
+                    } catch (NumberFormatException e) {
+                        tvPorcentaje.setVisibility(View.GONE);
+                        btnPositive.setEnabled(false);
+                    }
+                }
+            });
+
+            btnPositive.setOnClickListener(v -> {
+                double nuevoMonto;
+                try {
+                    nuevoMonto = Double.parseDouble(etMonto.getText().toString().trim());
+                } catch (NumberFormatException e) {
+                    nuevoMonto = 0;
+                }
+                if (nuevoMonto < ofertaComprador || nuevoMonto > precioOriginal) {
+                    return;
+                }
+                sendCounterOffer(offer.getId(), nuevoMonto, position);
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
+    }
+
+    private void sendCounterOffer(Long offerId, double newPrice, int position) {
+        OfferRespondRequest request = new OfferRespondRequest("COUNTER_OFFER", newPrice);
+        offerApiService.respondOffer(offerId, request).enqueue(new Callback<Offer>() {
+            @Override
+            public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentOffers.set(position, response.body());
+                    adapter.notifyItemChanged(position);
+                    Toast.makeText(getContext(), "Contra-oferta enviada", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getContext(), "Error al enviar contra-oferta", Toast.LENGTH_SHORT).show();
                 }
             }
 

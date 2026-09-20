@@ -99,7 +99,7 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         Glide.with(context)
                 .load(operacion.getImagenUrl())
                 .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
+                .error(android.R.drawable.ic_menu_gallery)
                 .centerCrop()
                 .into(holder.ivImagenArticulo);
 

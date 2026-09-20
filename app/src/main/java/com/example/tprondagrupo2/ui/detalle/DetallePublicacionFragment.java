@@ -3,6 +3,8 @@ package com.example.tprondagrupo2.ui.detalle;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -106,6 +108,7 @@ public class DetallePublicacionFragment extends Fragment {
     private TextView tvMiOferta;
     private Button btnPreguntar;
     private Button btnOfertar;
+    private Button btnVerOfertas;
     private LinearLayout layoutGestionVendedor;
     private TextView tvEstadoPublicacion;
     private Button btnPausarReactivar;
@@ -169,6 +172,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnPreguntar = view.findViewById(R.id.btnPreguntar);
         btnOfertar = view.findViewById(R.id.btnOfertar);
         layoutGestionVendedor = view.findViewById(R.id.layoutGestionVendedor);
+        btnVerOfertas = view.findViewById(R.id.btnVerOfertas);
         tvEstadoPublicacion = view.findViewById(R.id.tvEstadoPublicacion);
         btnPausarReactivar = view.findViewById(R.id.btnPausarReactivar);
         btnMarcarVendida = view.findViewById(R.id.btnMarcarVendida);
@@ -190,6 +194,10 @@ public class DetallePublicacionFragment extends Fragment {
             cambiarEstadoPublicacion(nuevoEstado);
         });
         btnMarcarVendida.setOnClickListener(v -> confirmarMarcarVendida());
+        btnVerOfertas.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_detalle_to_myOffers);
+        });
 
         pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
             @Override
@@ -532,27 +540,69 @@ public class DetallePublicacionFragment extends Fragment {
         TextView tvPrecioPublicado = dialogView.findViewById(R.id.tvPrecioPublicado);
         EditText etMonto = dialogView.findViewById(R.id.etMontoOferta);
         EditText etMensaje = dialogView.findViewById(R.id.etMensajeOferta);
-        tvPrecioPublicado.setText("Precio publicado: " + formatearPrecio(currentPublicacion.getPrice()));
+        TextView tvPorcentaje = dialogView.findViewById(R.id.tvPorcentajeOferta);
+        double precioOriginal = currentPublicacion.getPrice();
+        tvPrecioPublicado.setText("Precio publicado: " + formatearPrecio(precioOriginal));
 
-        activeDialog = new AlertDialog.Builder(requireContext())
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Hacer una oferta")
                 .setView(dialogView)
-                .setPositiveButton("Ofertar", (dialog, which) -> {
-                    double monto;
-                    try {
-                        monto = Double.parseDouble(etMonto.getText().toString().trim());
-                    } catch (NumberFormatException e) {
-                        monto = 0;
-                    }
-                    if (monto <= 0) {
-                        Toast.makeText(getContext(), "Ingresá un monto válido", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    String mensaje = etMensaje.getText().toString().trim();
-                    enviarOferta(monto, mensaje.isEmpty() ? null : mensaje);
-                })
+                .setPositiveButton("Ofertar", null)
                 .setNegativeButton("Cancelar", null)
-                .show();
+                .create();
+
+        activeDialog = dialog;
+        dialog.setOnShowListener(d -> {
+            android.widget.Button btnPositive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+
+            etMonto.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+                @Override
+                public void afterTextChanged(Editable s) {
+                    try {
+                        double monto = Double.parseDouble(s.toString().trim());
+                        if (monto > 0 && precioOriginal > 0) {
+                            int porcentaje = (int) Math.round((monto / precioOriginal) * 100);
+                            tvPorcentaje.setVisibility(View.VISIBLE);
+                            if (monto > precioOriginal) {
+                                tvPorcentaje.setText("No podés ofertar a un precio mayor al publicado");
+                                tvPorcentaje.setTextColor(0xFFD32F2F);
+                                btnPositive.setEnabled(false);
+                            } else {
+                                tvPorcentaje.setText(porcentaje + "% del precio publicado");
+                                tvPorcentaje.setTextColor(0xFF888888);
+                                btnPositive.setEnabled(true);
+                            }
+                        } else {
+                            tvPorcentaje.setVisibility(View.GONE);
+                            btnPositive.setEnabled(false);
+                        }
+                    } catch (NumberFormatException e) {
+                        tvPorcentaje.setVisibility(View.GONE);
+                        btnPositive.setEnabled(false);
+                    }
+                }
+            });
+
+            btnPositive.setEnabled(false);
+            btnPositive.setOnClickListener(v -> {
+                double monto;
+                try {
+                    monto = Double.parseDouble(etMonto.getText().toString().trim());
+                } catch (NumberFormatException e) {
+                    monto = 0;
+                }
+                if (monto <= 0 || monto > precioOriginal) {
+                    return;
+                }
+                String mensaje = etMensaje.getText().toString().trim();
+                enviarOferta(monto, mensaje.isEmpty() ? null : mensaje);
+                dialog.dismiss();
+            });
+        });
+
+        dialog.show();
     }
 
     private void enviarOferta(double monto, @Nullable String mensaje) {
@@ -896,6 +946,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvMiOferta = null;
         btnPreguntar = null;
         btnOfertar = null;
+        btnVerOfertas = null;
         layoutGestionVendedor = null;
         tvEstadoPublicacion = null;
         btnPausarReactivar = null;
