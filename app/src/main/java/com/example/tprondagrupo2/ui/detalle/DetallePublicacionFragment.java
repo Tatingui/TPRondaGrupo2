@@ -1,5 +1,8 @@
 package com.example.tprondagrupo2.ui.detalle;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -82,6 +85,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     // Dirección y acciones según quién mira
     private TextView tvDireccion;
+    private Button btnComoLlegar;
     private TextView tvAvisoEstado;
     private LinearLayout layoutAccionesComprador;
     private TextView tvMiOferta;
@@ -128,6 +132,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnVerPerfilVendedor = view.findViewById(R.id.btnVerPerfilVendedor);
 
         tvDireccion = view.findViewById(R.id.tvDireccion);
+        btnComoLlegar = view.findViewById(R.id.btnComoLlegar);
         tvAvisoEstado = view.findViewById(R.id.tvAvisoEstado);
         layoutAccionesComprador = view.findViewById(R.id.layoutAccionesComprador);
         tvMiOferta = view.findViewById(R.id.tvMiOferta);
@@ -260,6 +265,52 @@ public class DetallePublicacionFragment extends Fragment {
             tvDireccion.setText(zona);
         } else {
             tvDireccion.setText(zona + "\n" + getString(R.string.detalle_direccion_oculta));
+        }
+
+        mostrarComoLlegar(publicacion);
+    }
+
+    /**
+     * El botón "Cómo llegar" aparece cuando ya se puede ver el punto de entrega,
+     * o sea cuando al comprador le aceptaron la oferta.
+     */
+    private void mostrarComoLlegar(@NonNull Publicacion publicacion) {
+        String destino = publicacion.getDestinoParaMapa();
+
+        if (publicacion.isOwner() || !publicacion.isAddressVisible() || destino == null) {
+            btnComoLlegar.setVisibility(View.GONE);
+            return;
+        }
+
+        btnComoLlegar.setVisibility(View.VISIBLE);
+        btnComoLlegar.setOnClickListener(v -> abrirEnMapa(destino));
+    }
+
+    /**
+     * Muestra la ruta en Google Maps con el punto de entrega ya cargado.
+     * La persona toca "Iniciar" en Maps cuando quiere comenzar la navegación.
+     * Si no está Google Maps, se intenta con la app de mapas del dispositivo.
+     */
+    private void abrirEnMapa(@NonNull String destino) {
+        Uri ruta = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
+                .appendQueryParameter("api", "1")
+                .appendQueryParameter("destination", destino)
+                .build();
+        Intent intent = new Intent(Intent.ACTION_VIEW, ruta);
+        intent.setPackage("com.google.android.apps.maps");
+
+        try {
+            startActivity(intent);
+            return;
+        } catch (ActivityNotFoundException e) {
+            // No está Google Maps: probamos con la app de mapas por defecto
+        }
+
+        Uri mapa = Uri.parse("geo:0,0?q=" + Uri.encode(destino));
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, mapa));
+        } catch (ActivityNotFoundException e) {
+            Toast.makeText(getContext(), R.string.detalle_sin_app_mapas, Toast.LENGTH_SHORT).show();
         }
     }
 

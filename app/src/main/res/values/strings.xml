@@ -34,6 +34,8 @@
     <string name="detalle_zona">Zona: %1$s</string>
     <string name="detalle_direccion_oculta">La dirección exacta se muestra cuando el vendedor acepte tu oferta.</string>
     <string name="detalle_direccion_exacta">Dirección de entrega: %1$s</string>
+    <string name="detalle_como_llegar">Cómo llegar</string>
+    <string name="detalle_sin_app_mapas">No hay una app de mapas instalada</string>
     <string name="detalle_mi_oferta">Tu oferta: %1$s (%2$s)</string>
     <string name="detalle_sin_conexion_accion">Se necesita conexión para esta acción</string>
 

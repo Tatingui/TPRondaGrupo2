@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.di;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
@@ -16,7 +17,7 @@ import retrofit2.Retrofit;
 
 public class NetworkModuleTest {
 
-    private static final String BASE_URL_ESPERADA = "http://localhost:8081/api/";
+    private static final String BASE_URL_ESPERADA = BuildConfig.BASE_URL;
 
     private NetworkModule networkModule;
     private OkHttpClient okHttpClient;
@@ -46,7 +47,8 @@ public class NetworkModuleTest {
 
     @Test
     public void testBaseUrlTerminaConBarra() {
-        assertEquals('/', BASE_URL_ESPERADA.charAt(BASE_URL_ESPERADA.length() - 1));
+        String baseUrl = retrofit.baseUrl().toString();
+        assertEquals('/', baseUrl.charAt(baseUrl.length() - 1));
     }
 
     @Test
