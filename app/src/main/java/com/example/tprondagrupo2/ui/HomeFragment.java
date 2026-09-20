@@ -275,6 +275,15 @@ public class HomeFragment extends Fragment {
             filtered.sort((p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
         } else if (currentSort.equals("price,desc")) {
             filtered.sort((p1, p2) -> Double.compare(p2.getPrice(), p1.getPrice()));
+        } else if (currentSort.equals("createdAt,desc")) {
+            filtered.sort((p1, p2) -> {
+                Long id1 = p1.getIdLong();
+                Long id2 = p2.getIdLong();
+                if (id1 == null && id2 == null) return 0;
+                if (id1 == null) return 1;
+                if (id2 == null) return -1;
+                return Long.compare(id2, id1);
+            });
         }
 
         displayedPublications.clear();
