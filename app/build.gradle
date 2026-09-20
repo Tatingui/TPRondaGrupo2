@@ -3,6 +3,14 @@ plugins {
     alias(libs.plugins.hilt.android)
 }
 
+// Lee BASE_URL de local.properties (cada dev configura la suya)
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localProps.load(new FileInputStream(localPropsFile))
+}
+
+
 android {
     namespace 'com.example.tprondagrupo2'
     compileSdk {
@@ -17,6 +25,9 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // URL del backend inyectada desde local.properties
+        buildConfigField "String", "BASE_URL", "\"${localProps.getProperty('BASE_URL', 'http://10.0.2.2:8081/api/')}\""
     }
 
     buildTypes {
@@ -26,6 +37,10 @@ android {
             }
         }
     }
+    buildFeatures {
+        buildConfig true
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
