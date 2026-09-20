@@ -20,10 +20,10 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <ImageView
+            <com.example.tprondagrupo2.ui.SquareImageView
                 android:id="@+id/ivProduct"
                 android:layout_width="match_parent"
-                android:layout_height="160dp"
+                android:layout_height="wrap_content"
                 android:background="?attr/colorSurface"
                 android:scaleType="centerCrop"
                 android:src="@android:drawable/ic_menu_gallery" />

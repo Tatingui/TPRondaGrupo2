@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -17,17 +18,21 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
+import com.yalantis.ucrop.UCrop;
 import com.example.tprondagrupo2.data.DraftManager;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,18 +60,65 @@ public class PublishWizardFragment extends Fragment {
     private TextInputEditText etTitle, etDescription, etPrice, etLocation, etImageUrl, etDeliveryAddress;
     private android.widget.AutoCompleteTextView autoCompleteCategory, autoCompleteStatus;
 
-    private List<String> imageUrls = new ArrayList<>();
+    private List<Uri> imageUris = new ArrayList<>();
+    private RecyclerView rvPhotoThumbnails;
+    private PhotoThumbnailAdapter photoAdapter;
 
     private final ActivityResultLauncher<String> galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
                 if (uri != null) {
-                    imageUrls.add(uri.toString());
-                    tvImageStatus.setText(imageUrls.size() + " fotos seleccionadas");
-                    saveCurrentDraft();
+                    launchCrop(uri);
                 }
             }
     );
+
+    private final ActivityResultLauncher<Intent> cropLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                    Uri croppedUri = UCrop.getOutput(result.getData());
+                    if (croppedUri != null) {
+                        imageUris.add(croppedUri);
+                        updatePhotoThumbnails();
+                        saveCurrentDraft();
+                    }
+                }
+            }
+    );
+
+    private void launchCrop(Uri sourceUri) {
+        File destFile = new File(requireContext().getCacheDir(),
+                "pub_crop_" + System.currentTimeMillis() + ".jpg");
+        Uri destUri = Uri.fromFile(destFile);
+
+        UCrop.Options options = new UCrop.Options();
+        options.setCompressionQuality(85);
+        options.setToolbarTitle("Recortar foto");
+
+        Intent cropIntent = UCrop.of(sourceUri, destUri)
+                .withAspectRatio(1, 1)
+                .withMaxResultSize(800, 800)
+                .withOptions(options)
+                .getIntent(requireContext());
+
+        cropLauncher.launch(cropIntent);
+    }
+
+    private void updatePhotoThumbnails() {
+        if (rvPhotoThumbnails != null) {
+            if (imageUris.isEmpty()) {
+                rvPhotoThumbnails.setVisibility(View.GONE);
+                tvImageStatus.setText("Seleccioná al menos una foto");
+            } else {
+                rvPhotoThumbnails.setVisibility(View.VISIBLE);
+                tvImageStatus.setText(imageUris.size() + " foto(s) seleccionada(s)");
+                if (photoAdapter != null) {
+                    photoAdapter.notifyDataSetChanged();
+                }
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -120,8 +172,8 @@ public class PublishWizardFragment extends Fragment {
                     updateStepUI();
                 }
             } else if (currentStep == 2) {
-                if (imageUrls.isEmpty() && etImageUrl.getText() != null && !etImageUrl.getText().toString().isEmpty()) {
-                    imageUrls.add(etImageUrl.getText().toString().trim());
+                if (imageUris.isEmpty() && etImageUrl.getText() != null && !etImageUrl.getText().toString().isEmpty()) {
+                    imageUris.add(Uri.parse(etImageUrl.getText().toString().trim()));
                 }
                 currentStep = 3;
                 updateReviewSummary();
@@ -137,6 +189,19 @@ public class PublishWizardFragment extends Fragment {
                 updateStepUI();
             }
         });
+
+        // Setup photo thumbnails RecyclerView
+        rvPhotoThumbnails = view.findViewById(R.id.rvPhotoThumbnails);
+        photoAdapter = new PhotoThumbnailAdapter(imageUris, position -> {
+            imageUris.remove(position);
+            photoAdapter.notifyItemRemoved(position);
+            photoAdapter.notifyItemRangeChanged(position, imageUris.size());
+            updatePhotoThumbnails();
+            saveCurrentDraft();
+        });
+        rvPhotoThumbnails.setLayoutManager(
+                new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvPhotoThumbnails.setAdapter(photoAdapter);
 
         btnSelectPhoto.setOnClickListener(v -> galleryLauncher.launch("image/*"));
     }
@@ -181,8 +246,11 @@ public class PublishWizardFragment extends Fragment {
                 else autoCompleteStatus.setText("Nuevo", false);
             }
             if (draft.getImageUrls() != null) {
-                imageUrls = new ArrayList<>(draft.getImageUrls());
-                tvImageStatus.setText(imageUrls.size() + " fotos seleccionadas");
+                imageUris.clear();
+                for (String url : draft.getImageUrls()) {
+                    imageUris.add(Uri.parse(url));
+                }
+                updatePhotoThumbnails();
             }
             Toast.makeText(getContext(), "Borrador restaurado", Toast.LENGTH_SHORT).show();
         }
@@ -199,7 +267,11 @@ public class PublishWizardFragment extends Fragment {
         long catId = getSelectedCategoryId();
         String status = getSelectedStatus();
 
-        PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, imageUrls);
+        List<String> urls = new ArrayList<>();
+        for (Uri u : imageUris) {
+            urls.add(u.toString());
+        }
+        PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, urls);
         request.setAddress(etDeliveryAddress.getText() == null ? "" : etDeliveryAddress.getText().toString().trim());
         draftManager.saveDraft(request);
     }
@@ -281,7 +353,7 @@ public class PublishWizardFragment extends Fragment {
                 "Dirección de entrega (privada): " + etDeliveryAddress.getText() + "\n" +
                 "Categoría: " + autoCompleteCategory.getText().toString() + "\n" +
                 "Estado: " + autoCompleteStatus.getText().toString() + "\n" +
-                "Fotos: " + imageUrls.size() + " adjuntas";
+                "Fotos: " + imageUris.size() + " adjuntas";
         tvReviewSummary.setText(summary);
     }
 
@@ -298,11 +370,15 @@ public class PublishWizardFragment extends Fragment {
         long catId = getSelectedCategoryId();
         String status = getSelectedStatus();
 
-        if (imageUrls.isEmpty()) {
-            imageUrls.add("https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800"); // Default fallback
+        List<String> finalUrls = new ArrayList<>();
+        for (Uri u : imageUris) {
+            finalUrls.add(u.toString());
+        }
+        if (finalUrls.isEmpty()) {
+            finalUrls.add("https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800");
         }
 
-        PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, imageUrls);
+        PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);
         request.setAddress(etDeliveryAddress.getText().toString().trim());
         publicationApiService.createPublication(request).enqueue(new Callback<Publicacion>() {
             @Override

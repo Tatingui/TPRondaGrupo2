@@ -11,6 +11,7 @@ public class UserProfile implements ReputacionInfo {
     private String email;
     private String telefono;
     private String zona;
+    private String profileImageUrl;
     private String miembroDesde;  // Ej: "Septiembre 2026"
 
     // Reputacion (se completa con las calificaciones del punto 9)
@@ -61,6 +62,14 @@ public class UserProfile implements ReputacionInfo {
 
     public void setZona(String zona) {
         this.zona = zona;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.example.tprondagrupo2.ui.profile;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -9,11 +10,14 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -23,6 +27,9 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.PublicationRepository;
 import com.example.tprondagrupo2.data.repository.SavedSearchRepository;
@@ -37,10 +44,14 @@ import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
+import com.example.tprondagrupo2.network.UserApiService;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.yalantis.ucrop.UCrop;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,21 +59,25 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 @AndroidEntryPoint
 public class ProfileFragment extends Fragment {
 
     private static final String TAG = "ProfileFragment";
 
-
     @Inject SavedSearchRepository savedSearchRepository;
-
     @Inject PublicationRepository publicationRepository;
-
-    /** Repositorio que centraliza las operaciones de perfil y logout */
     @Inject UserRepository userRepository;
+    @Inject UserApiService userApiService;
 
     private TextView tvAvatar;
+    private ImageView ivAvatar;
     private TextView tvNombre;
     private TextView tvNivel;
     private RatingBar rbReputacion;
@@ -73,6 +88,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvEmail;
     private TextView tvTelefono;
     private Button btnEditProfile;
+    private FloatingActionButton fabChangePhoto;
     private RecyclerView rvFavorites;
     private ProgressBar progressBar;
     private TextView tvEmpty;
@@ -85,8 +101,99 @@ public class ProfileFragment extends Fragment {
     private PublicationAdapter adapter;
     private final List<Publicacion> favoritePublications = new ArrayList<>();
 
-    /** Perfil cargado del backend para usar en edicion */
     private UserProfile currentProfile;
+
+    // ==================== PHOTO PICKER + UCROP ====================
+
+    /** Launcher para elegir imagen de la galería */
+    private final ActivityResultLauncher<String> imagePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri != null) {
+                    launchCrop(uri);
+                }
+            });
+
+    /** Launcher para UCrop */
+    private final ActivityResultLauncher<android.content.Intent> cropLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                    Uri croppedUri = UCrop.getOutput(result.getData());
+                    if (croppedUri != null) {
+                        uploadProfilePhoto(croppedUri);
+                    }
+                }
+            });
+
+    private void launchCrop(Uri sourceUri) {
+        File destFile = new File(requireContext().getCacheDir(), "profile_crop_" + System.currentTimeMillis() + ".jpg");
+        Uri destUri = Uri.fromFile(destFile);
+
+        UCrop.Options options = new UCrop.Options();
+        options.setCompressionQuality(85);
+        options.setToolbarTitle("Recortar foto");
+        options.setCircleDimmedLayer(true);
+
+        android.content.Intent cropIntent = UCrop.of(sourceUri, destUri)
+                .withAspectRatio(1, 1)
+                .withMaxResultSize(512, 512)
+                .withOptions(options)
+                .getIntent(requireContext());
+
+        cropLauncher.launch(cropIntent);
+    }
+
+    private void uploadProfilePhoto(Uri imageUri) {
+        try {
+            java.io.InputStream inputStream = requireContext().getContentResolver().openInputStream(imageUri);
+            if (inputStream == null) {
+                Toast.makeText(getContext(), "No se pudo leer la imagen", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Leer bytes
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            byte[] data = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(data)) != -1) {
+                buffer.write(data, 0, bytesRead);
+            }
+            inputStream.close();
+
+            RequestBody requestBody = RequestBody.create(
+                    MediaType.parse("image/jpeg"),
+                    buffer.toByteArray()
+            );
+            MultipartBody.Part part = MultipartBody.Part.createFormData("foto", "profile.jpg", requestBody);
+
+            Toast.makeText(getContext(), "Subiendo foto...", Toast.LENGTH_SHORT).show();
+
+            userApiService.uploadProfilePhoto(part).enqueue(new Callback<UserProfile>() {
+                @Override
+                public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
+                    if (!isAdded()) return;
+                    if (response.isSuccessful() && response.body() != null) {
+                        currentProfile = response.body();
+                        mostrarPerfil(currentProfile);
+                        Toast.makeText(getContext(), "Foto actualizada", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(getContext(), "Error al subir la foto", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<UserProfile> call, Throwable t) {
+                    if (!isAdded()) return;
+                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error uploading photo", e);
+            Toast.makeText(getContext(), "Error al procesar la imagen", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ==================== LIFECYCLE ====================
 
     @Nullable
     @Override
@@ -99,8 +206,8 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
+        ivAvatar = view.findViewById(R.id.ivPerfilAvatar);
         tvNombre = view.findViewById(R.id.tvPerfilNombre);
         tvNivel = view.findViewById(R.id.tvPerfilNivel);
         rbReputacion = view.findViewById(R.id.rbPerfilReputacion);
@@ -111,6 +218,7 @@ public class ProfileFragment extends Fragment {
         tvEmail = view.findViewById(R.id.tvPerfilEmail);
         tvTelefono = view.findViewById(R.id.tvPerfilTelefono);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
+        fabChangePhoto = view.findViewById(R.id.fabChangePhoto);
         rvFavorites = view.findViewById(R.id.rvFavorites);
         progressBar = view.findViewById(R.id.progressBar);
         tvEmpty = view.findViewById(R.id.tvEmpty);
@@ -128,6 +236,11 @@ public class ProfileFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_offers)
         );
 
+        // Cambiar foto de perfil
+        if (fabChangePhoto != null) {
+            fabChangePhoto.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        }
+
         com.google.android.material.switchmaterial.SwitchMaterial switchDarkMode = view.findViewById(R.id.switchDarkMode);
         com.example.tprondagrupo2.data.ThemePreferenceManager themeManager = new com.example.tprondagrupo2.data.ThemePreferenceManager(requireContext());
         switchDarkMode.setChecked(themeManager.isDarkModeEnabled());
@@ -136,14 +249,14 @@ public class ProfileFragment extends Fragment {
             requireActivity().recreate();
         });
 
-        // Cerrar sesion: delega al repositorio y navega al login
+        // Cerrar sesion
         view.findViewById(R.id.btnLogout).setOnClickListener(v -> {
             userRepository.logout();
             NavHostFragment.findNavController(this)
                     .navigate(R.id.action_profile_to_login);
         });
 
-        // Borrar cuenta: muestra dialogo de confirmacion
+        // Borrar cuenta
         view.findViewById(R.id.btnDeleteAccount).setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
                     .setTitle("Borrar cuenta")
@@ -154,7 +267,7 @@ public class ProfileFragment extends Fragment {
                             public void onSuccess() {
                                 if (getActivity() != null) {
                                     getActivity().runOnUiThread(() -> {
-                                        android.widget.Toast.makeText(requireContext(), "Cuenta eliminada", android.widget.Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(requireContext(), "Cuenta eliminada", Toast.LENGTH_SHORT).show();
                                         NavHostFragment.findNavController(ProfileFragment.this)
                                                 .navigate(R.id.action_profile_to_login);
                                     });
@@ -165,7 +278,7 @@ public class ProfileFragment extends Fragment {
                             public void onError(String message) {
                                 if (getActivity() != null) {
                                     getActivity().runOnUiThread(() ->
-                                            android.widget.Toast.makeText(requireContext(), message, android.widget.Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                                     );
                                 }
                             }
@@ -195,7 +308,7 @@ public class ProfileFragment extends Fragment {
 
     private void loadProfile() {
         if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
-            android.widget.Toast.makeText(getContext(), "Sin conexión: no se puede cargar el perfil", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Sin conexión: no se puede cargar el perfil", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -225,6 +338,37 @@ public class ProfileFragment extends Fragment {
 
     private void mostrarPerfil(UserProfile perfil) {
         if (tvNombre != null) tvNombre.setText(perfil.getNombre());
+
+        // Foto de perfil
+        if (perfil.getProfileImageUrl() != null && !perfil.getProfileImageUrl().isEmpty()) {
+            // Construir URL completa
+            String imageUrl = perfil.getProfileImageUrl();
+            if (imageUrl.startsWith("/")) {
+                // URL relativa: BASE_URL ya incluye /api/ y el context-path es /api
+                // asi que /uploads/... se sirve en /api/uploads/...
+                String baseUrl = BuildConfig.BASE_URL;
+                // Quitar trailing slash para evitar doble /
+                if (baseUrl.endsWith("/")) {
+                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                }
+                imageUrl = baseUrl + imageUrl;
+            }
+
+            if (ivAvatar != null && isAdded()) {
+                ivAvatar.setVisibility(View.VISIBLE);
+                tvAvatar.setVisibility(View.GONE);
+                Glide.with(this)
+                        .load(imageUrl)
+                        .transform(new CircleCrop())
+                        .placeholder(R.drawable.bg_avatar_vendedor)
+                        .error(R.drawable.bg_avatar_vendedor)
+                        .into(ivAvatar);
+            }
+        } else {
+            // Sin foto: mostrar inicial
+            if (ivAvatar != null) ivAvatar.setVisibility(View.GONE);
+            if (tvAvatar != null) tvAvatar.setVisibility(View.VISIBLE);
+        }
 
         // Email
         if (tvEmail != null) {
@@ -257,8 +401,7 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // Reputacion: UserProfile ahora implementa ReputacionInfo,
-        // se pasa directo a VendedorViewBinder sin crear un Vendedor intermedio
+        // Reputacion
         VendedorViewBinder.bindReputacion(perfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
         if (tvVentas != null) {
             tvVentas.setText(getString(R.string.vendedor_operaciones,
@@ -266,11 +409,7 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    /**
-     * Fallback si falla la carga del perfil real.
-     */
     private void mostrarPerfilMock() {
-        // Sin reputacion inventada: si no se pudo cargar el perfil, se muestra en 0
         Vendedor miPerfil = new Vendedor(0L, "Mi Usuario", 0, 0, 0, "Enero 2024", "Mi Ciudad");
 
         if (tvNombre != null) tvNombre.setText(miPerfil.getNombre());
@@ -302,7 +441,6 @@ public class ProfileFragment extends Fragment {
         EditText etEditTelefono = dialogView.findViewById(R.id.etEditTelefono);
         AutoCompleteTextView etEditZona = dialogView.findViewById(R.id.etEditZona);
 
-        // Configurar AutoComplete de zonas
         String[] zonas = getResources().getStringArray(R.array.zonas_argentina);
         ArrayAdapter<String> zonaAdapter = new ArrayAdapter<>(
                 requireContext(),
@@ -311,7 +449,6 @@ public class ProfileFragment extends Fragment {
         );
         etEditZona.setAdapter(zonaAdapter);
 
-        // Pre-cargar con datos actuales
         if (currentProfile != null) {
             etEditNombre.setText(currentProfile.getNombre());
             etEditTelefono.setText(currentProfile.getTelefono());
@@ -327,14 +464,13 @@ public class ProfileFragment extends Fragment {
 
         dialog.show();
 
-        // Sobreescribir el listener para controlar el dismiss manualmente
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String nombre = etEditNombre.getText().toString().trim();
             String telefono = etEditTelefono.getText().toString().trim();
             String zona = etEditZona.getText().toString().trim();
 
             if (nombre.isEmpty()) {
-                etEditNombre.setError("El nombre no puede estar vac\u00edo");
+                etEditNombre.setError("El nombre no puede estar vacío");
                 etEditNombre.requestFocus();
                 return;
             }
@@ -368,7 +504,7 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onNetworkError() {
                 if (!isAdded()) return;
-                Toast.makeText(getContext(), "Error de conexi\u00f3n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -445,7 +581,7 @@ public class ProfileFragment extends Fragment {
     private void loadSavedSearches() {
         if (getContext() == null) return;
         if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
-            android.widget.Toast.makeText(getContext(), "Sin conexión: no se pueden cargar búsquedas guardadas", android.widget.Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Sin conexión: no se pueden cargar búsquedas guardadas", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -537,14 +673,10 @@ public class ProfileFragment extends Fragment {
                 }
 
                 @Override
-                public void onError(String message) {
-                    // Ignorar fallo de busqueda en segundo plano
-                }
+                public void onError(String message) { }
 
                 @Override
-                public void onNetworkError() {
-                    // Ignorar fallo de busqueda en segundo plano
-                }
+                public void onNetworkError() { }
             });
         }
     }
@@ -614,7 +746,6 @@ public class ProfileFragment extends Fragment {
     private void abrirDetalle(Publicacion publicacion) {
         Bundle args = new Bundle();
         args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
-
         NavHostFragment.findNavController(this)
                 .navigate(R.id.action_profile_to_detalle, args);
     }

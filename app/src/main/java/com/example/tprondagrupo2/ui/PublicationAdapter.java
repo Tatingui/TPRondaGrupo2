@@ -1,5 +1,9 @@
 package com.example.tprondagrupo2.ui;
 
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -92,6 +96,13 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
             }
         });
 
+
+        // Click en la imagen: abrir en pantalla completa
+        holder.ivProduct.setOnClickListener(v -> {
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                showFullscreenImage(v, imageUrl);
+            }
+        });
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
     }
 
@@ -109,7 +120,27 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         }
     }
 
-    @Override
+    private void showFullscreenImage(View anchorView, String imageUrl) {
+        Dialog dialog = new Dialog(anchorView.getContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_fullscreen_image);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        ImageView ivFullscreen = dialog.findViewById(R.id.ivFullscreen);
+        dialog.findViewById(R.id.btnCloseFullscreen).setOnClickListener(v -> dialog.dismiss());
+        ivFullscreen.setOnClickListener(v -> dialog.dismiss());
+
+        Glide.with(anchorView.getContext())
+                .load(imageUrl)
+                .placeholder(android.R.drawable.ic_menu_gallery)
+                .error(android.R.drawable.ic_menu_gallery)
+                .into(ivFullscreen);
+
+        dialog.show();
+    }
+
     public int getItemCount() {
         return publications.size();
     }
