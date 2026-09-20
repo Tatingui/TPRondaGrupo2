@@ -203,6 +203,11 @@ public class ProfileFragment extends Fragment {
     // ==================== PERFIL REAL DESDE API ====================
 
     private void loadProfile() {
+        if (!new com.example.tprondagrupo2.network.NetworkObserver(requireContext()).isCurrentlyConnected()) {
+            android.widget.Toast.makeText(getContext(), "Sin conexión: no se puede cargar el perfil", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         userRepository.getMyProfile(new UserRepository.ProfileCallback() {
             @Override
             public void onSuccess(UserProfile profile) {
@@ -437,6 +442,11 @@ public class ProfileFragment extends Fragment {
 
     private void loadSavedSearches() {
         if (getContext() == null) return;
+        if (!new com.example.tprondagrupo2.network.NetworkObserver(requireContext()).isCurrentlyConnected()) {
+            android.widget.Toast.makeText(getContext(), "Sin conexión: no se pueden cargar búsquedas guardadas", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         savedSearchApiService.getSavedSearches().enqueue(new Callback<List<SavedSearch>>() {
             @Override
             public void onResponse(Call<List<SavedSearch>> call, Response<List<SavedSearch>> response) {

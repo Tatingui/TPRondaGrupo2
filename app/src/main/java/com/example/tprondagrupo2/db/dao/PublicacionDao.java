@@ -21,6 +21,9 @@ public interface PublicacionDao {
     @Query("SELECT * FROM publicaciones ORDER BY lastSeenTimestamp DESC")
     List<PublicacionEntity> getAll();
 
+    @Query("SELECT * FROM publicaciones WHERE title LIKE '%' || :query || '%' ORDER BY lastSeenTimestamp DESC")
+    List<PublicacionEntity> searchByTitle(String query);
+
     @Query("SELECT * FROM publicaciones WHERE id = :id LIMIT 1")
     PublicacionEntity getById(String id);
 

@@ -28,11 +28,10 @@ public class NetworkObserver {
             return;
         }
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-        isConnected.postValue(capabilities != null && (
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-        ));
+        boolean hasInternet = capabilities != null && 
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        isConnected.postValue(hasInternet);
     }
 
     private void registerCallback() {
@@ -43,7 +42,24 @@ public class NetworkObserver {
         connectivityManager.registerNetworkCallback(request, new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(@NonNull Network network) {
+                // A veces onAvailable se dispara antes de que se valide el internet.
+                // Lo marcamos temporalmente como true, pero onCapabilitiesChanged es mas preciso.
                 isConnected.postValue(true);
+            }
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+                super.onCapabilitiesChanged(network, networkCapabilities);
+                boolean hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+                // Soportamos explicitamente VPN y Bluetooth
+                boolean validTransport = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH);
+                
+                isConnected.postValue(hasInternet && validTransport);
             }
 
             @Override
