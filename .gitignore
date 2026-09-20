@@ -9,3 +9,5 @@
 .cxx
 local.properties
 Claude outputs/
+.env
+backend/.env
