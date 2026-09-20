@@ -64,7 +64,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         Publicacion pub = publications.get(position);
         holder.tvTitle.setText(pub.getTitle());
         holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
-        holder.tvCondition.setText(pub.getStatus());
+        holder.tvCondition.setText(traducirEstado(pub.getStatus()));
         holder.tvLocation.setText("Zona: " + (pub.getLocation() != null ? pub.getLocation() : "Sin ubicación"));
 
         String imageUrl = pub.getFirstImageUrl();
@@ -93,6 +93,20 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         });
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
+    }
+
+    private String traducirEstado(String status) {
+        if (status == null) return "";
+        switch (status) {
+            case "NEW":
+                return "Nuevo";
+            case "LIKE_NEW":
+                return "Como nuevo";
+            case "USED":
+                return "Usado";
+            default:
+                return status;
+        }
     }
 
     @Override
