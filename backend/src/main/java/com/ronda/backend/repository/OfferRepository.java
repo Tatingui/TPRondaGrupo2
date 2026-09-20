@@ -1,6 +1,7 @@
 package com.ronda.backend.repository;
 
 import com.ronda.backend.model.Offer;
+import com.ronda.backend.model.OfferStatus;
 import com.ronda.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,6 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
     List<Offer> findBySeller(User seller);
     List<Offer> findByPublicationId(Long publicationId);
     Optional<Offer> findFirstByPublicationIdAndBuyerIdOrderByCreatedAtDesc(Long publicationId, Long buyerId);
+    Optional<Offer> findFirstByPublicationIdAndBuyerIdAndStatusOrderByCreatedAtDesc(
+            Long publicationId, Long buyerId, OfferStatus status);
 }

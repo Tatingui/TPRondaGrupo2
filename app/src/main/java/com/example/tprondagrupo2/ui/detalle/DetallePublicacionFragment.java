@@ -313,9 +313,14 @@ public class DetallePublicacionFragment extends Fragment {
         String zona = getString(R.string.detalle_zona,
                 publicacion.getLocation() != null ? publicacion.getLocation() : "-");
 
-        if (detalleConfirmado && publicacion.isAddressVisible() && publicacion.getAddress() != null) {
-            tvDireccion.setText(zona + "\n"
-                    + getString(R.string.detalle_direccion_exacta, publicacion.getAddress()));
+        if (detalleConfirmado && publicacion.isAddressVisible()) {
+            String direccion = publicacion.getAddress();
+            if (direccion != null && !direccion.trim().isEmpty()) {
+                tvDireccion.setText(zona + "\n"
+                        + getString(R.string.detalle_direccion_exacta, direccion.trim()));
+            } else {
+                tvDireccion.setText(zona + "\n" + getString(R.string.detalle_sin_direccion_guardada));
+            }
         } else if (publicacion.isOwner()) {
             tvDireccion.setText(zona);
         } else {

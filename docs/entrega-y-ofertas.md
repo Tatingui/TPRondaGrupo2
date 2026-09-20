@@ -47,7 +47,7 @@ actualizada o la excepción de la consola del backend, sin tokens ni contraseña
 
 - Android: 158 pruebas unitarias aprobadas, APK debug y APK instrumentado compilados,
   lintDebug aprobado. No se instaló el APK ni se ejecutaron pruebas visuales en el emulador.
-- Backend: 13 pruebas focalizadas aprobadas (`DeliveryFlowTest`, `OfferServiceTest`,
+- Backend: 15 pruebas focalizadas aprobadas (`DeliveryFlowTest`, `OfferServiceTest`,
   `PublicationDetailTest`). Se ejercita HTTP con seguridad y persistencia H2:
   publicar, ofertar, listar por usuario, denegar aceptación a un tercero, aceptar como
   vendedor y recuperar la dirección como comprador, manteniéndola oculta a terceros.
@@ -80,3 +80,17 @@ mvn -Dtest=DeliveryFlowTest,OfferServiceTest,PublicationDetailTest test
 
 Esta entrega no implementa los incrementos 5–7 del refactor ni completa negociación de
 contraofertas. No incluye despliegue, push ni PR.
+
+## Seguimiento: comprador aceptado sin botón
+
+La pantalla confundía autorización ausente con dirección ausente: incluso con
+`addressVisible=true`, si `address` era null mostraba el mensaje de esperar aceptación.
+Ahora explica que la publicación no tiene una dirección exacta guardada. La zona nunca
+se convierte automáticamente en destino. Para probar publicaciones nuevas, pegar dirección
+en el campo nuevo; una publicación antigua sin esos datos seguirá sin destino de mapas.
+
+También se reprodujo con un test un caso distinto: la consulta tomaba solo la última oferta
+del comprador y perdía la autorización si había otra posterior a una aceptada. Ahora busca
+primero su oferta aceptada para esa publicación y, si no existe, su última oferta. El test
+falló antes del cambio y pasa con la corrección, manteniendo ocultos los datos a terceros.
+Esto no confirma que hubiera múltiples ofertas en la publicación de la captura.
