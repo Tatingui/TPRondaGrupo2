@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.reactivex.rxjava3.core.Single;
 
@@ -24,6 +25,8 @@ public class FavoritesDataStoreManager {
 
     public static final Preferences.Key<String> FAVORITES_KEY = PreferencesKeys.stringKey("favorites");
     private static RxDataStore<Preferences> dataStore;
+    private static final Map<String, Boolean> memoryCache = new ConcurrentHashMap<>();
+    private static boolean isInitialized = false;
 
     private FavoritesDataStoreManager() {
     }
@@ -31,90 +34,96 @@ public class FavoritesDataStoreManager {
     public static synchronized RxDataStore<Preferences> getInstance(Context context) {
         if (dataStore == null) {
             dataStore = new RxPreferenceDataStoreBuilder(context.getApplicationContext(), "favorites_datastore").build();
+            loadCacheAsync();
         }
         return dataStore;
     }
 
+    private static synchronized void loadCacheAsync() {
+        if (isInitialized || dataStore == null) return;
+        dataStore.data().firstOrError().subscribe(prefs -> {
+            String json = prefs.get(FAVORITES_KEY);
+            List<FavoriteDataStoreItem> list = parseList(json);
+            synchronized (memoryCache) {
+                memoryCache.clear();
+                for (FavoriteDataStoreItem item : list) {
+                    if (item.getId() != null) {
+                        memoryCache.put(item.getId(), item.isHasUpdates());
+                    }
+                }
+                isInitialized = true;
+            }
+        }, throwable -> {
+            // ignore
+        });
+    }
+
     public static void addFavorite(Context context, String pubId) {
         if (context == null || pubId == null) return;
+        synchronized (memoryCache) {
+            memoryCache.put(pubId, false);
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(FAVORITES_KEY);
-            List<FavoriteDataStoreItem> list = parseList(json);
-
-            boolean exists = false;
-            for (FavoriteDataStoreItem item : list) {
-                if (pubId.equals(item.getId())) {
-                    exists = true;
-                    break;
+            synchronized (memoryCache) {
+                List<FavoriteDataStoreItem> list = new ArrayList<>();
+                for (Map.Entry<String, Boolean> entry : memoryCache.entrySet()) {
+                    list.add(new FavoriteDataStoreItem(entry.getKey(), entry.getValue()));
                 }
+                mutable.set(FAVORITES_KEY, new Gson().toJson(list));
             }
-            if (!exists) {
-                list.add(new FavoriteDataStoreItem(pubId, false));
-            }
-
-            mutable.set(FAVORITES_KEY, new Gson().toJson(list));
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static void removeFavorite(Context context, String pubId) {
         if (context == null || pubId == null) return;
+        synchronized (memoryCache) {
+            memoryCache.remove(pubId);
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(FAVORITES_KEY);
-            List<FavoriteDataStoreItem> list = parseList(json);
-
-            list.removeIf(item -> pubId.equals(item.getId()));
-
-            mutable.set(FAVORITES_KEY, new Gson().toJson(list));
+            synchronized (memoryCache) {
+                List<FavoriteDataStoreItem> list = new ArrayList<>();
+                for (Map.Entry<String, Boolean> entry : memoryCache.entrySet()) {
+                    list.add(new FavoriteDataStoreItem(entry.getKey(), entry.getValue()));
+                }
+                mutable.set(FAVORITES_KEY, new Gson().toJson(list));
+            }
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static void setHasUpdates(Context context, String pubId, boolean hasUpdates) {
         if (context == null || pubId == null) return;
+        synchronized (memoryCache) {
+            memoryCache.put(pubId, hasUpdates);
+        }
+
         RxDataStore<Preferences> ds = getInstance(context);
         ds.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
-            String json = mutable.get(FAVORITES_KEY);
-            List<FavoriteDataStoreItem> list = parseList(json);
-
-            boolean found = false;
-            for (FavoriteDataStoreItem item : list) {
-                if (pubId.equals(item.getId())) {
-                    item.setHasUpdates(hasUpdates);
-                    found = true;
-                    break;
+            synchronized (memoryCache) {
+                List<FavoriteDataStoreItem> list = new ArrayList<>();
+                for (Map.Entry<String, Boolean> entry : memoryCache.entrySet()) {
+                    list.add(new FavoriteDataStoreItem(entry.getKey(), entry.getValue()));
                 }
+                mutable.set(FAVORITES_KEY, new Gson().toJson(list));
             }
-            if (!found) {
-                list.add(new FavoriteDataStoreItem(pubId, hasUpdates));
-            }
-
-            mutable.set(FAVORITES_KEY, new Gson().toJson(list));
             return Single.just(mutable);
         }).subscribe();
     }
 
     public static Map<String, Boolean> getHasUpdatesMap(Context context) {
-        if (context == null) return new HashMap<>();
-        try {
-            RxDataStore<Preferences> ds = getInstance(context);
-            Preferences prefs = ds.data().blockingFirst();
-            String json = prefs.get(FAVORITES_KEY);
-            List<FavoriteDataStoreItem> list = parseList(json);
-            Map<String, Boolean> map = new HashMap<>();
-            for (FavoriteDataStoreItem item : list) {
-                if (item.getId() != null) {
-                    map.put(item.getId(), item.isHasUpdates());
-                }
-            }
-            return map;
-        } catch (Exception e) {
-            return new HashMap<>();
+        if (context != null) {
+            getInstance(context);
+        }
+        synchronized (memoryCache) {
+            return new HashMap<>(memoryCache);
         }
     }
 
