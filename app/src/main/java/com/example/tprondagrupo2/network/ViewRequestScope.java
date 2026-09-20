@@ -13,6 +13,8 @@ public final class ViewRequestScope {
     private final Set<Call<?>> pendientes = new HashSet<>();
     private boolean cerrado;
 
+    public boolean hasPending() { return !pendientes.isEmpty(); }
+
     public <T> void enqueue(Call<T> call, Callback<T> callback) {
         if (cerrado) {
             call.cancel();

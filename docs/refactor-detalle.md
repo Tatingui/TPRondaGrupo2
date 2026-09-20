@@ -1,6 +1,8 @@
 # Refactor incremental del detalle y Cómo llegar
 
-Base de trabajo: `main` en `312ac6c` (incluye el arreglo de desplegables al publicar).
+Base inicial: `main` en `312ac6c` (arreglo de desplegables al publicar).
+Durante el trabajo se integró `main` en `58b7975`: correcciones de DataStore y tarjetas
+de Perfil/Historial, sin conflictos ni modificaciones a esos cambios.
 Se trabaja un incremento por vez. Los cambios de comportamiento se identifican
 aparte de las extracciones que deben preservar el funcionamiento existente.
 
@@ -12,7 +14,7 @@ aparte de las extracciones que deben preservar el funcionamiento existente.
 | 1 | Extraer autorización de la acción y resolución del destino | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 2 | Extraer integración con aplicaciones de mapas | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 3 | Corregir ciclo de vida, callbacks y cancelación | `features/refactor-detalle-base` | Implementado y verificado localmente |
-| 4 | Separar carga del detalle mediante repositorio y estado de pantalla | `features/refactor-detalle-base` | Pendiente |
+| 4 | Separar carga del detalle mediante repositorio y estado de pantalla | `features/refactor-detalle-base` | Implementado y verificado localmente |
 | 5 | Extraer acciones en entregas separadas: preguntas, ofertas, gestión y favoritos | `features/refactor-detalle-acciones` | Pendiente |
 | 6 | Ordenar persistencia, ejecución fuera del hilo principal y favoritos | `features/refactor-detalle-acciones` | Pendiente |
 | 7 | Separar presentación en secciones y diálogos | `features/refactor-detalle-acciones` | Pendiente |
@@ -81,6 +83,55 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
 - R5 queda cubierto respecto de recursos de la vista. La conservación del estado de carga
   y el registro de visita frente a recreaciones se completan en el incremento 4.
 
+## Incremento 4: lectura, estado y recreación
+
+- PublicationRepository implementa PublicationDetailSource para detalle, preguntas y visita,
+  con errores de red/HTTP diferenciados y cancelación por operación. Los métodos existentes
+  que usa Perfil mantienen sus firmas.
+- DetalleViewModel conserva la lectura y la foto seleccionada durante recreaciones; recibe
+  el repositorio por factory y no retiene vistas, Context ni objetos de Retrofit.
+- Cada nueva carga invalida la anterior y sus preguntas. No se aceptan respuestas de otro ID.
+  Las preguntas se solicitan después del detalle, cuando ya se conoce al propietario.
+- La vista observa con getViewLifecycleOwner y muestra carga, errores y reintento.
+  Sin detalle confirmado, o ante 401/403/404, oculta acciones y dirección exacta.
+  Un error transitorio de red conserva la información confirmada de la misma pantalla.
+- La visita remota y los efectos locales pendientes no se repiten por recrear la vista.
+  Al salir definitivamente se cancelan las lecturas. Tras cancelar una escritura pendiente,
+  se revalida el detalle al volver, sin reenviar esa escritura automáticamente.
+- Las acciones aún pertenecen al Fragment (incremento 5), pero notifican favorito/oferta al
+  ViewModel para que una lectura iniciada antes de su confirmación no deshaga el resultado.
+  Se preserva el bloqueo de botones durante operaciones en curso al renderizar nuevo estado.
+- Se mantienen R1/R2/R3/R4; se completan R5 y R6 en la lectura y su integración con acciones.
+  La extracción completa de acciones, persistencia asíncrona y división visual siguen en 5/6/7.
+- 20 pruebas nuevas de repositorio y ViewModel; total: 152 unitarias aprobadas, cero omitidas.
+  APK debug y APK de pruebas instrumentadas compilados; lintDebug finalizado correctamente.
+  No se cambiaron dependencias ni configuración de Hilt.
+- No se ejecutaron pruebas instrumentadas en dispositivo. La retención comprobada usa
+  ViewModelStore; tras muerte del proceso se reconstruye desde argumentos y se consulta
+  nuevamente al backend, no se promete retención en memoria entre procesos.
+
+## Comprobación manual antes del push
+
+- [ ] Abrir el detalle desde Home, favoritos y perfil público; verificar carga, vendedor y preguntas.
+- [ ] Como propietario o comprador sin permiso, comprobar que no aparece Cómo llegar.
+- [ ] Como comprador con oferta aceptada, abrir mapas incluso con la publicación vendida.
+- [ ] Probar con Google Maps y con otra app como alternativa; sin apps, verificar el mensaje.
+- [ ] Cambiar de foto, rotar y volver desde el perfil del vendedor: conservar foto y detalle.
+- [ ] Salir durante una carga, volver y reintentar sin conexión; no cerrar la app ni mostrar datos viejos sobre nuevos.
+- [ ] Favorito, oferta y pausar/reactivar: botones no se habilitan por una respuesta de lectura en curso.
+- [ ] Comprobar en los registros del backend que rotar no repite POST de visita ni otras escrituras.
+- [ ] Verificar Home offline y Perfil tras las correcciones de DataStore integradas de main.
+
+Comandos utilizados para verificar cada entrega:
+
+```powershell
+.\gradlew.bat test :app:assembleDebug :app:assembleDebugAndroidTest --console=plain
+.\gradlew.bat :app:lintDebug --console=plain
+```
+
+Con un dispositivo de pruebas disponible, el adaptador Android de mapas también se puede
+verificar con `./gradlew.bat :app:connectedDebugAndroidTest`.
+
 ## Mejoras funcionales propuestas, separadas del refactor
 
 - Fallback web después de las alternativas de mapas, con sus pruebas específicas.
@@ -89,4 +140,4 @@ La segunda rama se creará desde una base que incluya los incrementos 0 a 4.
   requiere probar crear publicación, ofertar, aceptar y abrir destino como comprador,
   manteniendo la dirección oculta para terceros.
 
-Estas mejoras no se consideran implementadas ni incluidas automáticamente en el incremento 0.
+Estas mejoras no se consideran implementadas ni incluidas en los incrementos 0 a 4.

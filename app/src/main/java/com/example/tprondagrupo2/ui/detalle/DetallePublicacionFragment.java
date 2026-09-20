@@ -17,10 +17,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.data.repository.PublicationRepository;
+import com.example.tprondagrupo2.data.repository.PublicationDetailSource.LoadError;
 import com.example.tprondagrupo2.db.AppDatabase;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.AuthResponse;
@@ -59,9 +62,18 @@ public class DetallePublicacionFragment extends Fragment {
     private ViewRequestScope viewRequests;
     private ViewPager2.OnPageChangeCallback pageChangeCallback;
     private AlertDialog activeDialog;
+    private DetalleViewModel viewModel;
+    private boolean detalleConfirmado;
+    private boolean favoritoEnCurso, ofertaEnCurso, gestionEnCurso;
+    private List<String> fotosMostradas;
+    private TextView tvCargaDetalle;
+    private Button btnReintentarDetalle;
 
     @Inject
     PublicationApiService publicationApiService;
+
+    @Inject
+    PublicationRepository publicationRepository;
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -115,6 +127,19 @@ public class DetallePublicacionFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         viewRequests = new ViewRequestScope();
         mapaNavigator = new MapaNavigator(new AndroidMapaLauncher(this::startActivity));
+        favoritoEnCurso = ofertaEnCurso = gestionEnCurso = false;
+        viewModel = new ViewModelProvider(this, new DetalleViewModelFactory(publicationRepository))
+                .get(DetalleViewModel.class);
+        tvCargaDetalle = view.findViewById(R.id.tvCargaDetalle);
+        btnReintentarDetalle = view.findViewById(R.id.btnReintentarDetalle);
+        btnReintentarDetalle.setOnClickListener(v -> {
+            DetalleUiState estado = viewModel.getEstado().getValue();
+            if (estado != null && estado.getError() == null && estado.getErrorPreguntas() != null) {
+                viewModel.recargarPreguntas();
+            } else {
+                viewModel.recargarDetalle();
+            }
+        });
 
         vpGaleria = view.findViewById(R.id.vpGaleria);
         tvIndicadorFotos = view.findViewById(R.id.tvIndicadorFotos);
@@ -169,6 +194,7 @@ public class DetallePublicacionFragment extends Fragment {
         pageChangeCallback = new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
+                viewModel.seleccionarFoto(position);
                 actualizarIndicador(position, currentPublicacion.getCantidadFotos());
             }
         };
@@ -185,44 +211,56 @@ public class DetallePublicacionFragment extends Fragment {
             btnMarcarVendida.setAlpha(alpha);
         });
 
-        // Primero mostramos lo que llegó por el Bundle (o la caché) y después
-        // lo actualizamos con los datos completos del backend.
-        mostrarPublicacion(currentPublicacion);
-        saveToCache(currentPublicacion);
-        registrarVista(currentPublicacion);
-        cargarDetalle(currentPublicacion.getId());
+        Publicacion inicial = currentPublicacion;
+        viewModel.getEstado().observe(getViewLifecycleOwner(), this::mostrarEstadoDetalle);
+        viewModel.inicializar(inicial);
     }
 
-    private void cargarDetalle(String id) {
-        if (id == null) return;
+    private void mostrarEstadoDetalle(DetalleUiState estado) {
+        if (estado.getPublicacion() == null) return;
+        currentPublicacion = estado.getPublicacion();
+        detalleConfirmado = estado.isDetalleConfirmado();
+        mostrarPublicacion(currentPublicacion);
+        if (detalleConfirmado) {
+            mostrarAcciones(currentPublicacion);
+        } else {
+            layoutAccionesComprador.setVisibility(View.GONE);
+            layoutGestionVendedor.setVisibility(View.GONE);
+            tvAvisoEstado.setVisibility(View.GONE);
+            btnFavorite.setVisibility(View.GONE);
+        }
+        btnFavorite.setEnabled(!favoritoEnCurso);
+        if (ofertaEnCurso) btnOfertar.setEnabled(false);
+        btnPausarReactivar.setEnabled(!gestionEnCurso);
+        btnMarcarVendida.setEnabled(!gestionEnCurso);
+        mostrarPreguntas(estado.getPreguntas());
+        if (estado.isCargandoPreguntas() || estado.getErrorPreguntas() != null) {
+            tvSinPreguntas.setVisibility(View.VISIBLE);
+            tvSinPreguntas.setText(estado.isCargandoPreguntas()
+                    ? R.string.detalle_cargando_preguntas : R.string.detalle_error_preguntas);
+        } else {
+            tvSinPreguntas.setText(R.string.detalle_sin_preguntas);
+        }
+        tvCargaDetalle.setVisibility(estado.isCargando() || estado.getError() != null ? View.VISIBLE : View.GONE);
+        if (estado.isCargando()) tvCargaDetalle.setText(R.string.detalle_cargando);
+        else if (estado.getError() != null) tvCargaDetalle.setText(textoErrorCarga(estado.getError()));
+        boolean reintentar = !estado.isCargando() && !estado.isCargandoPreguntas()
+                && (estado.getError() != null || estado.getErrorPreguntas() != null);
+        btnReintentarDetalle.setVisibility(reintentar ? View.VISIBLE : View.GONE);
 
-        viewRequests.enqueue(publicationApiService.getPublication(id), new Callback<Publicacion>() {
-            @Override
-            public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
-                if (!isAdded()) return;
-                if (response.isSuccessful() && response.body() != null) {
-                    currentPublicacion = response.body();
-                    mostrarPublicacion(currentPublicacion);
-                    mostrarAcciones(currentPublicacion);
-                    saveToCache(currentPublicacion);
-                    // Las preguntas se cargan después del detalle porque necesitan
-                    // saber si quien mira es el vendedor (para mostrar "Responder")
-                    cargarPreguntas();
-                } else if (response.code() == 404) {
-                    Toast.makeText(getContext(), "La publicación ya no existe", Toast.LENGTH_SHORT).show();
-                }
-            }
+        Publicacion paraCache = viewModel.consumirCachePendiente();
+        if (paraCache != null) saveToCache(paraCache);
+        if (viewModel.consumirVisitaLocal()) registrarVistaLocal(currentPublicacion);
+    }
 
-            @Override
-            public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
-                // Sin conexión: nos quedamos con los datos que ya se muestran
-                if (isAdded()) {
-                    Toast.makeText(getContext(),
-                            "Sin conexión: la información podría no estar actualizada",
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+    private int textoErrorCarga(LoadError error) {
+        switch (error) {
+            case NETWORK: return R.string.detalle_error_red;
+            case NOT_FOUND: return R.string.detalle_no_existe;
+            case UNAUTHORIZED: return R.string.detalle_sesion_vencida;
+            case FORBIDDEN: return R.string.detalle_sin_permiso;
+            default: return R.string.detalle_error_carga;
+        }
     }
 
     private void saveToCache(Publicacion p) {
@@ -241,7 +279,10 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void mostrarPublicacion(@NonNull Publicacion publicacion) {
-        configurarGaleria(publicacion);
+        if (fotosMostradas == null || !fotosMostradas.equals(publicacion.getImageUrls())) {
+            configurarGaleria(publicacion);
+            fotosMostradas = new java.util.ArrayList<>(publicacion.getImageUrls());
+        }
 
         tvTitulo.setText(publicacion.getTitle());
         tvPrecio.setText(formatearPrecio(publicacion.getPrice()));
@@ -264,7 +305,7 @@ public class DetallePublicacionFragment extends Fragment {
         String zona = getString(R.string.detalle_zona,
                 publicacion.getLocation() != null ? publicacion.getLocation() : "-");
 
-        if (publicacion.isAddressVisible() && publicacion.getAddress() != null) {
+        if (detalleConfirmado && publicacion.isAddressVisible() && publicacion.getAddress() != null) {
             tvDireccion.setText(zona + "\n"
                     + getString(R.string.detalle_direccion_exacta, publicacion.getAddress()));
         } else if (publicacion.isOwner()) {
@@ -281,7 +322,7 @@ public class DetallePublicacionFragment extends Fragment {
      * o sea cuando al comprador le aceptaron la oferta.
      */
     private void mostrarComoLlegar(@NonNull Publicacion publicacion) {
-        String destino = comoLlegarResolver.resolver(publicacion);
+        String destino = detalleConfirmado ? comoLlegarResolver.resolver(publicacion) : null;
 
         if (destino == null) {
             btnComoLlegar.setVisibility(View.GONE);
@@ -311,6 +352,7 @@ public class DetallePublicacionFragment extends Fragment {
      * Solo se llama con los datos del backend, porque ahí viene el campo owner.
      */
     private void mostrarAcciones(@NonNull Publicacion publicacion) {
+        if (!detalleConfirmado) return;
         if (publicacion.isOwner()) {
             layoutAccionesComprador.setVisibility(View.GONE);
             tvAvisoEstado.setVisibility(View.GONE);
@@ -363,21 +405,7 @@ public class DetallePublicacionFragment extends Fragment {
     // ---------- Preguntas ----------
 
     private void cargarPreguntas() {
-        viewRequests.enqueue(publicationApiService.getQuestions(currentPublicacion.getId()),
-                new Callback<List<Pregunta>>() {
-                    @Override
-                    public void onResponse(@NonNull Call<List<Pregunta>> call,
-                                           @NonNull Response<List<Pregunta>> response) {
-                        if (isAdded() && response.isSuccessful() && response.body() != null) {
-                            mostrarPreguntas(response.body());
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NonNull Call<List<Pregunta>> call, @NonNull Throwable t) {
-                        // Sin conexión: la sección queda como está
-                    }
-                });
+        viewModel.recargarPreguntas();
     }
 
     private void mostrarPreguntas(List<Pregunta> preguntas) {
@@ -397,7 +425,7 @@ public class DetallePublicacionFragment extends Fragment {
             } else {
                 tvRespuesta.setText(R.string.detalle_sin_respuesta);
                 // Solo el vendedor puede responder
-                if (currentPublicacion.isOwner()) {
+                if (detalleConfirmado && currentPublicacion.isOwner()) {
                     btnResponder.setVisibility(View.VISIBLE);
                     btnResponder.setOnClickListener(v -> mostrarDialogoResponder(pregunta));
                 }
@@ -528,6 +556,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarOferta(double monto, @Nullable String mensaje) {
+        if (ofertaEnCurso) return;
+        ofertaEnCurso = true;
         btnOfertar.setEnabled(false);
         viewRequests.enqueue(publicationApiService
                 .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
@@ -535,9 +565,10 @@ public class DetallePublicacionFragment extends Fragment {
                     @Override
                     public void onResponse(@NonNull Call<Oferta> call, @NonNull Response<Oferta> response) {
                         if (!isAdded()) return;
+                        ofertaEnCurso = false;
                         if (response.isSuccessful() && response.body() != null) {
                             Toast.makeText(getContext(), "Oferta enviada", Toast.LENGTH_SHORT).show();
-                            currentPublicacion.setMyOffer(response.body());
+                            viewModel.actualizarOferta(response.body());
                         } else {
                             Toast.makeText(getContext(),
                                     mensajeDeError(response, "No se pudo enviar la oferta"),
@@ -549,6 +580,7 @@ public class DetallePublicacionFragment extends Fragment {
                     @Override
                     public void onFailure(@NonNull Call<Oferta> call, @NonNull Throwable t) {
                         if (isAdded()) {
+                            ofertaEnCurso = false;
                             btnOfertar.setEnabled(true);
                             Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
                         }
@@ -571,19 +603,25 @@ public class DetallePublicacionFragment extends Fragment {
 
     /** Usa el mismo endpoint que "Mis publicaciones": PATCH /publications/{id}/status. */
     private void cambiarEstadoPublicacion(String nuevoEstado) {
-        if (!hayConexion()) return;
+        if (gestionEnCurso || !hayConexion()) return;
 
         Long id = currentPublicacion.getIdLong();
         if (id == null) return;
+        gestionEnCurso = true;
+        btnPausarReactivar.setEnabled(false);
+        btnMarcarVendida.setEnabled(false);
 
         viewRequests.enqueue(publicationApiService.updatePublicationStatus(id, nuevoEstado),
                 new Callback<Publicacion>() {
                     @Override
                     public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                         if (!isAdded()) return;
+                        gestionEnCurso = false;
+                        btnPausarReactivar.setEnabled(true);
+                        btnMarcarVendida.setEnabled(true);
                         if (response.isSuccessful()) {
                             Toast.makeText(getContext(), "Publicación actualizada", Toast.LENGTH_SHORT).show();
-                            cargarDetalle(currentPublicacion.getId());
+                            viewModel.recargarDetalle();
                         } else {
                             Toast.makeText(getContext(),
                                     mensajeDeError(response, "No se pudo actualizar la publicación"),
@@ -594,6 +632,9 @@ public class DetallePublicacionFragment extends Fragment {
                     @Override
                     public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
                         if (isAdded()) {
+                            gestionEnCurso = false;
+                            btnPausarReactivar.setEnabled(true);
+                            btnMarcarVendida.setEnabled(true);
                             Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -665,21 +706,9 @@ public class DetallePublicacionFragment extends Fragment {
         return dia + "/" + mes + "/" + anio;
     }
 
-    private void registrarVista(@NonNull Publicacion publicacion) {
+    private void registrarVistaLocal(@NonNull Publicacion publicacion) {
         if (publicacion.getId() == null) return;
         String pubId = publicacion.getId();
-
-        viewRequests.enqueue(publicationApiService.recordView(pubId), new Callback<Void>() {
-            @Override
-            public void onResponse(@NonNull Call<Void> call, @NonNull Response<Void> response) {
-                // Vista registrada en backend
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Void> call, @NonNull Throwable t) {
-                // Ignorar fallo no bloqueante
-            }
-        });
 
         if (getContext() != null) {
             FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
@@ -689,6 +718,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void toggleFavorite(@NonNull Publicacion publicacion) {
+        if (favoritoEnCurso) return;
         if (!networkObserver.isCurrentlyConnected()) {
             Toast.makeText(getContext(), "Se necesita conexión para esta acción", Toast.LENGTH_SHORT).show();
             return;
@@ -697,22 +727,23 @@ public class DetallePublicacionFragment extends Fragment {
         final boolean wasFavorite = publicacion.isFavorite();
         final String pubId = publicacion.getId();
 
+        favoritoEnCurso = true;
         btnFavorite.setEnabled(false);
 
         Callback<Void> callback = new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (isAdded()) {
+                    favoritoEnCurso = false;
                     btnFavorite.setEnabled(true);
                     if (response.isSuccessful()) {
-                        publicacion.setFavorite(!wasFavorite);
-                        actualizarIconoFavorito(publicacion.isFavorite());
-                        if (publicacion.isFavorite()) {
+                        viewModel.actualizarFavorito(!wasFavorite);
+                        if (!wasFavorite) {
                             FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
                         } else {
                             FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
                         }
-                        String mensaje = publicacion.isFavorite() ? "Agregado a favoritos" : "Eliminado de favoritos";
+                        String mensaje = !wasFavorite ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
                     } else {
                         String mensaje = "Error al actualizar favorito";
@@ -741,6 +772,7 @@ public class DetallePublicacionFragment extends Fragment {
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
                 if (isAdded()) {
+                    favoritoEnCurso = false;
                     btnFavorite.setEnabled(true);
                     Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
                 }
@@ -801,9 +833,10 @@ public class DetallePublicacionFragment extends Fragment {
             FotoFullscreenDialog dialog = FotoFullscreenDialog.newInstance(fotos, position);
             dialog.show(getParentFragmentManager(), "foto_fullscreen");
         });
+        int posicion = Math.min(viewModel.getFotoSeleccionada(), Math.max(0, fotos.size() - 1));
         vpGaleria.setAdapter(adapter);
-
-        actualizarIndicador(0, publicacion.getCantidadFotos());
+        vpGaleria.setCurrentItem(posicion, false);
+        actualizarIndicador(posicion, publicacion.getCantidadFotos());
     }
 
     private void actualizarIndicador(int position, int total) {
@@ -821,6 +854,9 @@ public class DetallePublicacionFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (viewModel != null && viewRequests != null && viewRequests.hasPending()) {
+            viewModel.revalidarAlVolver();
+        }
         if (viewRequests != null) viewRequests.close();
         if (activeDialog != null) activeDialog.dismiss();
         if (vpGaleria != null) {
@@ -832,6 +868,9 @@ public class DetallePublicacionFragment extends Fragment {
         mapaNavigator = null;
         networkObserver = null;
         currentPublicacion = null;
+        fotosMostradas = null;
+        tvCargaDetalle = null;
+        btnReintentarDetalle = null;
         vpGaleria = null;
         tvIndicadorFotos = null;
         tvTitulo = null;

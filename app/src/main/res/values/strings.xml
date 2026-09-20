@@ -38,6 +38,15 @@
     <string name="detalle_sin_app_mapas">No hay una app de mapas instalada</string>
     <string name="detalle_mi_oferta">Tu oferta: %1$s (%2$s)</string>
     <string name="detalle_sin_conexion_accion">Se necesita conexión para esta acción</string>
+    <string name="detalle_cargando">Actualizando publicación…</string>
+    <string name="detalle_cargando_preguntas">Cargando preguntas…</string>
+    <string name="detalle_error_preguntas">No se pudieron actualizar las preguntas.</string>
+    <string name="detalle_error_red">Sin conexión: la información podría no estar actualizada.</string>
+    <string name="detalle_no_existe">La publicación ya no existe.</string>
+    <string name="detalle_sesion_vencida">Tu sesión venció. Ingresá de nuevo.</string>
+    <string name="detalle_sin_permiso">No tenés permiso para consultar esta publicación.</string>
+    <string name="detalle_error_carga">No se pudo actualizar la publicación.</string>
+    <string name="detalle_reintentar">Reintentar</string>
 
     <!-- Sección de favoritos -->
     <string name="perfil_mis_favoritos">Mis favoritos</string>
