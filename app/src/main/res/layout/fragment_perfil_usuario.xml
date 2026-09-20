@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
+    android:background="?android:attr/colorBackground"
     android:fillViewport="true">
 
     <LinearLayout
@@ -48,7 +48,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:background="#FFFFFF"
+                android:background="?attr/colorSurface"
                 android:paddingStart="12dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="12dp"
@@ -73,7 +73,8 @@
                 android:layout_height="wrap_content"
                 android:drawablePadding="8dp"
                 android:textSize="15sp"
-                android:textColor="#555555"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
                 android:visibility="gone"
                 tools:text="usuario@email.com" />
 
@@ -84,7 +85,8 @@
                 android:layout_marginTop="4dp"
                 android:drawablePadding="8dp"
                 android:textSize="15sp"
-                android:textColor="#555555"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
                 android:visibility="gone"
                 tools:text="11-2345-6789" />
 
@@ -94,7 +96,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textSize="15sp"
-                android:textColor="#555555"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
                 android:visibility="gone"
                 tools:text="CABA" />
 
@@ -104,7 +107,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textSize="13sp"
-                android:textColor="#888888"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.6"
                 tools:text="Miembro desde Septiembre 2026" />
 
             <Button
@@ -141,7 +145,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textSize="13sp"
-                android:textColor="#555555"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
                 tools:text="5.0 (5 opiniones)" />
 
             <TextView
@@ -150,7 +155,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textSize="13sp"
-                android:textColor="#555555"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
                 tools:text="10 ventas" />
 
         </LinearLayout>
@@ -192,7 +198,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Mis Ofertas"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_marginBottom="8dp" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switchDarkMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Modo Oscuro"
+                android:textSize="16sp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp" />
         </LinearLayout>
 
         <!-- Mis Búsquedas -->
@@ -203,7 +219,7 @@
             android:layout_marginTop="20dp"
             android:layout_marginEnd="16dp"
             android:text="@string/perfil_mis_busquedas"
-            android:textColor="@color/black"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -223,7 +239,8 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:text="@string/perfil_busquedas_vacias"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.6"
             android:textSize="14sp"
             android:visibility="gone" />
 
@@ -235,7 +252,7 @@
             android:layout_marginTop="24dp"
             android:layout_marginEnd="16dp"
             android:text="@string/perfil_mis_favoritos"
-            android:textColor="@color/black"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -261,7 +278,8 @@
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="16dp"
             android:text="@string/perfil_favoritos_vacio"
-            android:textColor="#888888"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.6"
             android:textSize="14sp"
             android:visibility="gone" />
 

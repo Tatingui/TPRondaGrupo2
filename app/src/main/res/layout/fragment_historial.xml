@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F8F9FA">
+    android:background="?android:attr/colorBackground">
 
     <!-- Encabezado y Filtros -->
     <com.google.android.material.card.MaterialCardView
@@ -25,7 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Historial de Operaciones"
-                android:textColor="@color/purple_700"
+                android:textColor="?attr/colorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -34,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="Filtra tus transacciones por tipo y rango de fechas"
-                android:textColor="#757575"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="12sp" />
 
             <!-- Pestañas de Tipo: Compras / Ventas -->
@@ -44,9 +44,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@android:color/transparent"
-                app:tabIndicatorColor="@color/purple_700"
-                app:tabSelectedTextColor="@color/purple_700"
-                app:tabTextColor="#757575"
+                app:tabIndicatorColor="?attr/colorPrimary"
+                app:tabSelectedTextColor="?attr/colorPrimary"
+                app:tabTextColor="?android:attr/textColorSecondary"
                 app:tabMode="fixed"
                 app:tabGravity="fill">
 
@@ -80,12 +80,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Desde"
-                        android:textColor="@color/purple_500"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="12sp"
-                        app:chipBackgroundColor="@color/white"
+                        app:chipBackgroundColor="?attr/colorSurface"
                         app:chipIcon="@android:drawable/ic_menu_my_calendar"
-                        app:chipIconTint="@color/purple_500"
-                        app:chipStrokeColor="@color/purple_500"
+                        app:chipIconTint="?attr/colorPrimary"
+                        app:chipStrokeColor="?attr/colorPrimary"
                         app:chipStrokeWidth="1dp" />
 
                     <com.google.android.material.chip.Chip
@@ -94,12 +94,12 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Hasta"
-                        android:textColor="@color/purple_500"
+                        android:textColor="?attr/colorPrimary"
                         android:textSize="12sp"
-                        app:chipBackgroundColor="@color/white"
+                        app:chipBackgroundColor="?attr/colorSurface"
                         app:chipIcon="@android:drawable/ic_menu_my_calendar"
-                        app:chipIconTint="@color/purple_500"
-                        app:chipStrokeColor="@color/purple_500"
+                        app:chipIconTint="?attr/colorPrimary"
+                        app:chipStrokeColor="?attr/colorPrimary"
                         app:chipStrokeWidth="1dp" />
 
                     <com.google.android.material.chip.Chip

@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/detalle_vendedor_titulo"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -46,7 +46,7 @@
                 android:id="@+id/tvVendedorNombre"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="17sp"
                 android:textStyle="bold"
                 tools:text="Juan Pérez" />
@@ -88,7 +88,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:textColor="#616161"
+            android:textColor="?attr/colorOnSurface"
+            android:alpha="0.7"
             android:textSize="14sp"
             tools:text="4.5 (128 opiniones)" />
 
@@ -100,7 +101,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:textColor="#616161"
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.7"
         android:textSize="14sp"
         tools:text="0 operaciones como vendedor · 0 como comprador" />
 
@@ -110,7 +112,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="#9E9E9E"
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.6"
         android:textSize="13sp"
         tools:text="Miembro desde Marzo 2023" />
 
@@ -123,7 +126,7 @@
         android:layout_marginTop="4dp"
         android:layout_marginStart="-4dp"
         android:text="@string/vendedor_ver_perfil"
-        android:textColor="#7E57C2"
+        android:textColor="?attr/colorPrimary"
         android:textStyle="bold" />
 
 </LinearLayout>

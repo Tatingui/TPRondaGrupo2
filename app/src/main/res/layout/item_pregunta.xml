@@ -11,7 +11,7 @@
         android:id="@+id/tvPregunta"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="15sp"
         tools:text="¿Sigue disponible?" />
 
@@ -21,7 +21,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="4dp"
-        android:textColor="#616161"
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.7"
         android:textSize="14sp"
         tools:text="↳ Sí, todavía está disponible." />
 
@@ -32,7 +33,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/detalle_responder"
-        android:textColor="#7E57C2"
+        android:textColor="?attr/colorPrimary"
         android:visibility="gone" />
 
 </LinearLayout>

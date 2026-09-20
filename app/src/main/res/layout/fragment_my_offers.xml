@@ -11,7 +11,7 @@
         android:text="Mis Ofertas"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:textColor="@color/purple_700"
+        android:textColor="?attr/colorPrimary"
         android:layout_marginBottom="12dp" />
 
     <com.google.android.material.tabs.TabLayout
