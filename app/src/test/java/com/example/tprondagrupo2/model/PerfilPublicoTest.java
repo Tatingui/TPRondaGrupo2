@@ -20,7 +20,7 @@ public class PerfilPublicoTest {
 
         PerfilPublico perfil = new Gson().fromJson(json, PerfilPublico.class);
 
-        assertEquals("2", perfil.getId());
+        assertEquals(Long.valueOf(2L), perfil.getId());
         assertEquals("Maria Hogar", perfil.getNombre());
         assertEquals("Septiembre 2026", perfil.getMiembroDesde());
         assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, perfil.getNivel());
