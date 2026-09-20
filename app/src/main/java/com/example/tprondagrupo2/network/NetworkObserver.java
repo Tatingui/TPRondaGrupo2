@@ -28,11 +28,10 @@ public class NetworkObserver {
             return;
         }
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-        isConnected.postValue(capabilities != null && (
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) ||
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-        ));
+        boolean hasInternet = capabilities != null && 
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        isConnected.postValue(hasInternet);
     }
 
     private void registerCallback() {
