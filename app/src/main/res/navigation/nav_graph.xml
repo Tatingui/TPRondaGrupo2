@@ -157,6 +157,10 @@
             android:id="@+id/action_detalle_to_perfil_vendedor"
             app:destination="@id/perfilVendedorFragment" />
 
+        <action
+            android:id="@+id/action_detalle_to_myOffers"
+            app:destination="@id/myOffersFragment" />
+
     </fragment>
 
     <fragment

@@ -22,6 +22,9 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
     public interface OnOfferActionListener {
         void onAccept(Offer offer, int position);
         void onReject(Offer offer, int position);
+        void onCounterOffer(Offer offer, int position);
+        void onBuyerAcceptCounter(Offer offer, int position);
+        void onBuyerRejectCounter(Offer offer, int position);
     }
 
     private final List<Offer> offers;
@@ -53,7 +56,16 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
             holder.tvUser.setText("Vendedor: " + (offer.getSellerName() != null ? offer.getSellerName() : "Vendedor"));
         }
 
-        holder.tvStatus.setText("Estado: " + offer.getStatus());
+        String statusText;
+        switch (offer.getStatus() != null ? offer.getStatus() : "") {
+            case "PENDING": statusText = "Pendiente"; break;
+            case "ACCEPTED": statusText = "Aceptada"; break;
+            case "REJECTED": statusText = "Rechazada"; break;
+            case "COUNTER_OFFER": statusText = "Contra-oferta"; break;
+            case "EXPIRED": statusText = "Expirada"; break;
+            default: statusText = offer.getStatus(); break;
+        }
+        holder.tvStatus.setText("Estado: " + statusText);
 
         if (offer.getMessage() != null && !offer.getMessage().trim().isEmpty()) {
             holder.tvMessage.setVisibility(View.VISIBLE);
@@ -70,12 +82,23 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
             holder.ivImage.setImageResource(R.drawable.ic_launcher_foreground);
         }
 
+        // Seller actions: show for received PENDING offers
         if (isReceived && "PENDING".equals(offer.getStatus())) {
             holder.layoutSellerActions.setVisibility(View.VISIBLE);
             holder.btnAccept.setOnClickListener(v -> listener.onAccept(offer, holder.getAdapterPosition()));
             holder.btnReject.setOnClickListener(v -> listener.onReject(offer, holder.getAdapterPosition()));
+            holder.btnCounterOffer.setOnClickListener(v -> listener.onCounterOffer(offer, holder.getAdapterPosition()));
         } else {
             holder.layoutSellerActions.setVisibility(View.GONE);
+        }
+
+        // Buyer info: show counter-offer details for sent offers
+        if (!isReceived && "COUNTER_OFFER".equals(offer.getStatus())) {
+            holder.layoutBuyerActions.setVisibility(View.VISIBLE);
+            holder.btnBuyerAccept.setVisibility(View.GONE);
+            holder.btnBuyerReject.setVisibility(View.GONE);
+        } else {
+            holder.layoutBuyerActions.setVisibility(View.GONE);
         }
     }
 
@@ -87,8 +110,9 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivImage;
         TextView tvTitle, tvDetails, tvUser, tvStatus, tvMessage;
-        LinearLayout layoutSellerActions;
-        Button btnAccept, btnReject;
+        LinearLayout layoutSellerActions, layoutBuyerActions;
+        Button btnAccept, btnReject, btnCounterOffer;
+        Button btnBuyerAccept, btnBuyerReject;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -101,6 +125,10 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
             layoutSellerActions = itemView.findViewById(R.id.layoutSellerActions);
             btnAccept = itemView.findViewById(R.id.btnAccept);
             btnReject = itemView.findViewById(R.id.btnReject);
+            btnCounterOffer = itemView.findViewById(R.id.btnCounterOffer);
+            layoutBuyerActions = itemView.findViewById(R.id.layoutBuyerActions);
+            btnBuyerAccept = itemView.findViewById(R.id.btnBuyerAccept);
+            btnBuyerReject = itemView.findViewById(R.id.btnBuyerReject);
         }
     }
 }
