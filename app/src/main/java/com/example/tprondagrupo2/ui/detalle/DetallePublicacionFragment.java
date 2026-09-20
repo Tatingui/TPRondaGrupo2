@@ -287,12 +287,17 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     /**
-     * Abre Google Maps en modo navegación con el punto de entrega ya cargado.
+     * Muestra la ruta en Google Maps con el punto de entrega ya cargado.
+     * La persona toca "Iniciar" en Maps cuando quiere comenzar la navegación.
      * Si no está Google Maps, se intenta con la app de mapas del dispositivo.
      */
     private void abrirEnMapa(@NonNull String destino) {
-        Uri navegacion = Uri.parse("google.navigation:q=" + Uri.encode(destino));
-        Intent intent = new Intent(Intent.ACTION_VIEW, navegacion);
+        Uri ruta = Uri.parse("https://www.google.com/maps/dir/").buildUpon()
+                .appendQueryParameter("api", "1")
+                .appendQueryParameter("destination", destino)
+                .build();
+        Intent intent = new Intent(Intent.ACTION_VIEW, ruta);
+        intent.setPackage("com.google.android.apps.maps");
 
         try {
             startActivity(intent);
