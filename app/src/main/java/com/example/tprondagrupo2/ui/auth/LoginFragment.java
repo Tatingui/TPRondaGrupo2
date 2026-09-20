@@ -31,6 +31,9 @@ public class LoginFragment extends Fragment {
     @Inject
     AuthApiService authApiService;
 
+    @Inject
+    TokenManager tokenManager;
+
     private EditText etEmail;
     private EditText etPassword;
     private TextView tvError;
@@ -54,7 +57,6 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TokenManager tokenManager = TokenManager.getInstance();
         biometricHelper = new BiometricHelper(tokenManager);
         authRepository = new AuthRepository(authApiService, tokenManager);
 
@@ -132,7 +134,7 @@ public class LoginFragment extends Fragment {
     }
 
     private void handleLoginSuccess(String token) {
-        TokenManager tm = TokenManager.getInstance();
+        TokenManager tm = tokenManager;
         if (!tm.isBiometricEnabled()) {
             biometricHelper.offerBiometricEnrollment(
                     requireContext(), token, this::navigateToHome);

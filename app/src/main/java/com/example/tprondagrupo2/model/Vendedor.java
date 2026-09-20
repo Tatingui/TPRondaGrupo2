@@ -8,7 +8,7 @@ import java.io.Serializable;
  */
 public class Vendedor implements Serializable, ReputacionInfo {
 
-    private String id;
+    private Long id;
     private String nombre;
     private double reputacion;        // Puntaje de 0 a 5 (promedio de opiniones)
     private int cantidadVentas;       // Operaciones concretadas como vendedor
@@ -21,7 +21,7 @@ public class Vendedor implements Serializable, ReputacionInfo {
         // Constructor vacio requerido por Gson
     }
 
-    public Vendedor(String id, String nombre, double reputacion, int cantidadVentas,
+    public Vendedor(Long id, String nombre, double reputacion, int cantidadVentas,
                     int cantidadOpiniones, String miembroDesde, String ubicacion) {
         this.id = id;
         this.nombre = nombre;
@@ -32,11 +32,11 @@ public class Vendedor implements Serializable, ReputacionInfo {
         this.ubicacion = ubicacion;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

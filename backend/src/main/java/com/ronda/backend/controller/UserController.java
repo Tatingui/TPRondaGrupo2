@@ -6,6 +6,7 @@ import com.ronda.backend.dto.UserProfileUpdateRequest;
 import com.ronda.backend.service.PublicationService;
 import com.ronda.backend.service.UserService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,7 +54,7 @@ public class UserController {
      */
     @PutMapping("/me")
     public ResponseEntity<UserProfileResponse> updateMyProfile(
-            @RequestBody UserProfileUpdateRequest request) {
+            @Valid @RequestBody UserProfileUpdateRequest request) {
         String email = getEmailFromToken();
         UserProfileResponse updated = userService.updateProfile(email, request);
         if (updated == null) {

@@ -39,6 +39,9 @@ public class RegisterFragment extends Fragment {
     @Inject
     AuthApiService authApiService;
 
+    @Inject
+    TokenManager tokenManager;
+
     private EditText etNombre;
     private EditText etEmail;
     private EditText etPassword;
@@ -67,7 +70,6 @@ public class RegisterFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TokenManager tokenManager = TokenManager.getInstance();
         authRepository = new AuthRepository(authApiService, tokenManager);
 
         etNombre = view.findViewById(R.id.etNombre);

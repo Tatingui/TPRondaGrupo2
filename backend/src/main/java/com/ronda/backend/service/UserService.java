@@ -102,13 +102,13 @@ public class UserService {
         User user = encontrado.get();
 
         if (request.getNombre() != null && !request.getNombre().isBlank()) {
-            user.setNombre(request.getNombre());
+            user.setNombre(request.getNombre().trim());
         }
         if (request.getTelefono() != null) {
-            user.setTelefono(request.getTelefono());
+            user.setTelefono(request.getTelefono().trim());
         }
         if (request.getZona() != null) {
-            user.setZona(request.getZona());
+            user.setZona(request.getZona().trim());
         }
 
         userRepository.save(user);

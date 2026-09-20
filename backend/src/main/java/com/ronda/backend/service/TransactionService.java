@@ -222,27 +222,21 @@ public class TransactionService {
      * Cantidad de calificaciones recibidas.
      */
     public int getRatingCount(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        return (int) ratingRepository.countByToUser(user);
+        return (int) ratingRepository.countByToUserId(userId);
     }
 
     /**
      * Cantidad de operaciones como comprador.
      */
     public int getPurchaseCount(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        return (int) transactionRepository.countByBuyer(user);
+        return (int) transactionRepository.countByBuyerId(userId);
     }
 
     /**
      * Cantidad de operaciones como vendedor.
      */
     public int getSaleCount(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-        return (int) transactionRepository.countBySeller(user);
+        return (int) transactionRepository.countBySellerId(userId);
     }
 
     // ──────────────────────────────────────────────

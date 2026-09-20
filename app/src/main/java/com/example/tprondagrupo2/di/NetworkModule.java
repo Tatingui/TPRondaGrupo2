@@ -12,6 +12,14 @@ import com.example.tprondagrupo2.network.SessionManager;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.network.UserApiService;
 
+import com.example.tprondagrupo2.data.repository.PublicationRepository;
+import com.example.tprondagrupo2.data.repository.SavedSearchRepository;
+import com.example.tprondagrupo2.data.repository.UserRepository;
+
+import android.content.Context;
+
+import dagger.hilt.android.qualifiers.ApplicationContext;
+
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -117,6 +125,37 @@ public class NetworkModule {
     @Singleton
     public HistorialApiService provideHistorialService(Retrofit retrofit) {
         return retrofit.create(HistorialApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public TokenManager provideTokenManager(@ApplicationContext Context context) {
+        TokenManager.setContext(context);
+        return TokenManager.getInstance();
+    }
+
+    @Provides
+    @Singleton
+    public SessionManager provideSessionManager() {
+        return SessionManager.getInstance();
+    }
+
+    @Provides
+    @Singleton
+    public UserRepository provideUserRepository(UserApiService userApiService, TokenManager tokenManager) {
+        return new UserRepository(userApiService, tokenManager);
+    }
+
+    @Provides
+    @Singleton
+    public SavedSearchRepository provideSavedSearchRepository(SavedSearchApiService apiService) {
+        return new SavedSearchRepository(apiService);
+    }
+
+    @Provides
+    @Singleton
+    public PublicationRepository providePublicationRepository(PublicationApiService apiService) {
+        return new PublicationRepository(apiService);
     }
 
     @Nullable
