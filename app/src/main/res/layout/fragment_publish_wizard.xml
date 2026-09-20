@@ -78,45 +78,30 @@
                     android:hint="Zona de entrega (ej. Palermo)" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Categoría (ID 1: Deportes, 2: Hogar, 3: Electrónica, 4: Ropa, 5: Otros)"
-                android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginBottom="4dp" />
-
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etCategoryId"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                <AutoCompleteTextView
+                    android:id="@+id/autoCompleteCategory"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:hint="ID de Categoría (1-5)" />
+                    android:inputType="none"
+                    android:hint="Categoría" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Estado del artículo (NUEVO, COMO_NUEVO, USADO)"
-                android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginBottom="4dp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etStatus"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+                <AutoCompleteTextView
+                    android:id="@+id/autoCompleteStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Estado (NUEVO / COMO_NUEVO / USADO)" />
+                    android:inputType="none"
+                    android:hint="Estado del artículo" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
