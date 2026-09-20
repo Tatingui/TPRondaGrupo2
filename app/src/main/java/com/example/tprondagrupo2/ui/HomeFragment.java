@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.db.AppDatabase;
+import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
@@ -60,6 +60,9 @@ public class HomeFragment extends Fragment {
 
     @Inject
     SavedSearchApiService savedSearchApiService;
+
+    @Inject
+    PublicacionDao publicacionDao;
 
     private RecyclerView rvPublications;
     private PublicationAdapter adapter;
@@ -242,15 +245,15 @@ public class HomeFragment extends Fragment {
         List<PublicacionEntity> entities = items.stream()
                 .map(PublicacionEntity::fromModel)
                 .collect(Collectors.toList());
-        AppDatabase.getInstance(requireContext()).publicacionDao().insertAll(entities);
+        publicacionDao.insertAll(entities);
     }
 
     private void loadFromCache() {
         List<PublicacionEntity> entities;
         if (currentSearchText != null && !currentSearchText.isEmpty()) {
-            entities = AppDatabase.getInstance(requireContext()).publicacionDao().searchByTitle(currentSearchText);
+            entities = publicacionDao.searchByTitle(currentSearchText);
         } else {
-            entities = AppDatabase.getInstance(requireContext()).publicacionDao().getAll();
+            entities = publicacionDao.getAll();
         }
 
         List<Publicacion> cachedItems = entities.stream()

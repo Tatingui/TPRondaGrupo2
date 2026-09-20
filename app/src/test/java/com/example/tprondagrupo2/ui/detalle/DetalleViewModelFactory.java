@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource;
 
-/** Reutiliza el repositorio existente; no requiere anotaciones ni módulos Hilt nuevos. */
+/** Fábrica exclusiva de tests JVM para verificar ViewModelStore con una fuente simulada. */
 public final class DetalleViewModelFactory implements ViewModelProvider.Factory {
     private final PublicationDetailSource source;
 

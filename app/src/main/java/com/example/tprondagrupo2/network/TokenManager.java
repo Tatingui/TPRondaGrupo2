@@ -5,7 +5,11 @@ import android.content.SharedPreferences;
 
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import dagger.hilt.android.qualifiers.ApplicationContext;
 
+@Singleton
 public class TokenManager {
     private static final String PREF_NAME = "RondaPrefs";
     private static final String KEY_TOKEN = "jwt_token";
@@ -15,29 +19,13 @@ public class TokenManager {
     private static final String ENCRYPTED_PREF_NAME = "encrypted_ronda_prefs";
     private static final String KEY_ENCRYPTED_TOKEN = "encrypted_token";
 
-    private static TokenManager instance;
-    private static Context appContext;
     private final SharedPreferences prefs;
     private final Context context;
 
-    private TokenManager(Context context) {
+    @Inject
+    public TokenManager(@ApplicationContext Context context) {
         this.context = context.getApplicationContext();
         prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-    }
-
-    public static void setContext(Context context) {
-        appContext = context.getApplicationContext();
-    }
-
-    public static synchronized TokenManager getInstance() {
-        if (instance == null) {
-            if (appContext == null) {
-                throw new IllegalStateException(
-                        "TokenManager must be initialized with setContext(Context) before use.");
-            }
-            instance = new TokenManager(appContext);
-        }
-        return instance;
     }
 
     // ── Token normal (SharedPreferences plano) ──

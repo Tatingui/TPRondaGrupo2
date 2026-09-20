@@ -17,7 +17,6 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.AuthRepository;
-import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -29,7 +28,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class LoginFragment extends Fragment {
 
     @Inject
-    AuthApiService authApiService;
+    AuthRepository authRepository;
 
     @Inject
     TokenManager tokenManager;
@@ -44,7 +43,6 @@ public class LoginFragment extends Fragment {
     private SwitchMaterial switchKeepSession;
 
     private BiometricHelper biometricHelper;
-    private AuthRepository authRepository;
 
     @Nullable
     @Override
@@ -58,7 +56,6 @@ public class LoginFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         biometricHelper = new BiometricHelper(tokenManager);
-        authRepository = new AuthRepository(authApiService, tokenManager);
 
         bindViews(view);
         setupListeners();
