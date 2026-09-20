@@ -34,6 +34,7 @@ import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
+import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
