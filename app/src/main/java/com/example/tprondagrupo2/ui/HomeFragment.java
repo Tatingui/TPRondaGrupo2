@@ -372,6 +372,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void guardarBusquedaActual() {
+        if (!networkObserver.isCurrentlyConnected()) {
+            Toast.makeText(getContext(), "Se necesita conexión para guardar búsquedas", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         SavedSearch savedSearch = new SavedSearch(
                 null,
                 currentSearchText,
