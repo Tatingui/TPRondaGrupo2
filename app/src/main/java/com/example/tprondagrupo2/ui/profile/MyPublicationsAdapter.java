@@ -22,6 +22,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         void onPause(Publicacion pub, int position);
         void onActivate(Publicacion pub, int position);
         void onSell(Publicacion pub, int position);
+        void onDelete(Publicacion pub, int position);
     }
 
     private final List<Publicacion> publications;
@@ -30,6 +31,16 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     public MyPublicationsAdapter(List<Publicacion> publications, OnPublicationActionListener listener) {
         this.publications = publications;
         this.listener = listener;
+    }
+
+    public static String traducirEstado(String state) {
+        if (state == null) return "Activa";
+        switch (state) {
+            case "ACTIVE": return "Activa";
+            case "PAUSED": return "Pausada";
+            case "SOLD": return "Vendida";
+            default: return state;
+        }
     }
 
     @NonNull
@@ -46,7 +57,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         holder.tvPrice.setText("$" + pub.getPrice());
         
         String state = pub.getState() != null ? pub.getState() : "ACTIVE";
-        holder.tvState.setText("Estado: " + state);
+        holder.tvState.setText("Estado: " + traducirEstado(state));
 
         if (pub.getFirstImageUrl() != null && !pub.getFirstImageUrl().isEmpty()) {
             Glide.with(holder.itemView.getContext())
@@ -65,6 +76,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         }
 
         holder.btnSell.setOnClickListener(v -> listener.onSell(pub, holder.getAdapterPosition()));
+        holder.btnDelete.setOnClickListener(v -> listener.onDelete(pub, holder.getAdapterPosition()));
     }
 
     @Override
@@ -75,7 +87,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivThumbnail;
         TextView tvTitle, tvPrice, tvState;
-        Button btnPause, btnSell;
+        Button btnPause, btnSell, btnDelete;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -85,6 +97,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
             tvState = itemView.findViewById(R.id.tvMyPubState);
             btnPause = itemView.findViewById(R.id.btnMyPubPause);
             btnSell = itemView.findViewById(R.id.btnMyPubSell);
+            btnDelete = itemView.findViewById(R.id.btnMyPubDelete);
         }
     }
 }

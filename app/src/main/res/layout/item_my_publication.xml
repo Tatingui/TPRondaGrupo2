@@ -80,6 +80,15 @@
                     android:text="Vendido"
                     android:textSize="12sp"
                     style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+                <Button
+                    android:id="@+id/btnMyPubDelete"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Dar de baja"
+                    android:textSize="12sp"
+                    android:textColor="#D32F2F"
+                    style="@style/Widget.MaterialComponents.Button.TextButton" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

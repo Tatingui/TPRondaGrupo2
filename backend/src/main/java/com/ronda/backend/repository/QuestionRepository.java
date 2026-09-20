@@ -10,4 +10,5 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findByPublicationIdOrderByCreatedAtDesc(Long publicationId);
     List<Question> findByAsker(com.ronda.backend.model.User asker);
+    void deleteByPublicationId(Long publicationId);
 }

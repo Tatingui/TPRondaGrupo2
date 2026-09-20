@@ -17,4 +17,5 @@ public interface OfferRepository extends JpaRepository<Offer, Long> {
     Optional<Offer> findFirstByPublicationIdAndBuyerIdOrderByCreatedAtDesc(Long publicationId, Long buyerId);
     Optional<Offer> findFirstByPublicationIdAndBuyerIdAndStatusOrderByCreatedAtDesc(
             Long publicationId, Long buyerId, OfferStatus status);
+    void deleteByPublicationId(Long publicationId);
 }

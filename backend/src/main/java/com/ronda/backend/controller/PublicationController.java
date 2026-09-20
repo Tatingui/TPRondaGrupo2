@@ -118,6 +118,16 @@ public class PublicationController {
         return ResponseEntity.ok(updated);
     }
 
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePublication(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        publicationService.deletePublication(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/favorite")
     public ResponseEntity<Void> markAsFavorite(@PathVariable Long id, Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
