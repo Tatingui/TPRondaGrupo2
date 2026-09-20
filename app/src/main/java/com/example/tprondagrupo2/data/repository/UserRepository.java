@@ -120,6 +120,9 @@ public class UserRepository {
      */
     public void logout() {
         tokenManager.clearToken();
+        tokenManager.setBiometricEnabled(false);
+        tokenManager.clearEncryptedToken();
+        tokenManager.setKeepSession(false);
     }
 
     public interface DeleteAccountCallback {

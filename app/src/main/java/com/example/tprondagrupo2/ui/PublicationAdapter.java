@@ -74,7 +74,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         Glide.with(holder.itemView.getContext())
                 .load(imageUrl)
                 .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
+                .error(android.R.drawable.ic_menu_gallery)
                 .centerCrop()
                 .into(holder.ivProduct);
 

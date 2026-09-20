@@ -98,7 +98,7 @@ public class PublishWizardFragment extends Fragment {
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
         etImageUrl = view.findViewById(R.id.etImageUrl);
 
-        String[] categories = {"1 - Deportes", "2 - Hogar", "3 - Electrónica", "4 - Ropa", "5 - Otros"};
+        String[] categories = {"Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
         android.widget.ArrayAdapter<String> catAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         autoCompleteCategory.setAdapter(catAdapter);
         autoCompleteCategory.setText(categories[0], false);
@@ -141,11 +141,13 @@ public class PublishWizardFragment extends Fragment {
 
     private Long getSelectedCategoryId() {
         String sel = autoCompleteCategory.getText() != null ? autoCompleteCategory.getText().toString() : "";
-        if (sel.startsWith("2")) return 2L;
-        if (sel.startsWith("3")) return 3L;
-        if (sel.startsWith("4")) return 4L;
-        if (sel.startsWith("5")) return 5L;
-        return 1L;
+        switch (sel) {
+            case "Hogar": return 2L;
+            case "Electrónica": return 3L;
+            case "Ropa": return 4L;
+            case "Otros": return 5L;
+            default: return 1L; // Deportes
+        }
     }
 
     private String getSelectedStatus() {
@@ -164,7 +166,7 @@ public class PublishWizardFragment extends Fragment {
             if (draft.getLocation() != null) etLocation.setText(draft.getLocation());
             if (draft.getCategoryId() != null) {
                 int idx = (int) (draft.getCategoryId() - 1);
-                String[] categories = {"1 - Deportes", "2 - Hogar", "3 - Electrónica", "4 - Ropa", "5 - Otros"};
+                String[] categories = {"Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
                 if (idx >= 0 && idx < categories.length) {
                     autoCompleteCategory.setText(categories[idx], false);
                 }

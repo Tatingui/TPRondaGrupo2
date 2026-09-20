@@ -107,7 +107,45 @@
                 android:layout_marginEnd="4dp" />
 
             <Button
+                android:id="@+id/btnCounterOffer"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Contra-oferta"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_marginEnd="4dp" />
+
+            <Button
                 android:id="@+id/btnAccept"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Aceptar"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_marginEnd="4dp" />
+        </LinearLayout>
+
+        <!-- Buyer Action Buttons (when seller sent counter-offer) -->
+        <LinearLayout
+            android:id="@+id/layoutBuyerActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btnBuyerReject"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Rechazar"
+                android:textSize="12sp"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/btnBuyerAccept"
                 android:layout_width="wrap_content"
                 android:layout_height="36dp"
                 android:text="Aceptar"
