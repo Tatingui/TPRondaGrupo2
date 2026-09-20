@@ -29,6 +29,9 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     /** Cantidad de calificaciones recibidas por un usuario. */
     long countByToUser(User toUser);
 
+    /** Contar calificaciones recibidas (por ID, sin cargar User). */
+    long countByToUserId(Long toUserId);
+
     /** Calificaciones recibidas por un usuario (para mostrar en perfil publico). */
     List<Rating> findByToUserOrderByCreatedAtDesc(User toUser);
     List<Rating> findByFromUser(com.ronda.backend.model.User fromUser);

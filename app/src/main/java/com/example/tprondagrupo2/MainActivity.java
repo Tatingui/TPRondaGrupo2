@@ -23,11 +23,16 @@ import com.example.tprondagrupo2.network.SessionManager;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
 // Esta anotación habilita la inyección en esta Activity. Sin esto, @Inject falla.
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
+
+    @Inject TokenManager tokenManager;
+    @Inject SessionManager sessionManager;
 
     private final ActivityResultLauncher<String> localNetworkPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -43,7 +48,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        TokenManager.setContext(this);
         setContentView(R.layout.activity_main);
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -101,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             NavigationUI.setupWithNavController(bottomNav, navController);
 
             // Solo ir directo al Home si "Mantener sesión" está activo Y hay token Y es la primer creación
-            TokenManager tm = TokenManager.getInstance();
+            TokenManager tm = tokenManager;
             String token = tm.getToken();
             if (savedInstanceState == null && token != null && !token.isEmpty() && tm.isKeepSession()) {
                 if (navController.getCurrentDestination() == null || navController.getCurrentDestination().getId() == R.id.loginFragment) {
@@ -112,9 +116,9 @@ public class MainActivity extends AppCompatActivity {
             // Si no hay token → queda en Login normalmente
 
             // Si el token venció (el backend devolvió 401), volver al login
-            SessionManager.getInstance().onSessionExpired().observe(this, expired -> {
+            sessionManager.onSessionExpired().observe(this, expired -> {
                 if (Boolean.TRUE.equals(expired)) {
-                    SessionManager.getInstance().clearExpiredFlag();
+                    sessionManager.clearExpiredFlag();
                     Toast.makeText(this, "Tu sesión expiró. Ingresá de nuevo.", Toast.LENGTH_LONG).show();
                     navController.navigate(R.id.loginFragment, null,
                             new androidx.navigation.NavOptions.Builder()

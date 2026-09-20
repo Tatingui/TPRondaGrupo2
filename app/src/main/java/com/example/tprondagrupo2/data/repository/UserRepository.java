@@ -8,6 +8,8 @@ import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.network.UserApiService;
 
+import javax.inject.Inject;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -19,8 +21,8 @@ import retrofit2.Response;
  * y la capa de presentacion (Fragments). Los Fragments no conocen los detalles
  * de como se hacen las llamadas HTTP.
  *
- * Recibe UserApiService y TokenManager por constructor (inyeccion manual,
- * mismo patron que AuthRepository).
+ * Recibe UserApiService y TokenManager por constructor, provisto por Hilt
+ * via NetworkModule.
  */
 public class UserRepository {
 
@@ -39,6 +41,7 @@ public class UserRepository {
     private final UserApiService userApiService;
     private final TokenManager tokenManager;
 
+    @Inject
     public UserRepository(UserApiService userApiService, TokenManager tokenManager) {
         this.userApiService = userApiService;
         this.tokenManager = tokenManager;

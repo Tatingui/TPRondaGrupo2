@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:hint="Comentario breve (opcional)"
             android:inputType="textMultiLine"
-            android:maxLength="200"
+            android:maxLength="500"
             android:maxLines="3" />
 
     </com.google.android.material.textfield.TextInputLayout>

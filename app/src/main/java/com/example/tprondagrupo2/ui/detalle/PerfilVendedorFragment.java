@@ -46,7 +46,7 @@ public class PerfilVendedorFragment extends Fragment {
     UserApiService userApiService;
 
     /** Repositorio que centraliza las operaciones de perfil */
-    private UserRepository userRepository;
+    @Inject UserRepository userRepository;
 
     private TextView tvAvatar;
     private TextView tvNombre;
@@ -73,7 +73,6 @@ public class PerfilVendedorFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        userRepository = new UserRepository(userApiService, TokenManager.getInstance());
 
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
         tvNombre = view.findViewById(R.id.tvPerfilNombre);
@@ -114,11 +113,12 @@ public class PerfilVendedorFragment extends Fragment {
         return null;
     }
 
-    private void cargarPerfilPublico(String id) {
+    private void cargarPerfilPublico(Long id) {
         if (id == null) return;
+        String idStr = String.valueOf(id);
 
         pbPublicaciones.setVisibility(View.VISIBLE);
-        userRepository.getPublicProfile(id, new UserRepository.PublicProfileCallback() {
+        userRepository.getPublicProfile(idStr, new UserRepository.PublicProfileCallback() {
             @Override
             public void onSuccess(PerfilPublico perfil) {
                 if (!isAdded()) return;

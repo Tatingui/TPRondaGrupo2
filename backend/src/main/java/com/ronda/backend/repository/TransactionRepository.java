@@ -36,8 +36,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     /** Contar operaciones como comprador. */
     long countByBuyer(User buyer);
 
+    /** Contar operaciones como comprador (por ID, sin cargar User). */
+    long countByBuyerId(Long buyerId);
+
     /** Contar operaciones como vendedor. */
     long countBySeller(User seller);
+
+    /** Contar operaciones como vendedor (por ID, sin cargar User). */
+    long countBySellerId(Long sellerId);
 
     List<Transaction> findByBuyer(User buyer);
     List<Transaction> findBySeller(User seller);

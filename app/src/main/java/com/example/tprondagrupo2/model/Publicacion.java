@@ -79,10 +79,7 @@ public class Publicacion implements Serializable {
             this.sellerName = vendedor.getNombre();
             this.location = vendedor.getUbicacion();
             if (vendedor.getId() != null) {
-                try {
-                    this.sellerId = Long.parseLong(vendedor.getId());
-                } catch (NumberFormatException ignored) {
-                }
+                this.sellerId = vendedor.getId();
             }
         }
     }
@@ -195,7 +192,7 @@ public class Publicacion implements Serializable {
         // vendedor sin reputación inventada: los datos completos llegan con el detalle.
         if (sellerId != null || sellerName != null || location != null) {
             return new Vendedor(
-                    sellerId != null ? sellerId.toString() : "0",
+                    sellerId != null ? sellerId : 0L,
                     sellerName,
                     0,
                     0,
@@ -213,10 +210,7 @@ public class Publicacion implements Serializable {
             this.sellerName = vendedor.getNombre();
             this.location = vendedor.getUbicacion();
             if (vendedor.getId() != null) {
-                try {
-                    this.sellerId = Long.parseLong(vendedor.getId());
-                } catch (NumberFormatException ignored) {
-                }
+                this.sellerId = vendedor.getId();
             }
         }
     }
@@ -224,10 +218,7 @@ public class Publicacion implements Serializable {
     public Long getSellerId() {
         if (sellerId != null) return sellerId;
         if (vendedor != null && vendedor.getId() != null) {
-            try {
-                return Long.parseLong(vendedor.getId());
-            } catch (NumberFormatException ignored) {
-            }
+            return vendedor.getId();
         }
         return null;
     }

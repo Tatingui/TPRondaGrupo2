@@ -31,6 +31,9 @@ public class OtpFragment extends Fragment {
     @Inject
     AuthApiService authApiService;
 
+    @Inject
+    TokenManager tokenManager;
+
     public static final String ARG_EMAIL = "email";
 
     private static final int CODE_LENGTH = 6;
@@ -61,7 +64,6 @@ public class OtpFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        TokenManager tokenManager = TokenManager.getInstance();
         authRepository = new AuthRepository(authApiService, tokenManager);
 
         email = getArguments() != null ? getArguments().getString(ARG_EMAIL, "") : "";
