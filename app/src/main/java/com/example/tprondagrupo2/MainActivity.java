@@ -1,10 +1,16 @@
 package com.example.tprondagrupo2;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -22,6 +28,17 @@ import dagger.hilt.android.AndroidEntryPoint;
 // Esta anotación habilita la inyección en esta Activity. Sin esto, @Inject falla.
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
+
+    private final ActivityResultLauncher<String> localNetworkPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) {
+                    // Recarga las pantallas que pudieron pedir datos antes de obtener el permiso.
+                    recreate();
+                } else {
+                    Toast.makeText(this, R.string.local_network_permission_required,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +108,13 @@ public class MainActivity extends AppCompatActivity {
                     bottomNav.setVisibility(View.VISIBLE);
                 }
             });
+        }
+
+        // Android 17 bloquea el backend local (incluido 10.0.2.2) sin este permiso.
+        if (Build.VERSION.SDK_INT >= 37 && savedInstanceState == null
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_LOCAL_NETWORK)
+                != PackageManager.PERMISSION_GRANTED) {
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK);
         }
     }
 }

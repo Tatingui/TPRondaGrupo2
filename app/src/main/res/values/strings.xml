@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Ronda</string>
+    <string name="local_network_permission_required">Para conectarte al servidor, permití el acceso a dispositivos cercanos en Ajustes → Aplicaciones → Ronda → Permisos.</string>
     <string name="otp_message">Ingresá el código enviado a: %1$s</string>
     <string name="detalle_publicado_el">Publicado el %1$s</string>
     <string name="detalle_indicador_fotos">%1$d / %2$d</string>
