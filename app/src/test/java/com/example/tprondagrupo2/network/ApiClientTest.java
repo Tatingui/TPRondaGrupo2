@@ -3,6 +3,7 @@ package com.example.tprondagrupo2.network;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.di.NetworkModule;
 
 import org.junit.Before;
@@ -16,7 +17,7 @@ import retrofit2.Retrofit;
  */
 public class ApiClientTest {
 
-    private static final String BASE_URL_ESPERADA = "http://localhost:8081/api/";
+    private static final String BASE_URL_ESPERADA = BuildConfig.BASE_URL;
 
     private NetworkModule networkModule;
     private OkHttpClient okHttpClient;
@@ -72,13 +73,14 @@ public class ApiClientTest {
 
     @Test
     public void testBaseUrlEsLaEsperada() {
-        // Valida que la URL base de Retrofit coincida exactamente con la del backend en entorno de desarrollo/local
+        // Valida que Retrofit use la URL configurada para esta compilación.
         assertEquals(BASE_URL_ESPERADA, retrofit.baseUrl().toString());
     }
 
     @Test
     public void testBaseUrlTerminaConBarra() {
         // Valida el requisito de Retrofit de que la base URL termine en /
-        assertEquals('/', BASE_URL_ESPERADA.charAt(BASE_URL_ESPERADA.length() - 1));
+        String baseUrl = retrofit.baseUrl().toString();
+        assertEquals('/', baseUrl.charAt(baseUrl.length() - 1));
     }
 }
