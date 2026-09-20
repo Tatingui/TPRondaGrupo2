@@ -13,25 +13,24 @@ import androidx.lifecycle.MutableLiveData;
 public class NetworkObserver {
 
     private final ConnectivityManager connectivityManager;
-    private final MutableLiveData<Boolean> isConnected = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isConnected;
 
     public NetworkObserver(Context context) {
-        connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        checkInitialStatus();
+        Context appContext = context.getApplicationContext();
+        connectivityManager = (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        isConnected = new MutableLiveData<>(hasValidatedInternet(connectivityManager));
         registerCallback();
     }
 
-    private void checkInitialStatus() {
+    private static boolean hasValidatedInternet(ConnectivityManager connectivityManager) {
         Network activeNetwork = connectivityManager.getActiveNetwork();
         if (activeNetwork == null) {
-            isConnected.postValue(false);
-            return;
+            return false;
         }
         NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(activeNetwork);
-        boolean hasInternet = capabilities != null && 
+        return capabilities != null &&
                 capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
                 capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-        isConnected.postValue(hasInternet);
     }
 
     private void registerCallback() {
@@ -74,7 +73,16 @@ public class NetworkObserver {
     }
 
     public boolean isCurrentlyConnected() {
-        Boolean value = isConnected.getValue();
-        return value != null && value;
+        return hasValidatedInternet(connectivityManager);
+    }
+
+    /**
+     * Consulta puntual que no registra un callback. Usar cuando solo se necesita
+     * validar la red antes de una operacion y no observar cambios posteriores.
+     */
+    public static boolean isCurrentlyConnected(Context context) {
+        ConnectivityManager manager = (ConnectivityManager) context.getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        return hasValidatedInternet(manager);
     }
 }
