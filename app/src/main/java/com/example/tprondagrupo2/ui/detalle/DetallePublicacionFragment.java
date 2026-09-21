@@ -77,6 +77,9 @@ public class DetallePublicacionFragment extends Fragment {
     @Inject
     PublicacionDao publicacionDao;
 
+    @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
+
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
     private TextView tvTitulo;
@@ -756,7 +759,7 @@ public class DetallePublicacionFragment extends Fragment {
         String pubId = publicacion.getId();
 
         if (getContext() != null) {
-            FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
+            favoritesDataStoreManager.setHasUpdates(pubId, false);
         }
         publicacion.setHasUpdates(false);
         publicacion.setLastSeenPrice(publicacion.getPrice());
@@ -784,9 +787,9 @@ public class DetallePublicacionFragment extends Fragment {
                     if (response.isSuccessful()) {
                         viewModel.actualizarFavorito(!wasFavorite);
                         if (!wasFavorite) {
-                            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.addFavorite(pubId);
                         } else {
-                            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.removeFavorite(pubId);
                         }
                         String mensaje = !wasFavorite ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();

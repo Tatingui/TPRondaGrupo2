@@ -33,10 +33,18 @@ import com.google.android.material.chip.Chip;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
 public class HomeFragment extends Fragment {
+
+    @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
+
+    @Inject
+    SavedSearchesDataStoreManager savedSearchesDataStoreManager;
 
     private HomeViewModel viewModel;
 
@@ -133,7 +141,7 @@ public class HomeFragment extends Fragment {
                     }
                 }
                 if (savedSearch.getId() != null && getContext() != null) {
-                    SavedSearchesDataStoreManager.saveSearch(requireContext(), String.valueOf(savedSearch.getId()), pubIds);
+                    savedSearchesDataStoreManager.saveSearch(String.valueOf(savedSearch.getId()), pubIds);
                 }
                 Toast.makeText(getContext(), R.string.busqueda_guardada_exito, Toast.LENGTH_SHORT).show();
             }
@@ -205,9 +213,9 @@ public class HomeFragment extends Fragment {
         viewModel.toggleFavorite(publicacion);
 
         if (!wasFavorite) {
-            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+            favoritesDataStoreManager.addFavorite(pubId);
         } else {
-            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+            favoritesDataStoreManager.removeFavorite(pubId);
         }
     }
 

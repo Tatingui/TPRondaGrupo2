@@ -64,6 +64,12 @@ import okhttp3.RequestBody;
 public class ProfileFragment extends Fragment {
 
     @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
+
+    @Inject
+    SavedSearchesDataStoreManager savedSearchesDataStoreManager;
+
+    @Inject
     UserRepository userRepository;
 
     private ProfileViewModel viewModel;
@@ -445,10 +451,10 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onSearchClick(SavedSearch savedSearch) {
                 if (savedSearch != null && savedSearch.getId() != null && getContext() != null) {
-                    SavedSearchDataStoreItem dsItem = SavedSearchesDataStoreManager.getSavedSearchesMap(requireContext())
+                    SavedSearchDataStoreItem dsItem = savedSearchesDataStoreManager.getSavedSearchesMap()
                             .get(String.valueOf(savedSearch.getId()));
                     List<String> knownIds = dsItem != null ? dsItem.getPublicationIds() : new ArrayList<>();
-                    SavedSearchesDataStoreManager.updateSearchUpdates(requireContext(), String.valueOf(savedSearch.getId()), knownIds, false);
+                    savedSearchesDataStoreManager.updateSearchUpdates(String.valueOf(savedSearch.getId()), knownIds, false);
                     savedSearch.setHasUpdates(false);
                 }
                 Bundle args = new Bundle();
@@ -464,7 +470,7 @@ public class ProfileFragment extends Fragment {
                         .setTitle(R.string.perfil_mis_busquedas)
                         .setMessage(R.string.eliminar_busqueda_confirm)
                         .setPositiveButton("Eliminar", (dialog, which) -> {
-                            SavedSearchesDataStoreManager.removeSearch(requireContext(), String.valueOf(savedSearch.getId()));
+                            savedSearchesDataStoreManager.removeSearch(String.valueOf(savedSearch.getId()));
                             viewModel.deleteSavedSearch(savedSearch.getId());
                         })
                         .setNegativeButton("Cancelar", null)
@@ -489,11 +495,11 @@ public class ProfileFragment extends Fragment {
     private void updateFavoritesList(List<Publicacion> favorites) {
         favoritePublications.clear();
         if (favorites != null && getContext() != null) {
-            Map<String, Boolean> hasUpdatesMap = FavoritesDataStoreManager.getHasUpdatesMap(requireContext());
+            Map<String, Boolean> hasUpdatesMap = favoritesDataStoreManager.getHasUpdatesMap();
             for (Publicacion p : favorites) {
                 p.setFavorite(true);
                 if (p.getLastSeenPrice() != null && p.getPrice() < p.getLastSeenPrice()) {
-                    FavoritesDataStoreManager.setHasUpdates(requireContext(), p.getId(), true);
+                    favoritesDataStoreManager.setHasUpdates(p.getId(), true);
                     p.setHasUpdates(true);
                 } else if (p.getId() != null && hasUpdatesMap.containsKey(p.getId())) {
                     p.setHasUpdates(Boolean.TRUE.equals(hasUpdatesMap.get(p.getId())));
@@ -523,9 +529,9 @@ public class ProfileFragment extends Fragment {
         String pubId = publicacion.getId();
 
         if (!isFavorite) {
-            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+            favoritesDataStoreManager.addFavorite(pubId);
         } else {
-            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+            favoritesDataStoreManager.removeFavorite(pubId);
         }
     }
 }
