@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.OperacionHistorial;
+import com.example.tprondagrupo2.util.FormatUtils;
 import com.google.android.material.button.MaterialButton;
 
 import java.text.SimpleDateFormat;
@@ -73,27 +74,31 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         OperacionHistorial operacion = operaciones.get(position);
         Context context = holder.itemView.getContext();
 
+        String contraparte = operacion.getNombreContraparte() != null ? operacion.getNombreContraparte() : "-";
+
         // 1. Tipo de operación
         if (operacion.isCompra()) {
-            holder.tvTipoOperacion.setText("COMPRA");
+            holder.tvTipoOperacion.setText(context.getString(R.string.historial_compra));
             holder.tvTipoOperacion.setBackgroundColor(Color.parseColor("#E8F5E9"));
             holder.tvTipoOperacion.setTextColor(Color.parseColor("#2E7D32"));
-            holder.tvOtroUsuario.setText("Vendedor: " + (operacion.getNombreContraparte() != null ? operacion.getNombreContraparte() : "-"));
+            holder.tvOtroUsuario.setText(context.getString(R.string.historial_vendedor, contraparte));
         } else {
-            holder.tvTipoOperacion.setText("VENTA");
+            holder.tvTipoOperacion.setText(context.getString(R.string.historial_venta));
             holder.tvTipoOperacion.setBackgroundColor(Color.parseColor("#F3E5F5"));
             holder.tvTipoOperacion.setTextColor(Color.parseColor("#6A1B9A"));
-            holder.tvOtroUsuario.setText("Comprador: " + (operacion.getNombreContraparte() != null ? operacion.getNombreContraparte() : "-"));
+            holder.tvOtroUsuario.setText(context.getString(R.string.historial_comprador, contraparte));
         }
 
         // 2. Fecha de transacción
         holder.tvFecha.setText(formatFechaDisplay(operacion.getFecha()));
 
         // 3. Título del artículo
-        holder.tvTituloArticulo.setText(operacion.getTituloPublicacion() != null ? operacion.getTituloPublicacion() : "Sin título");
+        holder.tvTituloArticulo.setText(operacion.getTituloPublicacion() != null
+                ? operacion.getTituloPublicacion()
+                : context.getString(R.string.historial_sin_titulo));
 
         // 4. Monto final
-        holder.tvMontoFinal.setText(String.format(Locale.getDefault(), "$ %,.2f", operacion.getMontoFinal()));
+        holder.tvMontoFinal.setText(FormatUtils.formatPrice(operacion.getMontoFinal()));
 
         // 5. Imagen del artículo
         Glide.with(context)
@@ -106,11 +111,11 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         // 6. Estado de la entrega
         if (operacion.entregaConfirmada()) {
             String fechaEntregaFormat = formatFechaDisplay(operacion.getFechaEntrega());
-            holder.tvEstadoEntrega.setText("✓ Entrega confirmada (" + fechaEntregaFormat + ")");
+            holder.tvEstadoEntrega.setText(context.getString(R.string.historial_entrega_confirmada, fechaEntregaFormat));
             holder.tvEstadoEntrega.setTextColor(Color.parseColor("#1B5E20"));
             holder.btnConfirmarEntrega.setVisibility(View.GONE);
         } else {
-            holder.tvEstadoEntrega.setText("⏳ Entrega pendiente");
+            holder.tvEstadoEntrega.setText(context.getString(R.string.historial_entrega_pendiente));
             holder.tvEstadoEntrega.setTextColor(Color.parseColor("#E65100"));
             if (confirmDeliveryClickListener != null) {
                 holder.btnConfirmarEntrega.setVisibility(View.VISIBLE);
@@ -127,12 +132,12 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         if (operacion.isYaCalificado()) {
             holder.btnCalificar.setVisibility(View.VISIBLE);
             holder.btnCalificar.setEnabled(false);
-            holder.btnCalificar.setText("Calificado");
+            holder.btnCalificar.setText(context.getString(R.string.historial_calificado));
             holder.btnCalificar.setOnClickListener(null);
         } else if (puedeCalificar) {
             holder.btnCalificar.setVisibility(View.VISIBLE);
             holder.btnCalificar.setEnabled(true);
-            holder.btnCalificar.setText("Calificar");
+            holder.btnCalificar.setText(context.getString(R.string.historial_calificar));
             holder.btnCalificar.setOnClickListener(v -> {
                 if (rateClickListener != null) {
                     rateClickListener.onRateClick(operacion);
