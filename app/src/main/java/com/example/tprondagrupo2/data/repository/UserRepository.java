@@ -11,6 +11,7 @@ import com.example.tprondagrupo2.network.UserApiService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import okhttp3.MultipartBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -82,6 +83,27 @@ public class UserRepository {
                     callback.onSuccess(response.body());
                 } else {
                     callback.onError("Error al actualizar el perfil");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<UserProfile> call, @NonNull Throwable t) {
+                callback.onNetworkError();
+            }
+        });
+    }
+
+    /**
+     * Sube la imagen de perfil del usuario logueado.
+     */
+    public void uploadAvatar(MultipartBody.Part photo, ProfileCallback callback) {
+        userApiService.uploadProfilePhoto(photo).enqueue(new Callback<UserProfile>() {
+            @Override
+            public void onResponse(@NonNull Call<UserProfile> call, @NonNull Response<UserProfile> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Error al subir imagen de perfil");
                 }
             }
 
