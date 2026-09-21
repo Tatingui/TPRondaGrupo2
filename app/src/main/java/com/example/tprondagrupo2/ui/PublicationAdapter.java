@@ -1,12 +1,13 @@
 package com.example.tprondagrupo2.ui;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.view.Window;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -14,17 +15,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.util.Log;
 import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.util.FormatUtils;
 
 import java.util.List;
-import java.util.Locale;
 
 public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.ViewHolder> {
 
-    private static final String TAG = "PublicationAdapter";
     private List<Publicacion> publications;
     private OnItemClickListener listener;
     private OnFavoriteClickListener favoriteListener;
@@ -66,16 +65,19 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Publicacion pub = publications.get(position);
+        Context context = holder.itemView.getContext();
+
         holder.tvTitle.setText(pub.getTitle());
-        holder.tvPrice.setText(String.format(Locale.getDefault(), "$ %.2f", pub.getPrice()));
+        holder.tvPrice.setText(FormatUtils.formatPrice(pub.getPrice()));
         holder.tvCondition.setText(traducirEstado(pub.getStatus()));
-        holder.tvLocation.setText("Zona: " + (pub.getLocation() != null ? pub.getLocation() : "Sin ubicación"));
+
+        String location = pub.getLocation() != null ? pub.getLocation() : context.getString(R.string.publication_no_location);
+        holder.tvLocation.setText(context.getString(R.string.detalle_zona, location));
 
         String imageUrl = pub.getFirstImageUrl();
-        Log.d(TAG, "Cargando imagen para: " + pub.getTitle() + " URL: " + imageUrl);
 
         // Carga de imagen con Glide
-        Glide.with(holder.itemView.getContext())
+        Glide.with(context)
                 .load(imageUrl)
                 .placeholder(android.R.drawable.ic_menu_gallery)
                 .error(android.R.drawable.ic_menu_gallery)
@@ -95,7 +97,6 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 favoriteListener.onFavoriteClick(pub, position);
             }
         });
-
 
         // Click en la imagen: abrir en pantalla completa
         holder.ivProduct.setOnClickListener(v -> {
