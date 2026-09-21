@@ -36,10 +36,6 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         this.listener = listener;
     }
 
-    public static String traducirEstado(String state) {
-        return PublicationConstants.translateStatus(state);
-    }
-
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -56,7 +52,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         holder.tvPrice.setText(FormatUtils.formatPrice(pub.getPrice()));
 
         String state = pub.getState() != null ? pub.getState() : "ACTIVE";
-        holder.tvState.setText(context.getString(R.string.my_publication_state_format, traducirEstado(state)));
+        holder.tvState.setText(context.getString(R.string.my_publication_state_format, PublicationConstants.translateStatus(state)));
 
         if (pub.getFirstImageUrl() != null && !pub.getFirstImageUrl().isEmpty()) {
             Glide.with(context)
