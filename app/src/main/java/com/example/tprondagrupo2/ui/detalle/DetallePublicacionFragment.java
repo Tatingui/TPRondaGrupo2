@@ -39,6 +39,7 @@ import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.example.tprondagrupo2.util.FormatUtils;
+import com.example.tprondagrupo2.util.PublicationConstants;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
@@ -295,7 +296,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvTitulo.setText(publicacion.getTitle());
         tvPrecio.setText(formatearPrecio(publicacion.getPrice()));
         tvCategoria.setText(publicacion.getCategoryName());
-        tvEstado.setText(traducirEstado(publicacion.getStatus()));
+        tvEstado.setText(PublicationConstants.translateStatus(publicacion.getStatus()));
         tvFechaPublicacion.setText(
                 getString(R.string.detalle_publicado_el, formatearFecha(publicacion.getCreatedAt())));
         tvDescripcion.setText(publicacion.getDescription());
@@ -372,7 +373,7 @@ public class DetallePublicacionFragment extends Fragment {
             btnFavorite.setVisibility(View.GONE);
             layoutGestionVendedor.setVisibility(View.VISIBLE);
 
-            tvEstadoPublicacion.setText("Estado: " + traducirEstadoPublicacion(publicacion.getState()));
+            tvEstadoPublicacion.setText("Estado: " + PublicationConstants.translateStatus(publicacion.getState()));
             boolean vendida = "SOLD".equals(publicacion.getState());
             btnPausarReactivar.setText("ACTIVE".equals(publicacion.getState())
                     ? R.string.detalle_pausar : R.string.detalle_reactivar);
@@ -389,7 +390,7 @@ public class DetallePublicacionFragment extends Fragment {
             layoutAccionesComprador.setVisibility(View.GONE);
             tvAvisoEstado.setVisibility(View.VISIBLE);
             tvAvisoEstado.setText("Esta publicación está "
-                    + traducirEstadoPublicacion(publicacion.getState()).toLowerCase(LOCALE_AR));
+                    + PublicationConstants.translateStatus(publicacion.getState()).toLowerCase(LOCALE_AR));
             return;
         }
 
@@ -407,12 +408,6 @@ public class DetallePublicacionFragment extends Fragment {
             tvMiOferta.setVisibility(View.GONE);
             btnOfertar.setEnabled(true);
         }
-    }
-
-    private String traducirEstadoPublicacion(String state) {
-        if ("PAUSED".equals(state)) return "Pausada";
-        if ("SOLD".equals(state)) return "Vendida";
-        return "Activa";
     }
 
     // ---------- Preguntas ----------
@@ -733,11 +728,6 @@ public class DetallePublicacionFragment extends Fragment {
             }
         }
         return mensajePorDefecto;
-    }
-
-    /** El backend manda NEW / LIKE_NEW / USED. */
-    private String traducirEstado(String status) {
-        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(status);
     }
 
     /** El backend manda la fecha como "2026-09-18T10:30:00"; la mostramos como "18/09/2026". */
