@@ -4,7 +4,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,58 +15,45 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.db.dao.PublicacionDao;
-import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
-import com.example.tprondagrupo2.network.PublicationApiService;
-import com.example.tprondagrupo2.network.PublicationPageResponse;
-import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
+import com.example.tprondagrupo2.ui.home.HomeViewModel;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class HomeFragment extends Fragment {
 
-    private static final String TAG = "HomeFragment";
+    @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
 
     @Inject
-    PublicationApiService publicationApiService;
+    SavedSearchesDataStoreManager savedSearchesDataStoreManager;
 
-    @Inject
-    SavedSearchApiService savedSearchApiService;
-
-    @Inject
-    PublicacionDao publicacionDao;
+    private HomeViewModel viewModel;
 
     private RecyclerView rvPublications;
     private PublicationAdapter adapter;
-    private List<Publicacion> displayedPublications;
+    private final List<Publicacion> displayedPublications = new ArrayList<>();
     private EditText etSearch;
     private TextView tvOfflineBanner;
     private NetworkObserver networkObserver;
-    private Set<String> favoriteIds = new HashSet<>();
 
     // Filter states
     private String currentSearchText = "";
@@ -85,8 +71,6 @@ public class HomeFragment extends Fragment {
     // Pagination states
     private int currentPage = 0;
     private final int PAGE_SIZE = 10;
-    private boolean isLoading = false;
-    private boolean isLastPage = false;
 
     @Nullable
     @Override
@@ -99,57 +83,67 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        viewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+
         rvPublications = view.findViewById(R.id.rvPublications);
         etSearch = view.findViewById(R.id.etSearch);
         tvOfflineBanner = view.findViewById(R.id.tvOfflineBanner);
 
-        displayedPublications = new ArrayList<>();
-
         networkObserver = new NetworkObserver(requireContext());
+
+        setupRecyclerView();
+        setupSearchLogic();
+        setupFilters(view);
+        setupViewModelObservers();
+        checkIncomingSavedSearch();
+
         networkObserver.getIsConnected().observe(getViewLifecycleOwner(), connected -> {
-            if (connected) {
+            if (Boolean.TRUE.equals(connected)) {
                 tvOfflineBanner.setVisibility(View.GONE);
                 refreshData();
             } else {
                 tvOfflineBanner.setVisibility(View.VISIBLE);
             }
         });
-
-        setupRecyclerView();
-        setupSearchLogic();
-        setupFilters(view);
-        checkIncomingSavedSearch();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        fetchFavoriteIds();
+        viewModel.fetchFavoriteIds(this::refreshData);
     }
 
-    private void fetchFavoriteIds() {
-        publicationApiService.getFavorites().enqueue(new Callback<List<Publicacion>>() {
-            @Override
-            public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    favoriteIds.clear();
-                    for (Publicacion p : response.body()) {
-                        if (p.getId() != null) {
-                            favoriteIds.add(p.getId());
-                        }
-                    }
-                    refreshData();
-                } else if (response.code() == 401 || response.code() == 403) {
-                    Toast.makeText(getContext(), "Sesión vencida o inválida. Iniciá sesión de nuevo.", Toast.LENGTH_SHORT).show();
-                    refreshData();
-                } else {
-                    refreshData();
-                }
+    private void setupViewModelObservers() {
+        viewModel.getPublications().observe(getViewLifecycleOwner(), publications -> {
+            displayedPublications.clear();
+            if (publications != null) {
+                displayedPublications.addAll(publications);
             }
+            adapter.notifyDataSetChanged();
+        });
 
-            @Override
-            public void onFailure(Call<List<Publicacion>> call, Throwable t) {
-                refreshData();
+        viewModel.getOfflineBannerVisible().observe(getViewLifecycleOwner(), visible -> {
+            tvOfflineBanner.setVisibility(Boolean.TRUE.equals(visible) ? View.VISIBLE : View.GONE);
+        });
+
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        viewModel.getSavedSearchSuccess().observe(getViewLifecycleOwner(), savedSearch -> {
+            if (savedSearch != null && isAdded()) {
+                List<String> pubIds = new ArrayList<>();
+                for (Publicacion p : displayedPublications) {
+                    if (p.getId() != null) {
+                        pubIds.add(p.getId());
+                    }
+                }
+                if (savedSearch.getId() != null && getContext() != null) {
+                    savedSearchesDataStoreManager.saveSearch(String.valueOf(savedSearch.getId()), pubIds);
+                }
+                Toast.makeText(getContext(), R.string.busqueda_guardada_exito, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -164,6 +158,9 @@ public class HomeFragment extends Fragment {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 GridLayoutManager layoutManager = (GridLayoutManager) recyclerView.getLayoutManager();
+                boolean isLoading = Boolean.TRUE.equals(viewModel.getLoading().getValue());
+                boolean isLastPage = Boolean.TRUE.equals(viewModel.getIsLastPage().getValue());
+
                 if (layoutManager != null && !isLoading && !isLastPage) {
                     int visibleItemCount = layoutManager.getChildCount();
                     int totalItemCount = layoutManager.getItemCount();
@@ -171,6 +168,7 @@ public class HomeFragment extends Fragment {
 
                     if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount
                             && firstVisibleItemPosition >= 0) {
+                        currentPage++;
                         fetchPublications();
                     }
                 }
@@ -179,16 +177,8 @@ public class HomeFragment extends Fragment {
     }
 
     private void fetchPublications() {
-        if (isLoading) return;
-
-        if (!networkObserver.isCurrentlyConnected()) {
-            loadFromCache();
-            return;
-        }
-
-        isLoading = true;
-
-        publicationApiService.getPublications(
+        boolean connected = networkObserver.isCurrentlyConnected();
+        viewModel.loadPublications(
                 currentSearchText.isEmpty() ? null : currentSearchText,
                 selectedCategoryId,
                 minPrice,
@@ -197,112 +187,18 @@ public class HomeFragment extends Fragment {
                 selectedLocation,
                 currentPage,
                 PAGE_SIZE,
-                currentSort
-        ).enqueue(new Callback<PublicationPageResponse>() {
-            @Override
-            public void onResponse(Call<PublicationPageResponse> call, Response<PublicationPageResponse> response) {
-                isLoading = false;
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Publicacion> newItems = response.body().getContent();
-                    
-                    // Sincronizar estado de favoritos
-                    for (Publicacion p : newItems) {
-                        p.setFavorite(p.getId() != null && favoriteIds.contains(p.getId()));
-                    }
-
-                    if (currentPage == 0) {
-                        displayedPublications.clear();
-                        displayedPublications.addAll(newItems);
-                        adapter.notifyDataSetChanged();
-                        saveToCache(newItems);
-                    } else {
-                        adapter.addItems(newItems);
-                    }
-
-                    isLastPage = response.body().isLast();
-                    if (!isLastPage) {
-                        currentPage++;
-                    }
-                } else {
-                    Log.e(TAG, "Error en la respuesta: " + response.code());
-                    loadFromCache();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<PublicationPageResponse> call, Throwable t) {
-                isLoading = false;
-                Log.e(TAG, "Falla en la peticion", t);
-                loadFromCache();
-            }
-        });
-    }
-
-    private void saveToCache(List<Publicacion> items) {
-        List<PublicacionEntity> entities = items.stream()
-                .map(PublicacionEntity::fromModel)
-                .collect(Collectors.toList());
-        publicacionDao.insertAll(entities);
-    }
-
-    private void loadFromCache() {
-        List<PublicacionEntity> entities;
-        if (currentSearchText != null && !currentSearchText.isEmpty()) {
-            entities = publicacionDao.searchByTitle(currentSearchText);
-        } else {
-            entities = publicacionDao.getAll();
-        }
-
-        List<Publicacion> cachedItems = entities.stream()
-                .map(PublicacionEntity::toModel)
-                .collect(Collectors.toList());
-        
-        // Aplicar filtros locales si los hay
-        List<Publicacion> filtered = new ArrayList<>();
-        for (Publicacion p : cachedItems) {
-            boolean matches = true;
-            if (selectedCategoryId != null && !p.getCategoryName().equals(selectedCategoryName)) matches = false;
-            if (matches && selectedCondition != null && !p.getStatus().equals(selectedCondition)) matches = false;
-            if (matches && minPrice != null && p.getPrice() < minPrice) matches = false;
-            if (matches && maxPrice != null && p.getPrice() > maxPrice) matches = false;
-            if (matches && selectedLocation != null && !p.getLocation().equals(selectedLocation)) matches = false;
-            
-            if (matches) filtered.add(p);
-        }
-
-        // Ordenamiento local
-        if (currentSort.equals("price,asc")) {
-            filtered.sort((p1, p2) -> Double.compare(p1.getPrice(), p2.getPrice()));
-        } else if (currentSort.equals("price,desc")) {
-            filtered.sort((p1, p2) -> Double.compare(p2.getPrice(), p1.getPrice()));
-        } else if (currentSort.equals("createdAt,desc")) {
-            filtered.sort((p1, p2) -> {
-                Long id1 = p1.getIdLong();
-                Long id2 = p2.getIdLong();
-                if (id1 == null && id2 == null) return 0;
-                if (id1 == null) return 1;
-                if (id2 == null) return -1;
-                return Long.compare(id2, id1);
-            });
-        }
-
-        displayedPublications.clear();
-        displayedPublications.addAll(filtered);
-        adapter.notifyDataSetChanged();
-        
-        isLastPage = true; // No paginamos en offline
-        tvOfflineBanner.setVisibility(View.VISIBLE);
+                currentSort,
+                connected
+        );
     }
 
     private void refreshData() {
         currentPage = 0;
-        isLastPage = false;
         fetchPublications();
     }
 
     private void abrirDetalle(Publicacion publicacion) {
         Bundle args = new Bundle();
-        Log.d(TAG, "Abriendo detalle para ID: " + publicacion.getId());
         args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
 
         NavHostFragment.findNavController(this)
@@ -310,39 +206,16 @@ public class HomeFragment extends Fragment {
     }
 
     private void onFavoriteClick(Publicacion publicacion, int position) {
-        boolean isFavorite = publicacion.isFavorite();
+        if (publicacion == null || publicacion.getId() == null) return;
+        boolean wasFavorite = publicacion.isFavorite();
         String pubId = publicacion.getId();
 
-        Callback<Void> callback = new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    publicacion.setFavorite(!isFavorite);
-                    if (publicacion.isFavorite()) {
-                        if (publicacion.getId() != null) {
-                            favoriteIds.add(publicacion.getId());
-                        }
-                        FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
-                    } else {
-                        favoriteIds.remove(publicacion.getId());
-                        FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
-                    }
-                    adapter.notifyItemChanged(position);
-                } else {
-                    Toast.makeText(getContext(), "Error al actualizar favorito", Toast.LENGTH_SHORT).show();
-                }
-            }
+        viewModel.toggleFavorite(publicacion);
 
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        };
-
-        if (isFavorite) {
-            publicationApiService.unmarkAsFavorite(pubId).enqueue(callback);
+        if (!wasFavorite) {
+            favoritesDataStoreManager.addFavorite(pubId);
         } else {
-            publicationApiService.markAsFavorite(pubId).enqueue(callback);
+            favoritesDataStoreManager.removeFavorite(pubId);
         }
     }
 
@@ -398,33 +271,7 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        savedSearchApiService.saveSearch(savedSearch).enqueue(new Callback<SavedSearch>() {
-            @Override
-            public void onResponse(Call<SavedSearch> call, Response<SavedSearch> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    SavedSearch created = response.body();
-                    List<String> pubIds = new ArrayList<>();
-                    if (displayedPublications != null) {
-                        for (Publicacion p : displayedPublications) {
-                            if (p.getId() != null) {
-                                pubIds.add(p.getId());
-                            }
-                        }
-                    }
-                    if (created.getId() != null && getContext() != null) {
-                        SavedSearchesDataStoreManager.saveSearch(requireContext(), String.valueOf(created.getId()), pubIds);
-                    }
-                    Toast.makeText(getContext(), R.string.busqueda_guardada_exito, Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al guardar la búsqueda", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<SavedSearch> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión al guardar", Toast.LENGTH_SHORT).show();
-            }
-        });
+        viewModel.saveSearch(savedSearch);
     }
 
     private void checkIncomingSavedSearch() {
@@ -481,13 +328,17 @@ public class HomeFragment extends Fragment {
     private void showSortDialog() {
         String[] options = {"Recientes", "Menor precio", "Mayor precio"};
         String[] sortValues = {"createdAt,desc", "price,asc", "price,desc"};
-        
+
         new AlertDialog.Builder(requireContext())
                 .setTitle("Ordenar por")
                 .setItems(options, (dialog, which) -> {
                     currentSort = sortValues[which];
                     currentSortName = options[which];
-                    ((Chip) getView().findViewById(R.id.chipSort)).setText("Orden: " + currentSortName);
+                    View view = getView();
+                    if (view != null) {
+                        Chip chip = view.findViewById(R.id.chipSort);
+                        if (chip != null) chip.setText("Orden: " + currentSortName);
+                    }
                     refreshData();
                 })
                 .show();
@@ -502,7 +353,11 @@ public class HomeFragment extends Fragment {
                 .setItems(categories, (dialog, which) -> {
                     selectedCategoryId = ids[which];
                     selectedCategoryName = categories[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterCategory)).setText(selectedCategoryName);
+                    View view = getView();
+                    if (view != null) {
+                        Chip chip = view.findViewById(R.id.chipFilterCategory);
+                        if (chip != null) chip.setText(selectedCategoryName);
+                    }
                     refreshData();
                 })
                 .show();
@@ -543,7 +398,11 @@ public class HomeFragment extends Fragment {
                 .setItems(options, (dialog, which) -> {
                     selectedCondition = values[which];
                     selectedConditionName = options[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterCondition)).setText(selectedConditionName);
+                    View view = getView();
+                    if (view != null) {
+                        Chip chip = view.findViewById(R.id.chipFilterCondition);
+                        if (chip != null) chip.setText(selectedConditionName);
+                    }
                     refreshData();
                 })
                 .show();
@@ -556,7 +415,11 @@ public class HomeFragment extends Fragment {
                 .setItems(locations, (dialog, which) -> {
                     selectedLocation = locations[which].equals("Todas") ? null : locations[which];
                     selectedLocationName = locations[which];
-                    ((Chip) getView().findViewById(R.id.chipFilterLocation)).setText(selectedLocationName);
+                    View view = getView();
+                    if (view != null) {
+                        Chip chip = view.findViewById(R.id.chipFilterLocation);
+                        if (chip != null) chip.setText(selectedLocationName);
+                    }
                     refreshData();
                 })
                 .show();

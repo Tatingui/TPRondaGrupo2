@@ -50,7 +50,7 @@ public class Publicacion implements Serializable {
     private String address;
     private Double latitude;
     private Double longitude;
-    private Oferta myOffer;           // última oferta de quien mira (null si no ofertó)
+    private Offer myOffer;           // última oferta de quien mira (null si no ofertó)
 
     public Publicacion() {
         // Constructor vacio requerido por Gson
@@ -290,11 +290,11 @@ public class Publicacion implements Serializable {
         return longitude;
     }
 
-    public Oferta getMyOffer() {
+    public Offer getMyOffer() {
         return myOffer;
     }
 
-    public void setMyOffer(Oferta myOffer) {
+    public void setMyOffer(Offer myOffer) {
         this.myOffer = myOffer;
     }
 

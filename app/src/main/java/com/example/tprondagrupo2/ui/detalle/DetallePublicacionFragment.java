@@ -28,7 +28,7 @@ import com.example.tprondagrupo2.data.repository.PublicationDetailSource.LoadErr
 import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.AuthResponse;
-import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.OfertaRequest;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
@@ -36,7 +36,8 @@ import com.example.tprondagrupo2.model.TextoRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.example.tprondagrupo2.util.FormatUtils;
 import com.example.tprondagrupo2.util.PublicationConstants;
@@ -73,10 +74,16 @@ public class DetallePublicacionFragment extends Fragment {
     private Button btnReintentarDetalle;
 
     @Inject
-    PublicationApiService publicationApiService;
+    PublicationWriteApiService publicationWriteApiService;
+
+    @Inject
+    PublicationFavoriteApiService publicationFavoriteApiService;
 
     @Inject
     PublicacionDao publicacionDao;
+
+    @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -397,13 +404,13 @@ public class DetallePublicacionFragment extends Fragment {
         tvAvisoEstado.setVisibility(View.GONE);
         layoutAccionesComprador.setVisibility(View.VISIBLE);
 
-        Oferta miOferta = publicacion.getMyOffer();
+        Offer miOferta = publicacion.getMyOffer();
         if (miOferta != null) {
             tvMiOferta.setVisibility(View.VISIBLE);
             tvMiOferta.setText(getString(R.string.detalle_mi_oferta,
-                    formatearPrecio(miOferta.getAmount()), miOferta.getStatusTexto()));
+                    formatearPrecio(miOferta.getOfferedPrice()), traducirEstadoOferta(miOferta.getStatus())));
             // Mientras haya una oferta pendiente no se puede hacer otra
-            btnOfertar.setEnabled(!miOferta.estaPendiente());
+            btnOfertar.setEnabled(!"PENDING".equals(miOferta.getStatus()));
         } else {
             tvMiOferta.setVisibility(View.GONE);
             btnOfertar.setEnabled(true);
@@ -462,8 +469,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarPregunta(String texto) {
-        viewRequests.enqueue(publicationApiService
-                .askQuestion(currentPublicacion.getId(), new TextoRequest(texto)),
+        viewRequests.enqueue(
+                publicationWriteApiService.askQuestion(currentPublicacion.getId(), new TextoRequest(texto)),
                 new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
@@ -507,8 +514,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarRespuesta(Long preguntaId, String texto) {
-        viewRequests.enqueue(publicationApiService
-                .answerQuestion(preguntaId, new TextoRequest(texto)), new Callback<Pregunta>() {
+        viewRequests.enqueue(
+                publicationWriteApiService.answerQuestion(preguntaId, new TextoRequest(texto)), new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
                         if (!isAdded()) return;
@@ -609,11 +616,11 @@ public class DetallePublicacionFragment extends Fragment {
         if (ofertaEnCurso) return;
         ofertaEnCurso = true;
         btnOfertar.setEnabled(false);
-        viewRequests.enqueue(publicationApiService
-                .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
-                new Callback<Oferta>() {
+        viewRequests.enqueue(
+                publicationWriteApiService.makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
+                new Callback<Offer>() {
                     @Override
-                    public void onResponse(@NonNull Call<Oferta> call, @NonNull Response<Oferta> response) {
+                    public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
                         if (!isAdded()) return;
                         ofertaEnCurso = false;
                         if (response.isSuccessful() && response.body() != null) {
@@ -628,7 +635,7 @@ public class DetallePublicacionFragment extends Fragment {
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<Oferta> call, @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
                         if (isAdded()) {
                             ofertaEnCurso = false;
                             btnOfertar.setEnabled(true);
@@ -661,7 +668,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnPausarReactivar.setEnabled(false);
         btnMarcarVendida.setEnabled(false);
 
-        viewRequests.enqueue(publicationApiService.updatePublicationStatus(id, nuevoEstado),
+        viewRequests.enqueue(publicationWriteApiService.updatePublicationStatus(id, nuevoEstado),
                 new Callback<Publicacion>() {
                     @Override
                     public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
@@ -746,7 +753,7 @@ public class DetallePublicacionFragment extends Fragment {
         String pubId = publicacion.getId();
 
         if (getContext() != null) {
-            FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
+            favoritesDataStoreManager.setHasUpdates(pubId, false);
         }
         publicacion.setHasUpdates(false);
         publicacion.setLastSeenPrice(publicacion.getPrice());
@@ -774,9 +781,9 @@ public class DetallePublicacionFragment extends Fragment {
                     if (response.isSuccessful()) {
                         viewModel.actualizarFavorito(!wasFavorite);
                         if (!wasFavorite) {
-                            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.addFavorite(pubId);
                         } else {
-                            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.removeFavorite(pubId);
                         }
                         String mensaje = !wasFavorite ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
@@ -815,9 +822,9 @@ public class DetallePublicacionFragment extends Fragment {
         };
 
         if (wasFavorite) {
-            viewRequests.enqueue(publicationApiService.unmarkAsFavorite(pubId), callback);
+            viewRequests.enqueue(publicationFavoriteApiService.unmarkAsFavorite(pubId), callback);
         } else {
-            viewRequests.enqueue(publicationApiService.markAsFavorite(pubId), callback);
+            viewRequests.enqueue(publicationFavoriteApiService.markAsFavorite(pubId), callback);
         }
     }
 
@@ -885,6 +892,17 @@ public class DetallePublicacionFragment extends Fragment {
 
     private String formatearPrecio(double precio) {
         return FormatUtils.formatPrice(precio);
+    }
+
+    private String traducirEstadoOferta(String status) {
+        if (status == null) return "";
+        switch (status) {
+            case "PENDING": return "Pendiente";
+            case "ACCEPTED": return "Aceptada";
+            case "REJECTED": return "Rechazada";
+            case "EXPIRED": return "Vencida";
+            default: return status;
+        }
     }
 
     @Override

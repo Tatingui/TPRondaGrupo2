@@ -1,8 +1,6 @@
 package com.example.tprondagrupo2.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class SavedSearch implements Serializable {
     private Long id;
@@ -82,48 +80,6 @@ public class SavedSearch implements Serializable {
 
     public boolean isHasUpdates() { return hasUpdates; }
     public void setHasUpdates(boolean hasUpdates) { this.hasUpdates = hasUpdates; }
-
-    public String getDisplayTitle() {
-        if (query != null && !query.trim().isEmpty()) {
-            return query.trim();
-        }
-        if (categoryName != null && !categoryName.equalsIgnoreCase("Categoría") && !categoryName.equalsIgnoreCase("Todas")) {
-            return categoryName;
-        }
-        return "Búsqueda guardada";
-    }
-
-    public String getSummaryFilters() {
-        List<String> filters = new ArrayList<>();
-
-        if (query != null && !query.trim().isEmpty() && categoryName != null && !categoryName.equalsIgnoreCase("Categoría") && !categoryName.equalsIgnoreCase("Todas")) {
-            filters.add("Categoría: " + categoryName);
-        }
-        if (conditionName != null && !conditionName.equalsIgnoreCase("Estado") && !conditionName.equalsIgnoreCase("Cualquiera")) {
-            filters.add("Estado: " + conditionName);
-        }
-        if (locationName != null && !locationName.equalsIgnoreCase("Zona") && !locationName.equalsIgnoreCase("Todas")) {
-            filters.add("Zona: " + locationName);
-        }
-        if (minPrice != null || maxPrice != null) {
-            if (minPrice != null && maxPrice != null) {
-                filters.add("$" + minPrice.longValue() + " - $" + maxPrice.longValue());
-            } else if (minPrice != null) {
-                filters.add("Desde $" + minPrice.longValue());
-            } else {
-                filters.add("Hasta $" + maxPrice.longValue());
-            }
-        }
-        if (sortName != null && !sortName.equalsIgnoreCase("Ordenar por") && !sortName.equalsIgnoreCase("Recientes")) {
-            filters.add("Orden: " + sortName);
-        }
-
-        if (filters.isEmpty()) {
-            return "Sin filtros adicionales";
-        }
-
-        return String.join(" • ", filters);
-    }
 
     public boolean hasAnyFilterOrQuery() {
         boolean hasQuery = query != null && !query.trim().isEmpty();

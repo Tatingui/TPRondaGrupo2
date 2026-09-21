@@ -12,35 +12,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.network.PublicationApiService;
-import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class MyPublicationsFragment extends Fragment {
 
-    @Inject
-    PublicationApiService publicationApiService;
+    private MyPublicationsViewModel viewModel;
 
     private RecyclerView rvMyPublications;
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private MyPublicationsAdapter adapter;
-    private List<Publicacion> myPublications = new ArrayList<>();
+    private final List<Publicacion> myPublications = new ArrayList<>();
 
     @Nullable
     @Override
@@ -52,127 +45,83 @@ public class MyPublicationsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        viewModel = new ViewModelProvider(this).get(MyPublicationsViewModel.class);
+
         rvMyPublications = view.findViewById(R.id.rvMyPublications);
         progressBar = view.findViewById(R.id.progressBarMyPubs);
         tvEmpty = view.findViewById(R.id.tvEmptyMyPubs);
 
         setupRecyclerView();
-        fetchMyPublications();
+        setupViewModelObservers();
+
+        viewModel.fetchMyPublications();
+    }
+
+    private void setupViewModelObservers() {
+        viewModel.getMyPublications().observe(getViewLifecycleOwner(), publications -> {
+            myPublications.clear();
+            if (publications != null) {
+                myPublications.addAll(publications);
+            }
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (progressBar != null) {
+                progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        viewModel.getEmptyVisible().observe(getViewLifecycleOwner(), isEmpty -> {
+            if (tvEmpty != null) {
+                tvEmpty.setVisibility(Boolean.TRUE.equals(isEmpty) ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupRecyclerView() {
         adapter = new MyPublicationsAdapter(myPublications, new MyPublicationsAdapter.OnPublicationActionListener() {
             @Override
             public void onPause(Publicacion pub, int position) {
-                updateStatus(pub.getIdLong(), "PAUSED", position);
+                viewModel.updateStatus(pub.getIdLong(), "PAUSED");
             }
 
             @Override
             public void onActivate(Publicacion pub, int position) {
-                updateStatus(pub.getIdLong(), "ACTIVE", position);
+                viewModel.updateStatus(pub.getIdLong(), "ACTIVE");
             }
 
             @Override
             public void onSell(Publicacion pub, int position) {
-                updateStatus(pub.getIdLong(), "SOLD", position);
+                viewModel.updateStatus(pub.getIdLong(), "SOLD");
             }
 
             @Override
             public void onDelete(Publicacion pub, int position) {
-                confirmDelete(pub, position);
+                confirmDelete(pub);
             }
         });
         rvMyPublications.setLayoutManager(new LinearLayoutManager(getContext()));
         rvMyPublications.setAdapter(adapter);
     }
 
-    private void fetchMyPublications() {
-        progressBar.setVisibility(View.VISIBLE);
-        tvEmpty.setVisibility(View.GONE);
-
-        publicationApiService.getMyPublications().enqueue(new Callback<List<Publicacion>>() {
-            @Override
-            public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
-                progressBar.setVisibility(View.GONE);
-                if (response.isSuccessful() && response.body() != null) {
-                    myPublications.clear();
-                    myPublications.addAll(response.body());
-                    adapter.notifyDataSetChanged();
-                    if (myPublications.isEmpty()) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    Toast.makeText(getContext(), "Error al cargar mis publicaciones", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Publicacion>> call, Throwable t) {
-                progressBar.setVisibility(View.GONE);
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void updateStatus(Long id, String state, int position) {
-        if (id == null) return;
-        publicationApiService.updatePublicationStatus(id, state).enqueue(new Callback<Publicacion>() {
-            @Override
-            public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    myPublications.set(position, response.body());
-                    adapter.notifyItemChanged(position);
-                    Toast.makeText(getContext(),
-                            "Estado actualizado a " + PublicationConstants.translateStatus(state),
-                            Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al actualizar estado", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Publicacion> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void confirmDelete(Publicacion pub, int position) {
+    private void confirmDelete(Publicacion pub) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Dar de baja publicación")
                 .setMessage("¿Estás seguro de que querés dar de baja \""
                         + pub.getTitle()
                         + "\"? Se eliminarán la publicación, sus comentarios, ofertas y datos relacionados. Esta acción no se puede deshacer.")
-                .setPositiveButton("Dar de baja", (dialog, which) -> deletePublication(pub, position))
+                .setPositiveButton("Dar de baja", (dialog, which) -> viewModel.deletePublication(pub))
                 .setNegativeButton("Cancelar", null)
                 .show();
-    }
-
-    private void deletePublication(Publicacion pub, int position) {
-        Long id = pub.getIdLong();
-        if (id == null) return;
-
-        publicationApiService.deletePublication(id).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    myPublications.remove(position);
-                    adapter.notifyItemRemoved(position);
-                    adapter.notifyItemRangeChanged(position, myPublications.size());
-                    if (myPublications.isEmpty()) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
-                    Toast.makeText(getContext(), "Publicación dada de baja", Toast.LENGTH_SHORT).show();
-                } else {
-                    String errorMsg = "Error al dar de baja (código " + response.code() + ")";
-                    Toast.makeText(getContext(), errorMsg, Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 }

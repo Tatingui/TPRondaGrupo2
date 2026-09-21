@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelStore;
 
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource;
-import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.support.ImmediateMainThreadRule;
@@ -173,7 +173,7 @@ public class DetalleViewModelTest {
     @Test
     public void respuestaEnVueloNoDeshaceFavoritoNiOfertaConfirmados() {
         vm.inicializar(publicacion("Inicial"));
-        Oferta oferta = new Gson().fromJson("{\"id\":4,\"status\":\"PENDING\",\"amount\":100}", Oferta.class);
+        Offer oferta = new Gson().fromJson("{\"id\":4,\"status\":\"PENDING\",\"offeredPrice\":100}", Offer.class);
         vm.actualizarFavorito(true);
         vm.actualizarOferta(oferta);
         source.detalles.get(0).success(publicacion("Vieja en vuelo"));

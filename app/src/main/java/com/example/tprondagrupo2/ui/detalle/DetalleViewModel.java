@@ -8,7 +8,7 @@ import com.example.tprondagrupo2.data.repository.PublicationDetailSource;
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource.LoadError;
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource.Request;
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource.Result;
-import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
 
@@ -140,7 +140,7 @@ public final class DetalleViewModel extends ViewModel {
         publicar();
     }
 
-    public void actualizarOferta(Oferta oferta) {
+    public void actualizarOferta(Offer oferta) {
         if (cerrado || publicacion == null) return;
         revisionOferta++;
         publicacion.setMyOffer(oferta);

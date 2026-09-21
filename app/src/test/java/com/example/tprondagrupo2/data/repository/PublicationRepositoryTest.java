@@ -4,7 +4,10 @@ import static org.junit.Assert.*;
 
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.Pregunta;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationDetailApiService;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationReadApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 import com.example.tprondagrupo2.support.FakeCall;
 
 import org.junit.Test;
@@ -95,14 +98,23 @@ public class PublicationRepositoryTest {
     }
 
     private PublicationRepository repository(String method, FakeCall<?> call) {
-        PublicationApiService api = (PublicationApiService) Proxy.newProxyInstance(
-                PublicationApiService.class.getClassLoader(), new Class<?>[]{PublicationApiService.class},
+        PublicationReadApiService readApi = proxy(PublicationReadApiService.class, method, call);
+        PublicationWriteApiService writeApi = proxy(PublicationWriteApiService.class, method, call);
+        PublicationFavoriteApiService favoriteApi = proxy(PublicationFavoriteApiService.class, method, call);
+        PublicationDetailApiService detailApi = proxy(PublicationDetailApiService.class, method, call);
+        return new PublicationRepository(readApi, writeApi, favoriteApi, detailApi);
+    }
+
+    private <T> T proxy(Class<T> serviceType, String method, FakeCall<?> call) {
+        return serviceType.cast(Proxy.newProxyInstance(
+                serviceType.getClassLoader(), new Class<?>[]{serviceType},
                 (proxy, invoked, args) -> {
-                    assertEquals(method, invoked.getName());
+                    if (!method.equals(invoked.getName())) {
+                        throw new AssertionError("Método inesperado: " + invoked.getName());
+                    }
                     assertEquals("17", args[0]);
                     return call;
-                });
-        return new PublicationRepository(api);
+                }));
     }
 
     private static class Resultado<T> implements PublicationDetailSource.Result<T> {

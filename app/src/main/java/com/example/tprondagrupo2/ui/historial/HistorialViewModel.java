@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.tprondagrupo2.data.repository.HistorialRepository;
+import com.example.tprondagrupo2.model.Calificacion;
+import com.example.tprondagrupo2.model.CalificacionRequest;
 import com.example.tprondagrupo2.model.OperacionHistorial;
 
 import java.util.List;
@@ -69,6 +71,35 @@ public class HistorialViewModel extends ViewModel {
             public void onSuccess(OperacionHistorial result) {
                 loading.setValue(false);
                 actionSuccess.setValue("Entrega confirmada con éxito");
+            }
+
+            @Override
+            public void onError(String msg) {
+                loading.setValue(false);
+                error.setValue(msg);
+            }
+
+            @Override
+            public void onNetworkError() {
+                loading.setValue(false);
+                error.setValue("Error de red");
+            }
+        });
+    }
+
+    public void rate(Long transactionId, int puntaje, String comentario) {
+        loading.setValue(true);
+        CalificacionRequest req = new CalificacionRequest(puntaje, comentario);
+        historialRepository.rate(transactionId, req, new HistorialRepository.CalificacionCallback() {
+            @Override
+            public void onSuccess(Calificacion result) {
+                loading.setValue(false);
+                actionSuccess.setValue("Calificación enviada correctamente");
+            }
+
+            @Override
+            public void onEmpty() {
+                loading.setValue(false);
             }
 
             @Override

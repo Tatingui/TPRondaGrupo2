@@ -51,10 +51,11 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testProvidePublicationServiceNoDevuelveNull() {
-        // Valida que Hilt pueda generar e inyectar la implementación del servicio de publicaciones (PublicationApiService)
-        PublicationApiService publicationApiService = networkModule.providePublicationService(retrofit);
-        assertNotNull(publicationApiService);
+    public void testProvidePublicationServicesNoDevuelveNull() {
+        assertNotNull(networkModule.providePublicationReadService(retrofit));
+        assertNotNull(networkModule.providePublicationWriteService(retrofit));
+        assertNotNull(networkModule.providePublicationFavoriteService(retrofit));
+        assertNotNull(networkModule.providePublicationDetailService(retrofit));
     }
 
     @Test

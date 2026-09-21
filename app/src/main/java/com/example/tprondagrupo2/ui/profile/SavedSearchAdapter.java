@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.SavedSearch;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SavedSearchAdapter extends RecyclerView.Adapter<SavedSearchAdapter.ViewHolder> {
@@ -40,8 +41,8 @@ public class SavedSearchAdapter extends RecyclerView.Adapter<SavedSearchAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         SavedSearch item = savedSearches.get(position);
-        holder.tvTitle.setText(item.getDisplayTitle());
-        holder.tvSummary.setText(item.getSummaryFilters());
+        holder.tvTitle.setText(formatDisplayTitle(item));
+        holder.tvSummary.setText(formatSummaryFilters(item));
 
         if (holder.tvBadge != null) {
             holder.tvBadge.setVisibility(item.isHasUpdates() ? View.VISIBLE : View.GONE);
@@ -57,6 +58,59 @@ public class SavedSearchAdapter extends RecyclerView.Adapter<SavedSearchAdapter.
                 listener.onDeleteClick(item, pos);
             }
         });
+    }
+
+    public static String formatDisplayTitle(SavedSearch item) {
+        if (item == null) return "";
+        String query = item.getQuery();
+        String categoryName = item.getCategoryName();
+        if (query != null && !query.trim().isEmpty()) {
+            return query.trim();
+        }
+        if (categoryName != null && !categoryName.equalsIgnoreCase("Categoría") && !categoryName.equalsIgnoreCase("Todas")) {
+            return categoryName;
+        }
+        return "Búsqueda guardada";
+    }
+
+    public static String formatSummaryFilters(SavedSearch item) {
+        if (item == null) return "";
+        List<String> filters = new ArrayList<>();
+        String query = item.getQuery();
+        String categoryName = item.getCategoryName();
+        String conditionName = item.getConditionName();
+        String locationName = item.getLocationName();
+        Double minPrice = item.getMinPrice();
+        Double maxPrice = item.getMaxPrice();
+        String sortName = item.getSortName();
+
+        if (query != null && !query.trim().isEmpty() && categoryName != null && !categoryName.equalsIgnoreCase("Categoría") && !categoryName.equalsIgnoreCase("Todas")) {
+            filters.add("Categoría: " + categoryName);
+        }
+        if (conditionName != null && !conditionName.equalsIgnoreCase("Estado") && !conditionName.equalsIgnoreCase("Cualquiera")) {
+            filters.add("Estado: " + conditionName);
+        }
+        if (locationName != null && !locationName.equalsIgnoreCase("Zona") && !locationName.equalsIgnoreCase("Todas")) {
+            filters.add("Zona: " + locationName);
+        }
+        if (minPrice != null || maxPrice != null) {
+            if (minPrice != null && maxPrice != null) {
+                filters.add("$" + minPrice.longValue() + " - $" + maxPrice.longValue());
+            } else if (minPrice != null) {
+                filters.add("Desde $" + minPrice.longValue());
+            } else {
+                filters.add("Hasta $" + maxPrice.longValue());
+            }
+        }
+        if (sortName != null && !sortName.equalsIgnoreCase("Ordenar por") && !sortName.equalsIgnoreCase("Recientes")) {
+            filters.add("Orden: " + sortName);
+        }
+
+        if (filters.isEmpty()) {
+            return "Sin filtros adicionales";
+        }
+
+        return String.join(" • ", filters);
     }
 
     @Override

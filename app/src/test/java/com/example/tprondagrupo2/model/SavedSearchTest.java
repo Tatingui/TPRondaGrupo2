@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.example.tprondagrupo2.ui.profile.SavedSearchAdapter;
+
 import org.junit.Test;
 
 public class SavedSearchTest {
@@ -12,20 +14,20 @@ public class SavedSearchTest {
     public void testGetDisplayTitleWithQuery() {
         SavedSearch search = new SavedSearch();
         search.setQuery("Zapatillas");
-        assertEquals("Zapatillas", search.getDisplayTitle());
+        assertEquals("Zapatillas", SavedSearchAdapter.formatDisplayTitle(search));
     }
 
     @Test
     public void testGetDisplayTitleWithCategoryOnly() {
         SavedSearch search = new SavedSearch();
         search.setCategoryName("Deportes");
-        assertEquals("Deportes", search.getDisplayTitle());
+        assertEquals("Deportes", SavedSearchAdapter.formatDisplayTitle(search));
     }
 
     @Test
     public void testGetDisplayTitleDefault() {
         SavedSearch search = new SavedSearch();
-        assertEquals("Búsqueda guardada", search.getDisplayTitle());
+        assertEquals("Búsqueda guardada", SavedSearchAdapter.formatDisplayTitle(search));
     }
 
     @Test
@@ -47,7 +49,7 @@ public class SavedSearchTest {
         search.setMinPrice(1000.0);
         search.setMaxPrice(5000.0);
 
-        String summary = search.getSummaryFilters();
+        String summary = SavedSearchAdapter.formatSummaryFilters(search);
         assertTrue(summary.contains("Categoría: Deportes"));
         assertTrue(summary.contains("Zona: Belgrano"));
         assertTrue(summary.contains("$1000 - $5000"));

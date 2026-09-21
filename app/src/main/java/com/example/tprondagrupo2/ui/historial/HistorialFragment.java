@@ -14,13 +14,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.data.repository.HistorialRepository;
-import com.example.tprondagrupo2.model.Calificacion;
-import com.example.tprondagrupo2.model.CalificacionRequest;
 import com.example.tprondagrupo2.model.OperacionHistorial;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
@@ -30,8 +28,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
-
-import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -43,8 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class HistorialFragment extends Fragment {
 
-    @Inject
-    HistorialRepository historialRepository;
+    private HistorialViewModel viewModel;
 
     private TabLayout tabLayoutTipo;
 
@@ -75,11 +70,46 @@ public class HistorialFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        viewModel = new ViewModelProvider(this).get(HistorialViewModel.class);
+
         initViews(view);
         setupRecyclerView();
         setupListeners();
+        setupViewModelObservers();
 
         loadHistory();
+    }
+
+    private void setupViewModelObservers() {
+        viewModel.getOperaciones().observe(getViewLifecycleOwner(), operaciones -> {
+            if (operaciones == null || operaciones.isEmpty()) {
+                tvEmptyState.setVisibility(View.VISIBLE);
+                rvHistorial.setVisibility(View.GONE);
+            } else {
+                tvEmptyState.setVisibility(View.GONE);
+                rvHistorial.setVisibility(View.VISIBLE);
+                adapter.setOperaciones(operaciones);
+            }
+        });
+
+        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            pbLoading.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE);
+        });
+
+        viewModel.getError().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                tvEmptyState.setText(msg);
+                tvEmptyState.setVisibility(View.VISIBLE);
+                rvHistorial.setVisibility(View.GONE);
+            }
+        });
+
+        viewModel.getActionSuccess().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                loadHistory();
+            }
+        });
     }
 
     /**
@@ -216,77 +246,27 @@ public class HistorialFragment extends Fragment {
     }
 
     /**
-     * Consulta el historial de operaciones desde el repositorio aplicando los filtros
+     * Consulta el historial de operaciones desde el ViewModel aplicando los filtros
      * de tipo (COMPRA/VENTA) y rango de fechas seleccionados.
      */
     private void loadHistory() {
-        pbLoading.setVisibility(View.VISIBLE);
-        tvEmptyState.setVisibility(View.GONE);
-        rvHistorial.setVisibility(View.GONE);
-
-        HistorialRepository.HistorialCallback callback = new HistorialRepository.HistorialCallback() {
-            @Override
-            public void onSuccess(List<OperacionHistorial> operaciones, int totalPages, boolean isLast) {
-                if (!isAdded()) return;
-
-                pbLoading.setVisibility(View.GONE);
-
-                if (operaciones == null || operaciones.isEmpty()) {
-                    tvEmptyState.setVisibility(View.VISIBLE);
-                    rvHistorial.setVisibility(View.GONE);
-                } else {
-                    tvEmptyState.setVisibility(View.GONE);
-                    rvHistorial.setVisibility(View.VISIBLE);
-                    adapter.setOperaciones(operaciones);
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-
-                pbLoading.setVisibility(View.GONE);
-                tvEmptyState.setText("Error al cargar historial: " + message);
-                tvEmptyState.setVisibility(View.VISIBLE);
-                rvHistorial.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-
-                pbLoading.setVisibility(View.GONE);
-                tvEmptyState.setText("Error de conexión al cargar historial");
-                tvEmptyState.setVisibility(View.VISIBLE);
-                rvHistorial.setVisibility(View.GONE);
-            }
-        };
-
-        if (fromCalendar == null && toCalendar == null) {
-            historialRepository.getHistory(selectedTipo, 0, 50, callback);
-        } else {
-            String fromStr;
-            if (fromCalendar != null) {
-                fromStr = String.format(Locale.US, "%04d-%02d-%02dT00:00:00",
-                        fromCalendar.get(Calendar.YEAR),
-                        fromCalendar.get(Calendar.MONTH) + 1,
-                        fromCalendar.get(Calendar.DAY_OF_MONTH));
-            } else {
-                fromStr = "1970-01-01T00:00:00";
-            }
-
-            String toStr;
-            if (toCalendar != null) {
-                toStr = String.format(Locale.US, "%04d-%02d-%02dT23:59:59",
-                        toCalendar.get(Calendar.YEAR),
-                        toCalendar.get(Calendar.MONTH) + 1,
-                        toCalendar.get(Calendar.DAY_OF_MONTH));
-            } else {
-                toStr = "2099-12-31T23:59:59";
-            }
-
-            historialRepository.getHistoryWithDates(selectedTipo, fromStr, toStr, 0, 50, callback);
+        String fromStr = null;
+        if (fromCalendar != null) {
+            fromStr = String.format(Locale.US, "%04d-%02d-%02dT00:00:00",
+                    fromCalendar.get(Calendar.YEAR),
+                    fromCalendar.get(Calendar.MONTH) + 1,
+                    fromCalendar.get(Calendar.DAY_OF_MONTH));
         }
+
+        String toStr = null;
+        if (toCalendar != null) {
+            toStr = String.format(Locale.US, "%04d-%02d-%02dT23:59:59",
+                    toCalendar.get(Calendar.YEAR),
+                    toCalendar.get(Calendar.MONTH) + 1,
+                    toCalendar.get(Calendar.DAY_OF_MONTH));
+        }
+
+        viewModel.loadHistory(selectedTipo, fromStr, toStr);
     }
 
     /**
@@ -323,39 +303,8 @@ public class HistorialFragment extends Fragment {
 
             String comment = etComentario.getText() != null ? etComentario.getText().toString().trim() : "";
 
-            btnEnviar.setEnabled(false);
-
-            CalificacionRequest request = new CalificacionRequest(stars, comment);
-            historialRepository.rate(operacion.getId(), request, new HistorialRepository.CalificacionCallback() {
-                @Override
-                public void onSuccess(Calificacion calificacion) {
-                    if (!isAdded()) return;
-                    Toast.makeText(requireContext(), "¡Calificación enviada con éxito!", Toast.LENGTH_SHORT).show();
-                    operacion.setYaCalificado(true);
-                    adapter.notifyDataSetChanged();
-                    dialog.dismiss();
-                }
-
-                @Override
-                public void onEmpty() {
-                    if (!isAdded()) return;
-                    dialog.dismiss();
-                }
-
-                @Override
-                public void onError(String message) {
-                    if (!isAdded()) return;
-                    btnEnviar.setEnabled(true);
-                    Toast.makeText(requireContext(), "Error al calificar: " + message, Toast.LENGTH_SHORT).show();
-                }
-
-                @Override
-                public void onNetworkError() {
-                    if (!isAdded()) return;
-                    btnEnviar.setEnabled(true);
-                    Toast.makeText(requireContext(), "Error de conexión al enviar calificación", Toast.LENGTH_SHORT).show();
-                }
-            });
+            viewModel.rate(operacion.getId(), stars, comment);
+            dialog.dismiss();
         });
 
         dialog.show();
@@ -371,26 +320,7 @@ public class HistorialFragment extends Fragment {
                 .setTitle("Confirmar entrega")
                 .setMessage("¿Confirmás que la entrega de esta operación fue realizada?")
                 .setPositiveButton("Sí, confirmar", (dialog, which) -> {
-                    historialRepository.confirmDelivery(operacion.getId(), new HistorialRepository.OperacionCallback() {
-                        @Override
-                        public void onSuccess(OperacionHistorial updatedOp) {
-                            if (!isAdded()) return;
-                            Toast.makeText(requireContext(), "Entrega confirmada con éxito", Toast.LENGTH_SHORT).show();
-                            loadHistory();
-                        }
-
-                        @Override
-                        public void onError(String message) {
-                            if (!isAdded()) return;
-                            Toast.makeText(requireContext(), "Error: " + message, Toast.LENGTH_SHORT).show();
-                        }
-
-                        @Override
-                        public void onNetworkError() {
-                            if (!isAdded()) return;
-                            Toast.makeText(requireContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    viewModel.confirmDelivery(operacion.getId());
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
