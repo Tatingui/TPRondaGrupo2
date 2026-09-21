@@ -8,20 +8,42 @@ import androidx.annotation.NonNull;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.ReputacionInfo;
-import com.example.tprondagrupo2.model.Vendedor;
 
 /**
  * Centraliza el formateo de la reputacion para que la seccion
  * del detalle, el perfil propio y el perfil publico muestren exactamente
  * lo mismo sin duplicar la logica de textos, estrellas y color del nivel.
  *
- * Trabaja con ReputacionInfo: tanto Vendedor como UserProfile la implementan,
- * eliminando la necesidad de crear un Vendedor intermedio.
+ * Trabaja con ReputacionInfo: tanto Vendedor como UserProfile la implementan.
  */
 public final class VendedorViewBinder {
 
     private VendedorViewBinder() {
         // Clase de utilidades
+    }
+
+    public enum NivelReputacion {
+        EXCELENTE("Excelente vendedor", 0xFF2E7D32),
+        BUENO("Buen vendedor", 0xFF9E9D24),
+        REGULAR("Reputacion regular", 0xFFEF6C00),
+        MALO("Reputacion baja", 0xFFC62828),
+        SIN_CALIFICACIONES("Sin calificaciones aun", 0xFF757575);
+
+        private final String etiqueta;
+        private final int color;
+
+        NivelReputacion(String etiqueta, int color) {
+            this.etiqueta = etiqueta;
+            this.color = color;
+        }
+
+        public String getEtiqueta() {
+            return etiqueta;
+        }
+
+        public int getColor() {
+            return color;
+        }
     }
 
     /**
@@ -36,23 +58,33 @@ public final class VendedorViewBinder {
     }
 
     /**
+     * Obtiene la inicial del nombre para mostrar en el avatar.
+     */
+    public static String obtenerInicial(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            return "?";
+        }
+        return nombre.trim().substring(0, 1).toUpperCase();
+    }
+
+    /**
      * Calcula el nivel de reputacion a partir de los datos de cualquier
      * modelo que implemente ReputacionInfo.
      */
-    public static Vendedor.NivelReputacion calcularNivel(@NonNull ReputacionInfo info) {
+    public static NivelReputacion calcularNivel(@NonNull ReputacionInfo info) {
         if (info.getCantidadOpiniones() == 0) {
-            return Vendedor.NivelReputacion.SIN_CALIFICACIONES;
+            return NivelReputacion.SIN_CALIFICACIONES;
         }
         if (info.getReputacion() >= 4.5) {
-            return Vendedor.NivelReputacion.EXCELENTE;
+            return NivelReputacion.EXCELENTE;
         }
         if (info.getReputacion() >= 3.5) {
-            return Vendedor.NivelReputacion.BUENO;
+            return NivelReputacion.BUENO;
         }
         if (info.getReputacion() >= 2.5) {
-            return Vendedor.NivelReputacion.REGULAR;
+            return NivelReputacion.REGULAR;
         }
-        return Vendedor.NivelReputacion.MALO;
+        return NivelReputacion.MALO;
     }
 
     /**
@@ -65,9 +97,7 @@ public final class VendedorViewBinder {
                                       TextView tvReputacion,
                                       TextView tvNivel) {
         if (tvAvatar != null) {
-            String nombre = info.getNombre();
-            tvAvatar.setText(nombre != null && !nombre.trim().isEmpty()
-                    ? nombre.trim().substring(0, 1).toUpperCase() : "?");
+            tvAvatar.setText(obtenerInicial(info.getNombre()));
         }
         if (rbReputacion != null) {
             rbReputacion.setRating((float) info.getReputacion());
@@ -76,7 +106,7 @@ public final class VendedorViewBinder {
             tvReputacion.setText(textoReputacion(tvReputacion.getResources(), info));
         }
         if (tvNivel != null) {
-            Vendedor.NivelReputacion nivel = calcularNivel(info);
+            NivelReputacion nivel = calcularNivel(info);
             tvNivel.setText(nivel.getEtiqueta());
             tvNivel.setTextColor(nivel.getColor());
         }
