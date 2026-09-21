@@ -31,7 +31,9 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.R;
+import com.example.tprondagrupo2.data.ThemePreferenceManager;
 import com.example.tprondagrupo2.data.repository.PublicationRepository;
+import com.example.tprondagrupo2.data.repository.RepoCallback;
 import com.example.tprondagrupo2.data.repository.SavedSearchRepository;
 import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.Publicacion;
@@ -242,7 +244,7 @@ public class ProfileFragment extends Fragment {
         }
 
         com.google.android.material.switchmaterial.SwitchMaterial switchDarkMode = view.findViewById(R.id.switchDarkMode);
-        com.example.tprondagrupo2.data.ThemePreferenceManager themeManager = new com.example.tprondagrupo2.data.ThemePreferenceManager(requireContext());
+        ThemePreferenceManager themeManager = new ThemePreferenceManager(requireContext());
         switchDarkMode.setChecked(themeManager.isDarkModeEnabled());
         switchDarkMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
             themeManager.setDarkModeEnabled(isChecked);
@@ -262,7 +264,7 @@ public class ProfileFragment extends Fragment {
                     .setTitle("Borrar cuenta")
                     .setMessage("¿Estás seguro? Se eliminarán todos tus datos, publicaciones, ofertas y calificaciones. Esta acción no se puede deshacer.")
                     .setPositiveButton("Sí, borrar", (dialog, which) -> {
-                        userRepository.deleteAccount(new com.example.tprondagrupo2.data.repository.UserRepository.DeleteAccountCallback() {
+                        userRepository.deleteAccount(new UserRepository.DeleteAccountCallback() {
                             @Override
                             public void onSuccess() {
                                 if (getActivity() != null) {
@@ -536,7 +538,7 @@ public class ProfileFragment extends Fragment {
                         .setTitle(R.string.perfil_mis_busquedas)
                         .setMessage(R.string.eliminar_busqueda_confirm)
                         .setPositiveButton("Eliminar", (dialog, which) -> {
-                            savedSearchRepository.deleteSearch(savedSearch.getId(), new com.example.tprondagrupo2.data.repository.RepoCallback<Void>() {
+                            savedSearchRepository.deleteSearch(savedSearch.getId(), new RepoCallback<Void>() {
                                 @Override
                                 public void onSuccess(Void result) {
                                     if (!isAdded()) return;
@@ -585,7 +587,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        savedSearchRepository.getSavedSearches(new com.example.tprondagrupo2.data.repository.RepoCallback<List<SavedSearch>>() {
+        savedSearchRepository.getSavedSearches(new RepoCallback<List<SavedSearch>>() {
             @Override
             public void onSuccess(List<SavedSearch> searches) {
                 if (!isAdded()) return;
