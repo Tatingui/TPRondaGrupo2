@@ -4,62 +4,40 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.EditText;
 import android.widget.Toast;
-
-import androidx.appcompat.app.AlertDialog;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Offer;
-import com.example.tprondagrupo2.model.OfferRespondRequest;
-import com.example.tprondagrupo2.model.OperacionHistorial;
-import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.network.HistorialApiService;
-import com.example.tprondagrupo2.network.OfferApiService;
-import com.example.tprondagrupo2.network.PublicationApiService;
-import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class MyOffersFragment extends Fragment {
 
-    @Inject
-    OfferApiService offerApiService;
-
-    @Inject
-    HistorialApiService historialApiService;
-
-    @Inject
-    PublicationApiService publicationApiService;
+    private MyOffersViewModel viewModel;
 
     private TabLayout tabLayoutOffers;
     private RecyclerView rvOffers;
     private ProgressBar progressBar;
     private TextView tvEmpty;
     private View btnRetry;
-    private ViewRequestScope requests;
-    private Call<List<Offer>> loadingCall;
-    private int loadGeneration;
     private AlertDialog activeDialog;
 
     private MyOffersAdapter adapter;
@@ -77,34 +55,103 @@ public class MyOffersFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        viewModel = new ViewModelProvider(this).get(MyOffersViewModel.class);
+
         tabLayoutOffers = view.findViewById(R.id.tabLayoutOffers);
         rvOffers = view.findViewById(R.id.rvOffers);
         progressBar = view.findViewById(R.id.progressBarOffers);
         tvEmpty = view.findViewById(R.id.tvEmptyOffers);
         btnRetry = view.findViewById(R.id.btnRetryOffers);
-        btnRetry.setOnClickListener(v -> fetchOffers());
-        requests = new ViewRequestScope();
+
         isReceivedTab = tabLayoutOffers.getSelectedTabPosition() == 0;
+
+        btnRetry.setOnClickListener(v -> viewModel.fetchOffers(isReceivedTab));
 
         setupRecyclerView();
         setupTabs();
-        fetchOffers();
+        setupViewModelObservers();
+
+        viewModel.fetchOffers(isReceivedTab);
+    }
+
+    private void setupViewModelObservers() {
+        viewModel.getOffers().observe(getViewLifecycleOwner(), offers -> {
+            currentOffers.clear();
+            if (offers != null) {
+                currentOffers.addAll(offers);
+            }
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+        });
+
+        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (progressBar != null) {
+                progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        viewModel.getEmptyMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (tvEmpty != null) {
+                if (msg != null && !msg.isEmpty()) {
+                    tvEmpty.setText(msg);
+                    tvEmpty.setVisibility(View.VISIBLE);
+                } else {
+                    tvEmpty.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty() && isAdded()) {
+                if (tvEmpty != null) {
+                    tvEmpty.setText(error);
+                    tvEmpty.setVisibility(View.VISIBLE);
+                }
+                if (btnRetry != null) {
+                    btnRetry.setVisibility(View.VISIBLE);
+                }
+            } else if (btnRetry != null) {
+                btnRetry.setVisibility(View.GONE);
+            }
+        });
+
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        viewModel.getNavigateToDetail().observe(getViewLifecycleOwner(), publicacion -> {
+            if (publicacion != null && isAdded()) {
+                Bundle args = new Bundle();
+                args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, publicacion);
+                viewModel.onNavigatedToDetail();
+                NavHostFragment.findNavController(MyOffersFragment.this)
+                        .navigate(R.id.action_myOffers_to_detalle, args);
+            }
+        });
     }
 
     private void setupRecyclerView() {
         adapter = new MyOffersAdapter(currentOffers, isReceivedTab, new MyOffersAdapter.OnOfferActionListener() {
             @Override
             public void onOpenPublication(Offer offer) {
-                navigateToPublicationDetail(offer.getPublicationId());
+                if (offer != null) {
+                    viewModel.fetchPublicationForDetail(offer.getPublicationId());
+                }
             }
+
             @Override
             public void onAccept(Offer offer, int position) {
-                acceptOffer(offer, position);
+                viewModel.acceptOffer(offer, isReceivedTab);
             }
 
             @Override
             public void onReject(Offer offer, int position) {
-                rejectOffer(offer.getId(), position);
+                if (offer != null) {
+                    viewModel.rejectOffer(offer.getId(), isReceivedTab);
+                }
             }
 
             @Override
@@ -114,12 +161,14 @@ public class MyOffersFragment extends Fragment {
 
             @Override
             public void onBuyerAcceptCounter(Offer offer, int position) {
-                acceptOffer(offer, position);
+                viewModel.acceptOffer(offer, isReceivedTab);
             }
 
             @Override
             public void onBuyerRejectCounter(Offer offer, int position) {
-                rejectOffer(offer.getId(), position);
+                if (offer != null) {
+                    viewModel.rejectOffer(offer.getId(), isReceivedTab);
+                }
             }
         });
         rvOffers.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -132,7 +181,7 @@ public class MyOffersFragment extends Fragment {
             public void onTabSelected(TabLayout.Tab tab) {
                 isReceivedTab = tab.getPosition() == 0;
                 setupRecyclerView();
-                fetchOffers();
+                viewModel.fetchOffers(isReceivedTab);
             }
 
             @Override
@@ -143,105 +192,6 @@ public class MyOffersFragment extends Fragment {
         });
     }
 
-    private void fetchOffers() {
-        int generation = ++loadGeneration;
-        if (loadingCall != null) loadingCall.cancel();
-        currentOffers.clear();
-        adapter.notifyDataSetChanged();
-        progressBar.setVisibility(View.VISIBLE);
-        tvEmpty.setVisibility(View.GONE);
-        btnRetry.setVisibility(View.GONE);
-
-        Call<List<Offer>> call = isReceivedTab ? offerApiService.getReceivedOffers() : offerApiService.getSentOffers();
-        loadingCall = call;
-        requests.enqueue(call, new Callback<List<Offer>>() {
-            @Override
-            public void onResponse(@NonNull Call<List<Offer>> call, @NonNull Response<List<Offer>> response) {
-                if (generation != loadGeneration) return;
-                progressBar.setVisibility(View.GONE);
-                if (response.isSuccessful() && response.body() != null) {
-                    currentOffers.clear();
-                    currentOffers.addAll(response.body());
-                    adapter.notifyDataSetChanged();
-                    if (currentOffers.isEmpty()) {
-                        tvEmpty.setText(R.string.offers_empty);
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    if (response.errorBody() != null) response.errorBody().close();
-                    int message = response.code() == 401 || response.code() == 403
-                            ? R.string.offers_auth_error : R.string.offers_http_error;
-                    showLoadError(getString(message, response.code()));
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<List<Offer>> call, @NonNull Throwable t) {
-                if (generation != loadGeneration) return;
-                progressBar.setVisibility(View.GONE);
-                showLoadError(getString(R.string.offers_network_error));
-            }
-        });
-    }
-
-    private void showLoadError(String message) {
-        tvEmpty.setText(message);
-        tvEmpty.setVisibility(View.VISIBLE);
-        btnRetry.setVisibility(View.VISIBLE);
-    }
-
-    /**
-     * Acepta la oferta usando el endpoint correcto (PUT /transactions/offers/{id}/accept).
-     * Esto crea la transacción en el backend, marca la publicación como SOLD,
-     * y luego navega al detalle. Cómo llegar sigue reservado al comprador autorizado.
-     */
-    private void acceptOffer(Offer offer, int position) {
-        requests.enqueue(historialApiService.acceptOffer(offer.getId()), new Callback<OperacionHistorial>() {
-            @Override
-            public void onResponse(@NonNull Call<OperacionHistorial> call, @NonNull Response<OperacionHistorial> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(getContext(), "Oferta aceptada", Toast.LENGTH_SHORT).show();
-                    fetchOffers();
-                    navigateToPublicationDetail(offer.getPublicationId());
-                } else {
-                    Toast.makeText(getContext(), "Error al aceptar oferta", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<OperacionHistorial> call, @NonNull Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    /**
-     * Rechaza la oferta usando el endpoint original (PATCH /offers/{id}/respond).
-     * Para rechazar solo se necesita cambiar el estado, no crear transacción.
-     */
-    private void rejectOffer(Long offerId, int position) {
-        OfferRespondRequest request = new OfferRespondRequest("REJECTED", null);
-        requests.enqueue(offerApiService.respondOffer(offerId, request), new Callback<Offer>() {
-            @Override
-            public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    fetchOffers();
-                    Toast.makeText(getContext(), "Oferta rechazada", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al rechazar oferta", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    /**
-     * Muestra un diálogo para que el vendedor haga una contra-oferta.
-     */
     private void showCounterOfferDialog(Offer offer, int position) {
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_ofertar, null);
         TextView tvPrecio = dialogView.findViewById(R.id.tvPrecioPublicado);
@@ -306,7 +256,7 @@ public class MyOffersFragment extends Fragment {
                 if (nuevoMonto < ofertaComprador || nuevoMonto > precioOriginal) {
                     return;
                 }
-                sendCounterOffer(offer.getId(), nuevoMonto, position);
+                viewModel.sendCounterOffer(offer.getId(), nuevoMonto, isReceivedTab);
                 dialog.dismiss();
             });
         });
@@ -315,62 +265,12 @@ public class MyOffersFragment extends Fragment {
         dialog.show();
     }
 
-    private void sendCounterOffer(Long offerId, double newPrice, int position) {
-        OfferRespondRequest request = new OfferRespondRequest("COUNTER_OFFER", newPrice);
-        requests.enqueue(offerApiService.respondOffer(offerId, request), new Callback<Offer>() {
-            @Override
-            public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    fetchOffers();
-                    Toast.makeText(getContext(), "Contra-oferta enviada", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(getContext(), "Error al enviar contra-oferta", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    /**
-     * Obtiene la publicación por ID y navega al DetallePublicacionFragment
-     * con permisos y dirección calculados por el backend para quien está consultando.
-     */
-    private void navigateToPublicationDetail(Long publicationId) {
-        if (publicationId == null) return;
-        requests.enqueue(publicationApiService.getPublication(String.valueOf(publicationId)), new Callback<Publicacion>() {
-            @Override
-            public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
-                if (response.isSuccessful() && response.body() != null && isAdded()) {
-                    Bundle args = new Bundle();
-                    args.putSerializable(DetallePublicacionFragment.ARG_PUBLICACION, response.body());
-                    NavHostFragment.findNavController(MyOffersFragment.this)
-                            .navigate(R.id.action_myOffers_to_detalle, args);
-                } else {
-                    Toast.makeText(getContext(), "No se pudo abrir la publicación (HTTP " + response.code() + ")", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
-                Toast.makeText(getContext(), "No se pudo abrir el detalle. Reintentá desde la oferta.", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     @Override
     public void onDestroyView() {
-        ++loadGeneration;
-        if (requests != null) requests.close();
         if (activeDialog != null) activeDialog.dismiss();
         if (tabLayoutOffers != null) tabLayoutOffers.clearOnTabSelectedListeners();
         if (rvOffers != null) rvOffers.setAdapter(null);
-        loadingCall = null;
         activeDialog = null;
-        requests = null;
         tabLayoutOffers = null;
         rvOffers = null;
         progressBar = null;

@@ -48,6 +48,24 @@ public class SavedSearchRepository {
         });
     }
 
+    public void saveSearch(SavedSearch search, RepoCallback<SavedSearch> callback) {
+        apiService.saveSearch(search).enqueue(new Callback<SavedSearch>() {
+            @Override
+            public void onResponse(@NonNull Call<SavedSearch> call, @NonNull Response<SavedSearch> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Error al guardar la búsqueda");
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<SavedSearch> call, @NonNull Throwable t) {
+                callback.onNetworkError();
+            }
+        });
+    }
+
     public void deleteSearch(Long id, RepoCallback<Void> callback) {
         apiService.deleteSearch(id).enqueue(new Callback<Void>() {
             @Override

@@ -2,7 +2,6 @@ package com.example.tprondagrupo2.ui.profile;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,9 +32,6 @@ import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.ThemePreferenceManager;
-import com.example.tprondagrupo2.data.repository.PublicationRepository;
-import com.example.tprondagrupo2.data.repository.RepoCallback;
-import com.example.tprondagrupo2.data.repository.SavedSearchRepository;
 import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
@@ -44,9 +41,7 @@ import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
-import com.example.tprondagrupo2.network.PublicationPageResponse;
 import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
-import com.example.tprondagrupo2.network.UserApiService;
 import com.example.tprondagrupo2.ui.PublicationAdapter;
 import com.example.tprondagrupo2.ui.detalle.DetallePublicacionFragment;
 import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
@@ -64,19 +59,14 @@ import dagger.hilt.android.AndroidEntryPoint;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class ProfileFragment extends Fragment {
 
-    private static final String TAG = "ProfileFragment";
+    @Inject
+    UserRepository userRepository;
 
-    @Inject SavedSearchRepository savedSearchRepository;
-    @Inject PublicationRepository publicationRepository;
-    @Inject UserRepository userRepository;
-    @Inject UserApiService userApiService;
+    private ProfileViewModel viewModel;
 
     private TextView tvAvatar;
     private ImageView ivAvatar;
@@ -107,7 +97,6 @@ public class ProfileFragment extends Fragment {
 
     // ==================== PHOTO PICKER + UCROP ====================
 
-    /** Launcher para elegir imagen de la galería */
     private final ActivityResultLauncher<String> imagePickerLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
@@ -115,7 +104,6 @@ public class ProfileFragment extends Fragment {
                 }
             });
 
-    /** Launcher para UCrop */
     private final ActivityResultLauncher<android.content.Intent> cropLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
@@ -152,7 +140,6 @@ public class ProfileFragment extends Fragment {
                 return;
             }
 
-            // Leer bytes
             java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
             byte[] data = new byte[4096];
             int bytesRead;
@@ -168,29 +155,9 @@ public class ProfileFragment extends Fragment {
             MultipartBody.Part part = MultipartBody.Part.createFormData("foto", "profile.jpg", requestBody);
 
             Toast.makeText(getContext(), "Subiendo foto...", Toast.LENGTH_SHORT).show();
-
-            userApiService.uploadProfilePhoto(part).enqueue(new Callback<UserProfile>() {
-                @Override
-                public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
-                    if (!isAdded()) return;
-                    if (response.isSuccessful() && response.body() != null) {
-                        currentProfile = response.body();
-                        mostrarPerfil(currentProfile);
-                        Toast.makeText(getContext(), "Foto actualizada", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(getContext(), "Error al subir la foto", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<UserProfile> call, Throwable t) {
-                    if (!isAdded()) return;
-                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-                }
-            });
+            viewModel.uploadAvatar(part);
 
         } catch (Exception e) {
-            Log.e(TAG, "Error uploading photo", e);
             Toast.makeText(getContext(), "Error al procesar la imagen", Toast.LENGTH_SHORT).show();
         }
     }
@@ -207,6 +174,8 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        viewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
         ivAvatar = view.findViewById(R.id.ivPerfilAvatar);
@@ -238,7 +207,6 @@ public class ProfileFragment extends Fragment {
                 NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_my_offers)
         );
 
-        // Cambiar foto de perfil
         if (fabChangePhoto != null) {
             fabChangePhoto.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         }
@@ -264,27 +232,7 @@ public class ProfileFragment extends Fragment {
                     .setTitle("Borrar cuenta")
                     .setMessage("¿Estás seguro? Se eliminarán todos tus datos, publicaciones, ofertas y calificaciones. Esta acción no se puede deshacer.")
                     .setPositiveButton("Sí, borrar", (dialog, which) -> {
-                        userRepository.deleteAccount(new UserRepository.DeleteAccountCallback() {
-                            @Override
-                            public void onSuccess() {
-                                if (getActivity() != null) {
-                                    getActivity().runOnUiThread(() -> {
-                                        Toast.makeText(requireContext(), "Cuenta eliminada", Toast.LENGTH_SHORT).show();
-                                        NavHostFragment.findNavController(ProfileFragment.this)
-                                                .navigate(R.id.action_profile_to_login);
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void onError(String message) {
-                                if (getActivity() != null) {
-                                    getActivity().runOnUiThread(() ->
-                                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-                                    );
-                                }
-                            }
-                        });
+                        viewModel.deleteAccount();
                     })
                     .setNegativeButton("Cancelar", null)
                     .show();
@@ -296,60 +244,68 @@ public class ProfileFragment extends Fragment {
 
         setupSavedSearchesRecyclerView();
         setupRecyclerView();
-        loadProfile();
+        setupViewModelObservers();
+
+        viewModel.loadProfile();
+    }
+
+    private void setupViewModelObservers() {
+        viewModel.getUserProfile().observe(getViewLifecycleOwner(), profile -> {
+            if (profile != null) {
+                currentProfile = profile;
+                mostrarPerfil(currentProfile);
+            } else {
+                mostrarPerfilMock();
+            }
+        });
+
+        viewModel.getSavedSearches().observe(getViewLifecycleOwner(), searches -> {
+            savedSearches.clear();
+            if (searches != null) {
+                savedSearches.addAll(searches);
+            }
+            if (savedSearchAdapter != null) {
+                savedSearchAdapter.notifyDataSetChanged();
+            }
+            if (tvEmptySavedSearches != null) {
+                tvEmptySavedSearches.setVisibility(savedSearches.isEmpty() ? View.VISIBLE : View.GONE);
+            }
+        });
+
+        viewModel.getFavoritePublications().observe(getViewLifecycleOwner(), favorites -> {
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            updateFavoritesList(favorites);
+        });
+
+        viewModel.getToastMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty() && isAdded()) {
+                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        viewModel.getAccountDeleted().observe(getViewLifecycleOwner(), deleted -> {
+            if (Boolean.TRUE.equals(deleted) && isAdded()) {
+                Toast.makeText(requireContext(), "Cuenta eliminada", Toast.LENGTH_SHORT).show();
+                NavHostFragment.findNavController(ProfileFragment.this)
+                        .navigate(R.id.action_profile_to_login);
+            }
+        });
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        loadSavedSearches();
-        fetchFavorites();
-    }
-
-    // ==================== PERFIL REAL DESDE API ====================
-
-    private void loadProfile() {
-        if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
-            Toast.makeText(getContext(), "Sin conexión: no se puede cargar el perfil", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        userRepository.getMyProfile(new UserRepository.ProfileCallback() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                if (!isAdded()) return;
-                currentProfile = profile;
-                mostrarPerfil(currentProfile);
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                Log.e(TAG, message);
-                mostrarPerfilMock();
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-                Log.e(TAG, "Error de conexion cargando perfil");
-                mostrarPerfilMock();
-            }
-        });
+        viewModel.loadSavedSearches();
+        viewModel.loadFavorites();
     }
 
     private void mostrarPerfil(UserProfile perfil) {
         if (tvNombre != null) tvNombre.setText(perfil.getNombre());
 
-        // Foto de perfil
         if (perfil.getProfileImageUrl() != null && !perfil.getProfileImageUrl().isEmpty()) {
-            // Construir URL completa
             String imageUrl = perfil.getProfileImageUrl();
             if (imageUrl.startsWith("/")) {
-                // URL relativa: BASE_URL ya incluye /api/ y el context-path es /api
-                // asi que /uploads/... se sirve en /api/uploads/...
                 String baseUrl = BuildConfig.BASE_URL;
-                // Quitar trailing slash para evitar doble /
                 if (baseUrl.endsWith("/")) {
                     baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
                 }
@@ -367,18 +323,15 @@ public class ProfileFragment extends Fragment {
                         .into(ivAvatar);
             }
         } else {
-            // Sin foto: mostrar inicial
             if (ivAvatar != null) ivAvatar.setVisibility(View.GONE);
             if (tvAvatar != null) tvAvatar.setVisibility(View.VISIBLE);
         }
 
-        // Email
         if (tvEmail != null) {
             tvEmail.setText(perfil.getEmail());
             tvEmail.setVisibility(View.VISIBLE);
         }
 
-        // Telefono
         if (tvTelefono != null) {
             if (perfil.getTelefono() != null && !perfil.getTelefono().isEmpty()) {
                 tvTelefono.setText(perfil.getTelefono());
@@ -388,12 +341,10 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // Miembro desde
         if (tvMiembroDesde != null && perfil.getMiembroDesde() != null) {
             tvMiembroDesde.setText(getString(R.string.vendedor_miembro_desde, perfil.getMiembroDesde()));
         }
 
-        // Ubicacion / Zona
         if (tvUbicacion != null) {
             if (perfil.getZona() != null && !perfil.getZona().isEmpty()) {
                 tvUbicacion.setVisibility(View.VISIBLE);
@@ -403,7 +354,6 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // Reputacion
         VendedorViewBinder.bindReputacion(perfil, tvAvatar, rbReputacion, tvReputacion, tvNivel);
         if (tvVentas != null) {
             tvVentas.setText(getString(R.string.vendedor_operaciones,
@@ -482,32 +432,8 @@ public class ProfileFragment extends Fragment {
                     telefono.isEmpty() ? null : telefono,
                     zona.isEmpty() ? null : zona
             );
-            saveProfile(update);
+            viewModel.updateProfile(update);
             dialog.dismiss();
-        });
-    }
-
-    private void saveProfile(UserProfileUpdateRequest request) {
-        userRepository.updateMyProfile(request, new UserRepository.ProfileCallback() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                if (!isAdded()) return;
-                currentProfile = profile;
-                mostrarPerfil(currentProfile);
-                Toast.makeText(getContext(), "Perfil actualizado", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
         });
     }
 
@@ -538,38 +464,8 @@ public class ProfileFragment extends Fragment {
                         .setTitle(R.string.perfil_mis_busquedas)
                         .setMessage(R.string.eliminar_busqueda_confirm)
                         .setPositiveButton("Eliminar", (dialog, which) -> {
-                            savedSearchRepository.deleteSearch(savedSearch.getId(), new RepoCallback<Void>() {
-                                @Override
-                                public void onSuccess(Void result) {
-                                    if (!isAdded()) return;
-                                    SavedSearchesDataStoreManager.removeSearch(requireContext(), String.valueOf(savedSearch.getId()));
-                                    if (position >= 0 && position < savedSearches.size()) {
-                                        savedSearches.remove(position);
-                                        if (savedSearchAdapter != null) {
-                                            savedSearchAdapter.notifyItemRemoved(position);
-                                            savedSearchAdapter.notifyItemRangeChanged(position, savedSearches.size());
-                                        }
-                                    } else {
-                                        loadSavedSearches();
-                                    }
-                                    if (savedSearches.isEmpty() && tvEmptySavedSearches != null) {
-                                        tvEmptySavedSearches.setVisibility(View.VISIBLE);
-                                    }
-                                    Toast.makeText(getContext(), "Búsqueda eliminada", Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onError(String message) {
-                                    if (!isAdded()) return;
-                                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onNetworkError() {
-                                    if (!isAdded()) return;
-                                    Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            SavedSearchesDataStoreManager.removeSearch(requireContext(), String.valueOf(savedSearch.getId()));
+                            viewModel.deleteSavedSearch(savedSearch.getId());
                         })
                         .setNegativeButton("Cancelar", null)
                         .show();
@@ -580,109 +476,6 @@ public class ProfileFragment extends Fragment {
         rvSavedSearches.setNestedScrollingEnabled(false);
     }
 
-    private void loadSavedSearches() {
-        if (getContext() == null) return;
-        if (!NetworkObserver.isCurrentlyConnected(requireContext())) {
-            Toast.makeText(getContext(), "Sin conexión: no se pueden cargar búsquedas guardadas", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        savedSearchRepository.getSavedSearches(new RepoCallback<List<SavedSearch>>() {
-            @Override
-            public void onSuccess(List<SavedSearch> searches) {
-                if (!isAdded()) return;
-                savedSearches.clear();
-                savedSearches.addAll(searches);
-                if (savedSearchAdapter != null) {
-                    savedSearchAdapter.notifyDataSetChanged();
-                }
-                if (tvEmptySavedSearches != null) {
-                    tvEmptySavedSearches.setVisibility(savedSearches.isEmpty() ? View.VISIBLE : View.GONE);
-                }
-                checkUpdatesForSavedSearches(searches);
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                Log.e(TAG, message);
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-                Log.e(TAG, "Error de red al cargar búsquedas guardadas");
-            }
-        });
-    }
-
-    private void checkUpdatesForSavedSearches(List<SavedSearch> list) {
-        if (list == null || getContext() == null) return;
-        Map<String, SavedSearchDataStoreItem> dsMap = SavedSearchesDataStoreManager.getSavedSearchesMap(requireContext());
-
-        for (int i = 0; i < list.size(); i++) {
-            final SavedSearch search = list.get(i);
-            final int pos = i;
-            if (search.getId() == null) continue;
-
-            final String searchIdStr = String.valueOf(search.getId());
-            final SavedSearchDataStoreItem dsItem = dsMap.get(searchIdStr);
-
-            publicationRepository.getPublications(
-                    search.getQuery() != null && !search.getQuery().isEmpty() ? search.getQuery() : null,
-                    search.getCategoryId(),
-                    search.getMinPrice(),
-                    search.getMaxPrice(),
-                    search.getCondition(),
-                    search.getLocation(),
-                    0,
-                    50,
-                    search.getSort() != null ? search.getSort() : "createdAt,desc",
-                    new PublicationRepository.PublicationPageCallback() {
-                @Override
-                public void onSuccess(PublicationPageResponse page) {
-                    if (!isAdded()) return;
-                    List<Publicacion> currentItems = page.getContent();
-                    List<String> currentIds = new ArrayList<>();
-                    if (currentItems != null) {
-                        for (Publicacion p : currentItems) {
-                            if (p.getId() != null) {
-                                currentIds.add(p.getId());
-                            }
-                        }
-                    }
-
-                    List<String> knownIds = dsItem != null ? dsItem.getPublicationIds() : new ArrayList<>();
-                    boolean hasNew = false;
-
-                    if (dsItem == null) {
-                        SavedSearchesDataStoreManager.saveSearch(requireContext(), searchIdStr, currentIds);
-                    } else {
-                        for (String id : currentIds) {
-                            if (!knownIds.contains(id)) {
-                                hasNew = true;
-                                break;
-                            }
-                        }
-                        if (hasNew || dsItem.isHasUpdates()) {
-                            search.setHasUpdates(true);
-                            SavedSearchesDataStoreManager.updateSearchUpdates(requireContext(), searchIdStr, currentIds, true);
-                            if (savedSearchAdapter != null && pos >= 0 && pos < savedSearches.size()) {
-                                savedSearchAdapter.notifyItemChanged(pos);
-                            }
-                        }
-                    }
-                }
-
-                @Override
-                public void onError(String message) { }
-
-                @Override
-                public void onNetworkError() { }
-            });
-        }
-    }
-
     // ==================== FAVORITOS ====================
 
     private void setupRecyclerView() {
@@ -691,34 +484,6 @@ public class ProfileFragment extends Fragment {
         rvFavorites.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rvFavorites.setAdapter(adapter);
         rvFavorites.setNestedScrollingEnabled(false);
-    }
-
-    private void fetchFavorites() {
-        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
-
-        publicationRepository.getFavorites(new PublicationRepository.FavoritesCallback() {
-            @Override
-            public void onSuccess(List<Publicacion> favorites) {
-                if (!isAdded()) return;
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                updateFavoritesList(favorites);
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                Log.e(TAG, message);
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                Log.e(TAG, "Error de red al cargar favoritos");
-            }
-        });
     }
 
     private void updateFavoritesList(List<Publicacion> favorites) {
@@ -753,33 +518,14 @@ public class ProfileFragment extends Fragment {
     }
 
     private void onFavoriteClick(Publicacion publicacion, int position) {
+        if (publicacion == null || publicacion.getId() == null) return;
         boolean isFavorite = publicacion.isFavorite();
         String pubId = publicacion.getId();
 
-        publicationRepository.toggleFavorite(pubId, isFavorite, new PublicationRepository.ToggleFavoriteCallback() {
-            @Override
-            public void onSuccess() {
-                if (!isAdded()) return;
-                publicacion.setFavorite(!isFavorite);
-                if (!publicacion.isFavorite()) {
-                    FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
-                    favoritePublications.remove(position);
-                    adapter.notifyItemRemoved(position);
-                    adapter.notifyItemRangeChanged(position, favoritePublications.size());
-                    if (favoritePublications.isEmpty() && tvEmpty != null) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
-                    adapter.notifyItemChanged(position);
-                }
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-        });
+        if (!isFavorite) {
+            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+        } else {
+            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+        }
     }
 }

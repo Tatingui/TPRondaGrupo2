@@ -21,15 +21,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.DraftManager;
-import com.example.tprondagrupo2.data.repository.PublicationRepository;
-import com.example.tprondagrupo2.data.repository.RepoCallback;
-import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
 import com.example.tprondagrupo2.util.PublicationConstants;
 import com.google.android.material.textfield.TextInputEditText;
@@ -47,11 +45,9 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class PublishWizardFragment extends Fragment {
 
     @Inject
-    PublicationRepository publicationRepository;
-
-    @Inject
     DraftManager.Factory draftManagerFactory;
 
+    private PublishViewModel viewModel;
     private int currentStep = 1;
     private DraftManager draftManager;
 
@@ -137,6 +133,7 @@ public class PublishWizardFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         draftManager = draftManagerFactory.create();
+        viewModel = new ViewModelProvider(this).get(PublishViewModel.class);
 
         tvStepTitle = view.findViewById(R.id.tvStepTitle);
         layoutStep1 = view.findViewById(R.id.layoutStep1);
@@ -169,6 +166,7 @@ public class PublishWizardFragment extends Fragment {
 
         loadDraft();
         setupTextWatchers();
+        setupViewModelObservers();
 
         btnNext.setOnClickListener(v -> {
             if (currentStep == 1) {
@@ -209,6 +207,26 @@ public class PublishWizardFragment extends Fragment {
         rvPhotoThumbnails.setAdapter(photoAdapter);
 
         btnSelectPhoto.setOnClickListener(v -> galleryLauncher.launch("image/*"));
+    }
+
+    private void setupViewModelObservers() {
+        viewModel.getPublishedResult().observe(getViewLifecycleOwner(), pub -> {
+            if (pub != null) {
+                draftManager.clearDraft();
+                Toast.makeText(getContext(), "¡Publicado con éxito!", Toast.LENGTH_LONG).show();
+                NavHostFragment.findNavController(PublishWizardFragment.this).popBackStack();
+            }
+        });
+
+        viewModel.getError().observe(getViewLifecycleOwner(), errorMsg -> {
+            if (errorMsg != null && !errorMsg.isEmpty()) {
+                Toast.makeText(getContext(), errorMsg, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        viewModel.getLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            btnNext.setEnabled(!Boolean.TRUE.equals(isLoading));
+        });
     }
 
     private Long getSelectedCategoryId() {
@@ -386,26 +404,6 @@ public class PublishWizardFragment extends Fragment {
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);
         request.setAddress(etDeliveryAddress.getText().toString().trim());
 
-        publicationRepository.createPublication(request, new RepoCallback<Publicacion>() {
-            @Override
-            public void onSuccess(Publicacion pub) {
-                if (!isAdded()) return;
-                draftManager.clearDraft();
-                Toast.makeText(getContext(), "¡Publicado con éxito!", Toast.LENGTH_LONG).show();
-                NavHostFragment.findNavController(PublishWizardFragment.this).popBackStack();
-            }
-
-            @Override
-            public void onError(String message) {
-                if (!isAdded()) return;
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNetworkError() {
-                if (!isAdded()) return;
-                Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
-            }
-        });
+        viewModel.createPublication(request);
     }
 }
