@@ -24,35 +24,27 @@ import retrofit2.Response;
  */
 public class HistorialRepository {
 
-    // ── Callbacks ──
-
-    /** Callback para resultados paginados del historial de transacciones. */
-    public interface HistorialCallback {
+    public interface HistorialCallback extends RepoCallback<List<OperacionHistorial>> {
         void onSuccess(List<OperacionHistorial> operaciones, int totalPages, boolean isLast);
-        void onError(String message);
-        void onNetworkError();
+
+        @Override
+        default void onSuccess(List<OperacionHistorial> result) {
+            onSuccess(result, 0, true);
+        }
     }
 
-    /** Callback para resultados de operaciones sobre una transacción individual. */
-    public interface OperacionCallback {
-        void onSuccess(OperacionHistorial operacion);
-        void onError(String message);
-        void onNetworkError();
-    }
+    public interface OperacionCallback extends RepoCallback<OperacionHistorial> {}
 
-    /** Callback para el envío o consulta de calificaciones. */
-    public interface CalificacionCallback {
-        void onSuccess(Calificacion calificacion);
-        void onEmpty();          // No calificó aún (204)
-        void onError(String message);
-        void onNetworkError();
-    }
-
-    /** Callback para operaciones simples sin valor de retorno. */
-    public interface SimpleCallback {
+    public interface SimpleCallback extends RepoCallback<Void> {
         void onSuccess();
-        void onError(String message);
-        void onNetworkError();
+        @Override
+        default void onSuccess(Void result) {
+            onSuccess();
+        }
+    }
+
+    public interface CalificacionCallback extends RepoCallback<Calificacion> {
+        void onEmpty();
     }
 
     private final HistorialApiService apiService;
@@ -64,12 +56,6 @@ public class HistorialRepository {
 
     // ── Gestión de ofertas ──
 
-    /**
-     * Acepta una oferta recibida para una publicación.
-     *
-     * @param offerId Identificador de la oferta.
-     * @param callback Callback de respuesta.
-     */
     public void acceptOffer(Long offerId, OperacionCallback callback) {
         apiService.acceptOffer(offerId).enqueue(new Callback<OperacionHistorial>() {
             @Override
@@ -89,12 +75,6 @@ public class HistorialRepository {
         });
     }
 
-    /**
-     * Rechaza una oferta recibida para una publicación.
-     *
-     * @param offerId Identificador de la oferta.
-     * @param callback Callback de respuesta.
-     */
     public void rejectOffer(Long offerId, SimpleCallback callback) {
         apiService.rejectOffer(offerId).enqueue(new Callback<Void>() {
             @Override
@@ -116,12 +96,6 @@ public class HistorialRepository {
 
     // ── Entrega ──
 
-    /**
-     * Confirma la entrega de una transacción concretada.
-     *
-     * @param transactionId Identificador de la transacción.
-     * @param callback Callback de respuesta.
-     */
     public void confirmDelivery(Long transactionId, OperacionCallback callback) {
         apiService.confirmDelivery(transactionId).enqueue(new Callback<OperacionHistorial>() {
             @Override
@@ -143,14 +117,6 @@ public class HistorialRepository {
 
     // ── Historial ──
 
-    /**
-     * Obtiene el historial de operaciones paginado según tipo (COMPRA o VENTA).
-     *
-     * @param tipo Tipo de operación ("COMPRA" o "VENTA").
-     * @param page Número de página.
-     * @param size Tamaño de página.
-     * @param callback Callback con la lista de operaciones.
-     */
     public void getHistory(String tipo, int page, int size, HistorialCallback callback) {
         apiService.getHistory(tipo, page, size).enqueue(new Callback<HistorialPageResponse>() {
             @Override
@@ -171,16 +137,6 @@ public class HistorialRepository {
         });
     }
 
-    /**
-     * Obtiene el historial de operaciones filtrado por rango de fechas ISO ("from" y "to").
-     *
-     * @param tipo Tipo de operación ("COMPRA" o "VENTA").
-     * @param from Fecha límite inferior en ISO format.
-     * @param to Fecha límite superior en ISO format.
-     * @param page Número de página.
-     * @param size Tamaño de página.
-     * @param callback Callback con la lista de operaciones filtradas.
-     */
     public void getHistoryWithDates(String tipo, String from, String to,
                                     int page, int size, HistorialCallback callback) {
         apiService.getHistoryWithDates(tipo, from, to, page, size)
@@ -205,13 +161,6 @@ public class HistorialRepository {
 
     // ── Calificaciones ──
 
-    /**
-     * Envía una calificación para la contraparte de una transacción concretada.
-     *
-     * @param transactionId Identificador de la transacción.
-     * @param request Datos de la calificación (estrellas y comentario opcional).
-     * @param callback Callback de respuesta.
-     */
     public void rate(Long transactionId, CalificacionRequest request, CalificacionCallback callback) {
         apiService.rate(transactionId, request).enqueue(new Callback<Calificacion>() {
             @Override
@@ -231,12 +180,6 @@ public class HistorialRepository {
         });
     }
 
-    /**
-     * Consulta la calificación enviada por el usuario autenticado para una transacción específica.
-     *
-     * @param transactionId Identificador de la transacción.
-     * @param callback Callback de respuesta.
-     */
     public void getMyRating(Long transactionId, CalificacionCallback callback) {
         apiService.getMyRating(transactionId).enqueue(new Callback<Calificacion>() {
             @Override
@@ -258,11 +201,6 @@ public class HistorialRepository {
         });
     }
 
-    // ── Helper ──
-
-    /**
-     * Extrae el mensaje de error del cuerpo de la respuesta HTTP.
-     */
     private String parseError(Response<?> response) {
         try {
             if (response.errorBody() != null) {

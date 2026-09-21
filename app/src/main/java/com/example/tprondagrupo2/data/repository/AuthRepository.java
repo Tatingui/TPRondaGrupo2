@@ -28,17 +28,16 @@ import retrofit2.Response;
  */
 public class AuthRepository {
 
-    public interface AuthCallback {
-        void onSuccess(String token);
-        void onError(String message);
+    public interface AuthCallback extends RepoCallback<String> {
         void onUnverified(String email);
-        void onNetworkError();
     }
 
-    public interface SimpleCallback {
+    public interface SimpleCallback extends RepoCallback<Void> {
         void onSuccess();
-        void onError(String message);
-        void onNetworkError();
+        @Override
+        default void onSuccess(Void result) {
+            onSuccess();
+        }
     }
 
     private final AuthApiService authApiService;

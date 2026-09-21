@@ -27,6 +27,7 @@ import retrofit2.Response;
 public class PublicationRepository implements PublicationDetailSource {
 
     public interface FavoritesCallback extends RepoCallback<List<Publicacion>> {}
+    public interface PublicationPageCallback extends RepoCallback<PublicationPageResponse> {}
     public interface ToggleFavoriteCallback extends RepoCallback<Void> {
         void onSuccess();
         @Override
@@ -34,7 +35,6 @@ public class PublicationRepository implements PublicationDetailSource {
             onSuccess();
         }
     }
-    public interface PublicationPageCallback extends RepoCallback<PublicationPageResponse> {}
 
     private final PublicationApiService apiService;
 

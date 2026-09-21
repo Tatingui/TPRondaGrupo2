@@ -28,16 +28,15 @@ import retrofit2.Response;
 @Singleton
 public class UserRepository {
 
-    public interface ProfileCallback {
-        void onSuccess(UserProfile profile);
-        void onError(String message);
-        void onNetworkError();
-    }
+    public interface ProfileCallback extends RepoCallback<UserProfile> {}
+    public interface PublicProfileCallback extends RepoCallback<PerfilPublico> {}
 
-    public interface PublicProfileCallback {
-        void onSuccess(PerfilPublico perfil);
-        void onError(String message);
-        void onNetworkError();
+    public interface DeleteAccountCallback extends RepoCallback<Void> {
+        void onSuccess();
+        @Override
+        default void onSuccess(Void result) {
+            onSuccess();
+        }
     }
 
     private final UserApiService userApiService;
@@ -125,11 +124,6 @@ public class UserRepository {
         tokenManager.setBiometricEnabled(false);
         tokenManager.clearEncryptedToken();
         tokenManager.setKeepSession(false);
-    }
-
-    public interface DeleteAccountCallback {
-        void onSuccess();
-        void onError(String message);
     }
 
     public void deleteAccount(DeleteAccountCallback callback) {
