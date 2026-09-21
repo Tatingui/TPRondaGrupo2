@@ -38,6 +38,7 @@ import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.ViewRequestScope;
+import com.example.tprondagrupo2.util.FormatUtils;
 import com.google.gson.Gson;
 
 import java.text.NumberFormat;
@@ -893,7 +894,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private String formatearPrecio(double precio) {
-        return NumberFormat.getCurrencyInstance(LOCALE_AR).format(precio);
+        return FormatUtils.formatPrice(precio);
     }
 
     @Override
