@@ -536,9 +536,9 @@ public class ProfileFragment extends Fragment {
                         .setTitle(R.string.perfil_mis_busquedas)
                         .setMessage(R.string.eliminar_busqueda_confirm)
                         .setPositiveButton("Eliminar", (dialog, which) -> {
-                            savedSearchRepository.deleteSearch(savedSearch.getId(), new SavedSearchRepository.SimpleCallback() {
+                            savedSearchRepository.deleteSearch(savedSearch.getId(), new com.example.tprondagrupo2.data.repository.RepoCallback<Void>() {
                                 @Override
-                                public void onSuccess() {
+                                public void onSuccess(Void result) {
                                     if (!isAdded()) return;
                                     SavedSearchesDataStoreManager.removeSearch(requireContext(), String.valueOf(savedSearch.getId()));
                                     if (position >= 0 && position < savedSearches.size()) {
@@ -585,7 +585,7 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        savedSearchRepository.getSavedSearches(new SavedSearchRepository.SavedSearchListCallback() {
+        savedSearchRepository.getSavedSearches(new com.example.tprondagrupo2.data.repository.RepoCallback<List<SavedSearch>>() {
             @Override
             public void onSuccess(List<SavedSearch> searches) {
                 if (!isAdded()) return;

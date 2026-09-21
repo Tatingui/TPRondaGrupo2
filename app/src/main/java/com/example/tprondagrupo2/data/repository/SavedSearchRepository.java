@@ -22,18 +22,6 @@ import retrofit2.Response;
 @Singleton
 public class SavedSearchRepository {
 
-    public interface SavedSearchListCallback {
-        void onSuccess(List<SavedSearch> searches);
-        void onError(String message);
-        void onNetworkError();
-    }
-
-    public interface SimpleCallback {
-        void onSuccess();
-        void onError(String message);
-        void onNetworkError();
-    }
-
     private final SavedSearchApiService apiService;
 
     @Inject
@@ -41,7 +29,7 @@ public class SavedSearchRepository {
         this.apiService = apiService;
     }
 
-    public void getSavedSearches(SavedSearchListCallback callback) {
+    public void getSavedSearches(RepoCallback<List<SavedSearch>> callback) {
         apiService.getSavedSearches().enqueue(new Callback<List<SavedSearch>>() {
             @Override
             public void onResponse(@NonNull Call<List<SavedSearch>> call,
@@ -60,13 +48,13 @@ public class SavedSearchRepository {
         });
     }
 
-    public void deleteSearch(Long id, SimpleCallback callback) {
+    public void deleteSearch(Long id, RepoCallback<Void> callback) {
         apiService.deleteSearch(id).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(@NonNull Call<Void> call,
                                    @NonNull Response<Void> response) {
                 if (response.isSuccessful()) {
-                    callback.onSuccess();
+                    callback.onSuccess(null);
                 } else {
                     callback.onError("Error al eliminar la busqueda");
                 }

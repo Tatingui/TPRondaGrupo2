@@ -24,21 +24,15 @@ import retrofit2.Response;
 @Singleton
 public class PublicationRepository implements PublicationDetailSource {
 
-    public interface FavoritesCallback {
-        void onSuccess(List<Publicacion> favorites);
-        void onError(String message);
-        void onNetworkError();
-    }
+    public interface FavoritesCallback extends RepoCallback<List<Publicacion>> {}
+    public interface PublicationPageCallback extends RepoCallback<PublicationPageResponse> {}
 
-    public interface ToggleFavoriteCallback {
+    public interface ToggleFavoriteCallback extends RepoCallback<Void> {
         void onSuccess();
-        void onError(String message);
-    }
-
-    public interface PublicationPageCallback {
-        void onSuccess(PublicationPageResponse page);
-        void onError(String message);
-        void onNetworkError();
+        @Override
+        default void onSuccess(Void result) {
+            onSuccess();
+        }
     }
 
     private final PublicationApiService apiService;
