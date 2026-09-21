@@ -5,7 +5,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.tprondagrupo2.model.Publicacion;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationReadApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,8 @@ import retrofit2.Response;
 @HiltViewModel
 public class MyPublicationsViewModel extends ViewModel {
 
-    private final PublicationApiService publicationApiService;
+    private final PublicationReadApiService publicationReadApiService;
+    private final PublicationWriteApiService publicationWriteApiService;
 
     private final MutableLiveData<List<Publicacion>> myPublications = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
@@ -28,8 +30,10 @@ public class MyPublicationsViewModel extends ViewModel {
     private final MutableLiveData<String> toastMessage = new MutableLiveData<>();
 
     @Inject
-    public MyPublicationsViewModel(PublicationApiService publicationApiService) {
-        this.publicationApiService = publicationApiService;
+    public MyPublicationsViewModel(PublicationReadApiService publicationReadApiService,
+                                   PublicationWriteApiService publicationWriteApiService) {
+        this.publicationReadApiService = publicationReadApiService;
+        this.publicationWriteApiService = publicationWriteApiService;
     }
 
     public LiveData<List<Publicacion>> getMyPublications() { return myPublications; }
@@ -41,7 +45,7 @@ public class MyPublicationsViewModel extends ViewModel {
         loading.setValue(true);
         emptyVisible.setValue(false);
 
-        publicationApiService.getMyPublications().enqueue(new Callback<List<Publicacion>>() {
+        publicationReadApiService.getMyPublications().enqueue(new Callback<List<Publicacion>>() {
             @Override
             public void onResponse(Call<List<Publicacion>> call, Response<List<Publicacion>> response) {
                 loading.setValue(false);
@@ -65,7 +69,7 @@ public class MyPublicationsViewModel extends ViewModel {
     public void updateStatus(Long id, String state) {
         if (id == null) return;
         loading.setValue(true);
-        publicationApiService.updatePublicationStatus(id, state).enqueue(new Callback<Publicacion>() {
+        publicationWriteApiService.updatePublicationStatus(id, state).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
                 loading.setValue(false);
@@ -88,7 +92,7 @@ public class MyPublicationsViewModel extends ViewModel {
     public void deletePublication(Publicacion pub) {
         if (pub == null || pub.getIdLong() == null) return;
         loading.setValue(true);
-        publicationApiService.deletePublication(pub.getIdLong()).enqueue(new Callback<Void>() {
+        publicationWriteApiService.deletePublication(pub.getIdLong()).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 loading.setValue(false);

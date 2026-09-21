@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 
 import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.network.AuthApiService;
-import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.UserApiService;
 
@@ -59,9 +58,11 @@ public class NetworkModuleTest {
     }
 
     @Test
-    public void testProvidePublicationServiceNoDevuelveNull() {
-        PublicationApiService publicationApiService = networkModule.providePublicationService(retrofit);
-        assertNotNull(publicationApiService);
+    public void testProvidePublicationServicesNoDevuelveNull() {
+        assertNotNull(networkModule.providePublicationReadService(retrofit));
+        assertNotNull(networkModule.providePublicationWriteService(retrofit));
+        assertNotNull(networkModule.providePublicationFavoriteService(retrofit));
+        assertNotNull(networkModule.providePublicationDetailService(retrofit));
     }
 
     @Test

@@ -36,7 +36,8 @@ import com.example.tprondagrupo2.model.TextoRequest;
 import com.example.tprondagrupo2.model.Vendedor;
 import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
 import com.example.tprondagrupo2.network.NetworkObserver;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 import com.example.tprondagrupo2.network.ViewRequestScope;
 import com.example.tprondagrupo2.util.FormatUtils;
 import com.google.gson.Gson;
@@ -72,10 +73,16 @@ public class DetallePublicacionFragment extends Fragment {
     private Button btnReintentarDetalle;
 
     @Inject
-    PublicationApiService publicationApiService;
+    PublicationWriteApiService publicationWriteApiService;
+
+    @Inject
+    PublicationFavoriteApiService publicationFavoriteApiService;
 
     @Inject
     PublicacionDao publicacionDao;
+
+    @Inject
+    FavoritesDataStoreManager favoritesDataStoreManager;
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -467,8 +474,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarPregunta(String texto) {
-        viewRequests.enqueue(publicationApiService
-                .askQuestion(currentPublicacion.getId(), new TextoRequest(texto)),
+        viewRequests.enqueue(
+                publicationWriteApiService.askQuestion(currentPublicacion.getId(), new TextoRequest(texto)),
                 new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
@@ -512,8 +519,8 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private void enviarRespuesta(Long preguntaId, String texto) {
-        viewRequests.enqueue(publicationApiService
-                .answerQuestion(preguntaId, new TextoRequest(texto)), new Callback<Pregunta>() {
+        viewRequests.enqueue(
+                publicationWriteApiService.answerQuestion(preguntaId, new TextoRequest(texto)), new Callback<Pregunta>() {
                     @Override
                     public void onResponse(@NonNull Call<Pregunta> call, @NonNull Response<Pregunta> response) {
                         if (!isAdded()) return;
@@ -614,8 +621,8 @@ public class DetallePublicacionFragment extends Fragment {
         if (ofertaEnCurso) return;
         ofertaEnCurso = true;
         btnOfertar.setEnabled(false);
-        viewRequests.enqueue(publicationApiService
-                .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
+        viewRequests.enqueue(
+                publicationWriteApiService.makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
                 new Callback<Offer>() {
                     @Override
                     public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
@@ -666,7 +673,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnPausarReactivar.setEnabled(false);
         btnMarcarVendida.setEnabled(false);
 
-        viewRequests.enqueue(publicationApiService.updatePublicationStatus(id, nuevoEstado),
+        viewRequests.enqueue(publicationWriteApiService.updatePublicationStatus(id, nuevoEstado),
                 new Callback<Publicacion>() {
                     @Override
                     public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
@@ -756,7 +763,7 @@ public class DetallePublicacionFragment extends Fragment {
         String pubId = publicacion.getId();
 
         if (getContext() != null) {
-            FavoritesDataStoreManager.setHasUpdates(requireContext(), pubId, false);
+            favoritesDataStoreManager.setHasUpdates(pubId, false);
         }
         publicacion.setHasUpdates(false);
         publicacion.setLastSeenPrice(publicacion.getPrice());
@@ -784,9 +791,9 @@ public class DetallePublicacionFragment extends Fragment {
                     if (response.isSuccessful()) {
                         viewModel.actualizarFavorito(!wasFavorite);
                         if (!wasFavorite) {
-                            FavoritesDataStoreManager.addFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.addFavorite(pubId);
                         } else {
-                            FavoritesDataStoreManager.removeFavorite(requireContext(), pubId);
+                            favoritesDataStoreManager.removeFavorite(pubId);
                         }
                         String mensaje = !wasFavorite ? "Agregado a favoritos" : "Eliminado de favoritos";
                         Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
@@ -825,9 +832,9 @@ public class DetallePublicacionFragment extends Fragment {
         };
 
         if (wasFavorite) {
-            viewRequests.enqueue(publicationApiService.unmarkAsFavorite(pubId), callback);
+            viewRequests.enqueue(publicationFavoriteApiService.unmarkAsFavorite(pubId), callback);
         } else {
-            viewRequests.enqueue(publicationApiService.markAsFavorite(pubId), callback);
+            viewRequests.enqueue(publicationFavoriteApiService.markAsFavorite(pubId), callback);
         }
     }
 

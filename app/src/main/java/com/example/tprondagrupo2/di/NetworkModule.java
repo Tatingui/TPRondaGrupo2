@@ -4,7 +4,10 @@ import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationDetailApiService;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationReadApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 import com.example.tprondagrupo2.network.SavedSearchApiService;
 import com.example.tprondagrupo2.network.SessionInterceptor;
 import com.example.tprondagrupo2.network.UserApiService;
@@ -67,8 +70,26 @@ public class NetworkModule {
 
     @Provides
     @Singleton
-    public PublicationApiService providePublicationService(Retrofit retrofit) {
-        return retrofit.create(PublicationApiService.class);
+    public PublicationReadApiService providePublicationReadService(Retrofit retrofit) {
+        return retrofit.create(PublicationReadApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public PublicationWriteApiService providePublicationWriteService(Retrofit retrofit) {
+        return retrofit.create(PublicationWriteApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public PublicationFavoriteApiService providePublicationFavoriteService(Retrofit retrofit) {
+        return retrofit.create(PublicationFavoriteApiService.class);
+    }
+
+    @Provides
+    @Singleton
+    public PublicationDetailApiService providePublicationDetailService(Retrofit retrofit) {
+        return retrofit.create(PublicationDetailApiService.class);
     }
 
     @Provides

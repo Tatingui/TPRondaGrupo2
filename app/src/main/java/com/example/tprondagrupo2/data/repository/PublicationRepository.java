@@ -5,9 +5,11 @@ import androidx.annotation.NonNull;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
 import com.example.tprondagrupo2.model.Pregunta;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationDetailApiService;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationReadApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
-import com.example.tprondagrupo2.data.repository.RepoCallback;
 
 import java.util.List;
 
@@ -36,26 +38,35 @@ public class PublicationRepository implements PublicationDetailSource {
         }
     }
 
-    private final PublicationApiService apiService;
+    private final PublicationReadApiService readApiService;
+    private final PublicationWriteApiService writeApiService;
+    private final PublicationFavoriteApiService favoriteApiService;
+    private final PublicationDetailApiService detailApiService;
 
     @Inject
-    public PublicationRepository(PublicationApiService apiService) {
-        this.apiService = apiService;
+    public PublicationRepository(PublicationReadApiService readApiService,
+                                 PublicationWriteApiService writeApiService,
+                                 PublicationFavoriteApiService favoriteApiService,
+                                 PublicationDetailApiService detailApiService) {
+        this.readApiService = readApiService;
+        this.writeApiService = writeApiService;
+        this.favoriteApiService = favoriteApiService;
+        this.detailApiService = detailApiService;
     }
 
     @Override
     public Request getDetail(String id, Result<Publicacion> result) {
-        return enqueueDetail(apiService.getPublication(id), result, true);
+        return enqueueDetail(readApiService.getPublication(id), result, true);
     }
 
     @Override
     public Request getQuestions(String id, Result<List<Pregunta>> result) {
-        return enqueueDetail(apiService.getQuestions(id), result, true);
+        return enqueueDetail(detailApiService.getQuestions(id), result, true);
     }
 
     @Override
     public Request recordView(String id) {
-        return enqueueDetail(apiService.recordView(id), new Result<Void>() {
+        return enqueueDetail(detailApiService.recordView(id), new Result<Void>() {
             @Override public void onSuccess(Void value) { }
             @Override public void onError(LoadError error) { /* Operación no bloqueante. */ }
         }, false);
@@ -93,7 +104,7 @@ public class PublicationRepository implements PublicationDetailSource {
     }
 
     public void getFavorites(FavoritesCallback callback) {
-        apiService.getFavorites().enqueue(new Callback<List<Publicacion>>() {
+        readApiService.getFavorites().enqueue(new Callback<List<Publicacion>>() {
             @Override
             public void onResponse(@NonNull Call<List<Publicacion>> call,
                                    @NonNull Response<List<Publicacion>> response) {
@@ -113,8 +124,8 @@ public class PublicationRepository implements PublicationDetailSource {
 
     public void toggleFavorite(String pubId, boolean currentlyFavorite, ToggleFavoriteCallback callback) {
         Call<Void> call = currentlyFavorite
-                ? apiService.unmarkAsFavorite(pubId)
-                : apiService.markAsFavorite(pubId);
+                ? favoriteApiService.unmarkAsFavorite(pubId)
+                : favoriteApiService.markAsFavorite(pubId);
 
         call.enqueue(new Callback<Void>() {
             @Override
@@ -137,7 +148,7 @@ public class PublicationRepository implements PublicationDetailSource {
     public void getPublications(String search, Long categoryId, Double minPrice, Double maxPrice,
                                 String status, String location, int page, int size, String sort,
                                 PublicationPageCallback callback) {
-        apiService.getPublications(search, categoryId, minPrice, maxPrice, status, location, page, size, sort)
+        readApiService.getPublications(search, categoryId, minPrice, maxPrice, status, location, page, size, sort)
                 .enqueue(new Callback<PublicationPageResponse>() {
                     @Override
                     public void onResponse(@NonNull Call<PublicationPageResponse> call,
@@ -157,7 +168,7 @@ public class PublicationRepository implements PublicationDetailSource {
     }
 
     public void createPublication(PublicationCreateRequest request, RepoCallback<Publicacion> callback) {
-        apiService.createPublication(request).enqueue(new Callback<Publicacion>() {
+        writeApiService.createPublication(request).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
                 if (response.isSuccessful() && response.body() != null) {

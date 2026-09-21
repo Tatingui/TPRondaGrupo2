@@ -10,7 +10,7 @@ import com.example.tprondagrupo2.model.OperacionHistorial;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.network.HistorialApiService;
 import com.example.tprondagrupo2.network.OfferApiService;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.network.PublicationReadApiService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +27,7 @@ public class MyOffersViewModel extends ViewModel {
 
     private final OfferApiService offerApiService;
     private final HistorialApiService historialApiService;
-    private final PublicationApiService publicationApiService;
+    private final PublicationReadApiService publicationReadApiService;
 
     private final MutableLiveData<List<Offer>> offers = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
@@ -41,10 +41,10 @@ public class MyOffersViewModel extends ViewModel {
     @Inject
     public MyOffersViewModel(OfferApiService offerApiService,
                              HistorialApiService historialApiService,
-                             PublicationApiService publicationApiService) {
+                             PublicationReadApiService publicationReadApiService) {
         this.offerApiService = offerApiService;
         this.historialApiService = historialApiService;
-        this.publicationApiService = publicationApiService;
+        this.publicationReadApiService = publicationReadApiService;
     }
 
     public LiveData<List<Offer>> getOffers() { return offers; }
@@ -164,7 +164,7 @@ public class MyOffersViewModel extends ViewModel {
 
     public void fetchPublicationForDetail(Long publicationId) {
         if (publicationId == null) return;
-        publicationApiService.getPublication(String.valueOf(publicationId)).enqueue(new Callback<Publicacion>() {
+        publicationReadApiService.getPublication(String.valueOf(publicationId)).enqueue(new Callback<Publicacion>() {
             @Override
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
                 if (response.isSuccessful() && response.body() != null) {

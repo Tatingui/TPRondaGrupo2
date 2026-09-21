@@ -19,27 +19,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import dagger.hilt.android.qualifiers.ApplicationContext;
 import io.reactivex.rxjava3.core.Single;
 
+@Singleton
 public class FavoritesDataStoreManager {
 
     public static final Preferences.Key<String> FAVORITES_KEY = PreferencesKeys.stringKey("favorites");
-    private static RxDataStore<Preferences> dataStore;
-    private static final Map<String, Boolean> memoryCache = new ConcurrentHashMap<>();
-    private static boolean isInitialized = false;
+    private final RxDataStore<Preferences> dataStore;
+    private final Map<String, Boolean> memoryCache = new ConcurrentHashMap<>();
+    private boolean isInitialized = false;
 
-    private FavoritesDataStoreManager() {
+    @Inject
+    public FavoritesDataStoreManager(@ApplicationContext Context context) {
+        dataStore = new RxPreferenceDataStoreBuilder(
+                context.getApplicationContext(), "favorites_datastore").build();
+        loadCacheAsync();
     }
 
-    public static synchronized RxDataStore<Preferences> getInstance(Context context) {
-        if (dataStore == null) {
-            dataStore = new RxPreferenceDataStoreBuilder(context.getApplicationContext(), "favorites_datastore").build();
-            loadCacheAsync();
-        }
-        return dataStore;
-    }
-
-    private static synchronized void loadCacheAsync() {
+    private synchronized void loadCacheAsync() {
         if (isInitialized || dataStore == null) return;
         dataStore.data().firstOrError().subscribe(prefs -> {
             String json = prefs.get(FAVORITES_KEY);
@@ -58,14 +59,13 @@ public class FavoritesDataStoreManager {
         });
     }
 
-    public static void addFavorite(Context context, String pubId) {
-        if (context == null || pubId == null) return;
+    public void addFavorite(String pubId) {
+        if (pubId == null) return;
         synchronized (memoryCache) {
             memoryCache.put(pubId, false);
         }
 
-        RxDataStore<Preferences> ds = getInstance(context);
-        ds.updateDataAsync(prefsIn -> {
+        dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
                 List<FavoriteDataStoreItem> list = new ArrayList<>();
@@ -78,14 +78,13 @@ public class FavoritesDataStoreManager {
         }).subscribe();
     }
 
-    public static void removeFavorite(Context context, String pubId) {
-        if (context == null || pubId == null) return;
+    public void removeFavorite(String pubId) {
+        if (pubId == null) return;
         synchronized (memoryCache) {
             memoryCache.remove(pubId);
         }
 
-        RxDataStore<Preferences> ds = getInstance(context);
-        ds.updateDataAsync(prefsIn -> {
+        dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
                 List<FavoriteDataStoreItem> list = new ArrayList<>();
@@ -98,14 +97,13 @@ public class FavoritesDataStoreManager {
         }).subscribe();
     }
 
-    public static void setHasUpdates(Context context, String pubId, boolean hasUpdates) {
-        if (context == null || pubId == null) return;
+    public void setHasUpdates(String pubId, boolean hasUpdates) {
+        if (pubId == null) return;
         synchronized (memoryCache) {
             memoryCache.put(pubId, hasUpdates);
         }
 
-        RxDataStore<Preferences> ds = getInstance(context);
-        ds.updateDataAsync(prefsIn -> {
+        dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
                 List<FavoriteDataStoreItem> list = new ArrayList<>();
@@ -118,10 +116,7 @@ public class FavoritesDataStoreManager {
         }).subscribe();
     }
 
-    public static Map<String, Boolean> getHasUpdatesMap(Context context) {
-        if (context != null) {
-            getInstance(context);
-        }
+    public Map<String, Boolean> getHasUpdatesMap() {
         synchronized (memoryCache) {
             return new HashMap<>(memoryCache);
         }
