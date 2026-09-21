@@ -10,6 +10,7 @@ import com.example.tprondagrupo2.model.OtpSendRequest;
 import com.example.tprondagrupo2.model.RegisterRequest;
 import com.example.tprondagrupo2.network.AuthApiService;
 import com.example.tprondagrupo2.network.TokenManager;
+import javax.inject.Inject;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,6 +44,7 @@ public class AuthRepository {
     private final AuthApiService authApiService;
     private final TokenManager tokenManager;
 
+    @Inject
     public AuthRepository(AuthApiService authApiService, TokenManager tokenManager) {
         this.authApiService = authApiService;
         this.tokenManager = tokenManager;

@@ -15,8 +15,11 @@ import com.example.tprondagrupo2.model.Publicacion;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.inject.Inject;
+import dagger.hilt.android.lifecycle.HiltViewModel;
 
 /** Conserva la lectura del detalle entre recreaciones; no retiene Context, vistas ni Retrofit. */
+@HiltViewModel
 public final class DetalleViewModel extends ViewModel {
     private final PublicationDetailSource source;
     private final MutableLiveData<DetalleUiState> estado = new MutableLiveData<>();
@@ -31,6 +34,7 @@ public final class DetalleViewModel extends ViewModel {
     private long generacionDetalle, generacionPreguntas, revisionFavorito, revisionOferta;
     private Request detalleRequest, preguntasRequest, visitaRequest;
 
+    @Inject
     public DetalleViewModel(PublicationDetailSource source) {
         this.source = source;
     }

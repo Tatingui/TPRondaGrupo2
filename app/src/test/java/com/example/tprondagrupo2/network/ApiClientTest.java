@@ -27,7 +27,7 @@ public class ApiClientTest {
     public void setUp() {
         // Inicializa el módulo de red e inyecta la instancia de OkHttpClient y Retrofit para los tests
         networkModule = new NetworkModule();
-        okHttpClient = networkModule.provideOkHttpClient();
+        okHttpClient = networkModule.provideOkHttpClient(new SessionInterceptor(() -> null, () -> {}));
         retrofit = networkModule.provideRetrofit(okHttpClient);
     }
 

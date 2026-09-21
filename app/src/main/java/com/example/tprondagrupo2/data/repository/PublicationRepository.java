@@ -10,6 +10,7 @@ import com.example.tprondagrupo2.network.PublicationPageResponse;
 import java.util.List;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -20,6 +21,7 @@ import retrofit2.Response;
  *
  * Patron Repository: los Fragments no llaman a Retrofit directamente.
  */
+@Singleton
 public class PublicationRepository implements PublicationDetailSource {
 
     public interface FavoritesCallback {

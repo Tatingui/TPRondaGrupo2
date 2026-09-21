@@ -49,6 +49,9 @@ public class PublishWizardFragment extends Fragment {
     @Inject
     PublicationApiService publicationApiService;
 
+    @Inject
+    DraftManager.Factory draftManagerFactory;
+
     private int currentStep = 1;
     private DraftManager draftManager;
 
@@ -130,8 +133,7 @@ public class PublishWizardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        draftManager = new DraftManager(requireContext(),
-                com.example.tprondagrupo2.network.TokenManager.getInstance().getToken());
+        draftManager = draftManagerFactory.create();
 
         tvStepTitle = view.findViewById(R.id.tvStepTitle);
         layoutStep1 = view.findViewById(R.id.layoutStep1);

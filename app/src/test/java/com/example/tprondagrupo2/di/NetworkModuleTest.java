@@ -26,7 +26,8 @@ public class NetworkModuleTest {
     @Before
     public void setUp() {
         networkModule = new NetworkModule();
-        okHttpClient = networkModule.provideOkHttpClient();
+        okHttpClient = networkModule.provideOkHttpClient(
+                new com.example.tprondagrupo2.network.SessionInterceptor(() -> null, () -> {}));
         retrofit = networkModule.provideRetrofit(okHttpClient);
     }
 
