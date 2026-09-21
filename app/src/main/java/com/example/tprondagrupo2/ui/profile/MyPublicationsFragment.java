@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -122,7 +123,7 @@ public class MyPublicationsFragment extends Fragment {
                     myPublications.set(position, response.body());
                     adapter.notifyItemChanged(position);
                     Toast.makeText(getContext(),
-                            "Estado actualizado a " + MyPublicationsAdapter.traducirEstado(state),
+                            "Estado actualizado a " + PublicationConstants.translateStatus(state),
                             Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getContext(), "Error al actualizar estado", Toast.LENGTH_SHORT).show();
