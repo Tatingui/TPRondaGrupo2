@@ -45,8 +45,8 @@ public class PhotoThumbnailAdapter extends RecyclerView.Adapter<PhotoThumbnailAd
                 .into(holder.ivThumbnail);
 
         holder.ivRemove.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-            if (pos != RecyclerView.NO_POSITION) {
+            int pos = holder.getBindingAdapterPosition();
+            if (removeListener != null && pos != RecyclerView.NO_POSITION) {
                 removeListener.onRemove(pos);
             }
         });
@@ -57,7 +57,7 @@ public class PhotoThumbnailAdapter extends RecyclerView.Adapter<PhotoThumbnailAd
         return photos.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivThumbnail;
         ImageView ivRemove;
 
