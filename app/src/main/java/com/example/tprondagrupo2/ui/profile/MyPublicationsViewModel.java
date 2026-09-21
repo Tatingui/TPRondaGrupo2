@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.network.PublicationReadApiService;
 import com.example.tprondagrupo2.network.PublicationWriteApiService;
+import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +75,7 @@ public class MyPublicationsViewModel extends ViewModel {
             public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
                 loading.setValue(false);
                 if (response.isSuccessful() && response.body() != null) {
-                    toastMessage.setValue("Estado actualizado a " + MyPublicationsAdapter.traducirEstado(state));
+                    toastMessage.setValue("Estado actualizado a " + PublicationConstants.translateStatus(state));
                     fetchMyPublications();
                 } else {
                     toastMessage.setValue("Error al actualizar estado");

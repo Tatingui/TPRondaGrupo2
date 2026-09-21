@@ -19,6 +19,7 @@ import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.util.FormatUtils;
+import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.List;
 
@@ -44,11 +45,14 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     public void updateList(List<Publicacion> newList) {
         this.publications.clear();
-        this.publications.addAll(newList);
+        if (newList != null) {
+            this.publications.addAll(newList);
+        }
         notifyDataSetChanged();
     }
 
     public void addItems(List<Publicacion> newItems) {
+        if (newItems == null || newItems.isEmpty()) return;
         int startPos = this.publications.size();
         this.publications.addAll(newItems);
         notifyItemRangeInserted(startPos, newItems.size());
@@ -69,7 +73,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
         holder.tvTitle.setText(pub.getTitle());
         holder.tvPrice.setText(FormatUtils.formatPrice(pub.getPrice()));
-        holder.tvCondition.setText(traducirEstado(pub.getStatus()));
+        holder.tvCondition.setText(PublicationConstants.translateStatus(pub.getStatus()));
 
         String location = pub.getLocation() != null ? pub.getLocation() : context.getString(R.string.publication_no_location);
         holder.tvLocation.setText(context.getString(R.string.detalle_zona, location));
@@ -93,8 +97,9 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         }
 
         holder.btnFavorite.setOnClickListener(v -> {
-            if (favoriteListener != null) {
-                favoriteListener.onFavoriteClick(pub, position);
+            int pos = holder.getBindingAdapterPosition();
+            if (favoriteListener != null && pos != RecyclerView.NO_POSITION) {
+                favoriteListener.onFavoriteClick(pub, pos);
             }
         });
 
@@ -104,11 +109,12 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 showFullscreenImage(v, imageUrl);
             }
         });
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
-    }
 
-    private String traducirEstado(String status) {
-        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(status);
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(pub);
+            }
+        });
     }
 
     private void showFullscreenImage(View anchorView, String imageUrl) {

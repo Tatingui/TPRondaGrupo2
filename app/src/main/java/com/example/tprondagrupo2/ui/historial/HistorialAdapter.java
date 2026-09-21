@@ -1,7 +1,6 @@
 package com.example.tprondagrupo2.ui.historial;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -79,13 +79,13 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         // 1. Tipo de operación
         if (operacion.isCompra()) {
             holder.tvTipoOperacion.setText(context.getString(R.string.historial_compra));
-            holder.tvTipoOperacion.setBackgroundColor(Color.parseColor("#E8F5E9"));
-            holder.tvTipoOperacion.setTextColor(Color.parseColor("#2E7D32"));
+            holder.tvTipoOperacion.setBackgroundColor(ContextCompat.getColor(context, R.color.historial_compra_bg));
+            holder.tvTipoOperacion.setTextColor(ContextCompat.getColor(context, R.color.historial_compra_text));
             holder.tvOtroUsuario.setText(context.getString(R.string.historial_vendedor, contraparte));
         } else {
             holder.tvTipoOperacion.setText(context.getString(R.string.historial_venta));
-            holder.tvTipoOperacion.setBackgroundColor(Color.parseColor("#F3E5F5"));
-            holder.tvTipoOperacion.setTextColor(Color.parseColor("#6A1B9A"));
+            holder.tvTipoOperacion.setBackgroundColor(ContextCompat.getColor(context, R.color.historial_venta_bg));
+            holder.tvTipoOperacion.setTextColor(ContextCompat.getColor(context, R.color.historial_venta_text));
             holder.tvOtroUsuario.setText(context.getString(R.string.historial_comprador, contraparte));
         }
 
@@ -112,11 +112,11 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         if (operacion.entregaConfirmada()) {
             String fechaEntregaFormat = formatFechaDisplay(operacion.getFechaEntrega());
             holder.tvEstadoEntrega.setText(context.getString(R.string.historial_entrega_confirmada, fechaEntregaFormat));
-            holder.tvEstadoEntrega.setTextColor(Color.parseColor("#1B5E20"));
+            holder.tvEstadoEntrega.setTextColor(ContextCompat.getColor(context, R.color.historial_entrega_confirmada));
             holder.btnConfirmarEntrega.setVisibility(View.GONE);
         } else {
             holder.tvEstadoEntrega.setText(context.getString(R.string.historial_entrega_pendiente));
-            holder.tvEstadoEntrega.setTextColor(Color.parseColor("#E65100"));
+            holder.tvEstadoEntrega.setTextColor(ContextCompat.getColor(context, R.color.historial_entrega_pendiente));
             if (confirmDeliveryClickListener != null) {
                 holder.btnConfirmarEntrega.setVisibility(View.VISIBLE);
                 holder.btnConfirmarEntrega.setOnClickListener(v -> confirmDeliveryClickListener.onConfirmDeliveryClick(operacion));
