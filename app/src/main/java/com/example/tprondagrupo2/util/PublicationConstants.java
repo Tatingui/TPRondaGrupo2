@@ -12,6 +12,12 @@ public class PublicationConstants {
     public static String translateStatus(String status) {
         if (status == null) return "";
         switch (status) {
+            case "ACTIVE":
+                return "Activa";
+            case "PAUSED":
+                return "Pausada";
+            case "SOLD":
+                return "Vendida";
             case "NEW":
                 return "Nuevo";
             case "LIKE_NEW":

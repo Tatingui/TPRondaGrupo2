@@ -25,7 +25,7 @@
             android:layout_marginEnd="12dp"
             android:contentDescription="Icono búsqueda"
             android:src="@android:drawable/ic_menu_search"
-            app:tint="@color/purple_500" />
+            app:tint="?attr/colorPrimary" />
 
         <LinearLayout
             android:layout_width="0dp"

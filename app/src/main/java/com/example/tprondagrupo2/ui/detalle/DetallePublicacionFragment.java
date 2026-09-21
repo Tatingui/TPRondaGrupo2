@@ -417,9 +417,7 @@ public class DetallePublicacionFragment extends Fragment {
     }
 
     private String traducirEstadoPublicacion(String state) {
-        if ("PAUSED".equals(state)) return "Pausada";
-        if ("SOLD".equals(state)) return "Vendida";
-        return "Activa";
+        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(state);
     }
 
     // ---------- Preguntas ----------

@@ -16,7 +16,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingBottom="12dp"
-            android:background="@color/purple_500">
+            android:background="?attr/colorPrimary">
 
             <TextView
                 android:layout_width="match_parent"
@@ -85,7 +85,7 @@
                     android:text="@string/guardar_busqueda"
                     android:textColor="@color/white"
                     android:textSize="12sp"
-                    app:chipBackgroundColor="@color/purple_500"
+                    app:chipBackgroundColor="?attr/colorPrimary"
                     app:chipIcon="@android:drawable/ic_menu_save"
                     app:chipIconTint="@color/white" />
 
