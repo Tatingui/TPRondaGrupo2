@@ -28,8 +28,7 @@ public class Publicacion implements Serializable {
 
     private Vendedor vendedor;
 
-    // TODO: decidir si deberíamos seguir usando sellerId y sellerName
-    //       o si es redundante porque vendedor ya los incluye.
+    // Campos de respaldo para listados donde el vendedor puede venir de forma plana
     private Long sellerId;
 
     private String sellerName;
