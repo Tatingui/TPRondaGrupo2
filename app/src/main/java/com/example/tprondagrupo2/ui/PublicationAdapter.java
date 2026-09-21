@@ -19,6 +19,7 @@ import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.util.FormatUtils;
+import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.List;
 
@@ -69,7 +70,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
         holder.tvTitle.setText(pub.getTitle());
         holder.tvPrice.setText(FormatUtils.formatPrice(pub.getPrice()));
-        holder.tvCondition.setText(traducirEstado(pub.getStatus()));
+        holder.tvCondition.setText(PublicationConstants.translateStatus(pub.getStatus()));
 
         String location = pub.getLocation() != null ? pub.getLocation() : context.getString(R.string.publication_no_location);
         holder.tvLocation.setText(context.getString(R.string.detalle_zona, location));
@@ -105,10 +106,6 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
             }
         });
         holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
-    }
-
-    private String traducirEstado(String status) {
-        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(status);
     }
 
     private void showFullscreenImage(View anchorView, String imageUrl) {
