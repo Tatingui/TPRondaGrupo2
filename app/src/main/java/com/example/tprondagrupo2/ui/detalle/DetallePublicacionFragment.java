@@ -24,9 +24,8 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.tprondagrupo2.R;
-import com.example.tprondagrupo2.data.repository.PublicationRepository;
 import com.example.tprondagrupo2.data.repository.PublicationDetailSource.LoadError;
-import com.example.tprondagrupo2.db.AppDatabase;
+import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.AuthResponse;
 import com.example.tprondagrupo2.model.Oferta;
@@ -75,7 +74,7 @@ public class DetallePublicacionFragment extends Fragment {
     PublicationApiService publicationApiService;
 
     @Inject
-    PublicationRepository publicationRepository;
+    PublicacionDao publicacionDao;
 
     private ViewPager2 vpGaleria;
     private TextView tvIndicadorFotos;
@@ -131,7 +130,7 @@ public class DetallePublicacionFragment extends Fragment {
         viewRequests = new ViewRequestScope();
         mapaNavigator = new MapaNavigator(new AndroidMapaLauncher(this::startActivity));
         favoritoEnCurso = ofertaEnCurso = gestionEnCurso = false;
-        viewModel = new ViewModelProvider(this, new DetalleViewModelFactory(publicationRepository))
+        viewModel = new ViewModelProvider(this)
                 .get(DetalleViewModel.class);
         tvCargaDetalle = view.findViewById(R.id.tvCargaDetalle);
         btnReintentarDetalle = view.findViewById(R.id.btnReintentarDetalle);
@@ -273,7 +272,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     private void saveToCache(Publicacion p) {
         PublicacionEntity entity = PublicacionEntity.fromModel(p);
-        AppDatabase.getInstance(requireContext()).publicacionDao().insert(entity);
+        publicacionDao.insert(entity);
     }
 
     private Publicacion obtenerPublicacion() {

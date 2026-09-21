@@ -18,8 +18,6 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.AuthRepository;
-import com.example.tprondagrupo2.network.AuthApiService;
-import com.example.tprondagrupo2.network.TokenManager;
 
 import javax.inject.Inject;
 
@@ -29,10 +27,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class OtpFragment extends Fragment {
 
     @Inject
-    AuthApiService authApiService;
-
-    @Inject
-    TokenManager tokenManager;
+    AuthRepository authRepository;
 
     public static final String ARG_EMAIL = "email";
 
@@ -51,7 +46,6 @@ public class OtpFragment extends Fragment {
     private Button btnVerify;
     private Button btnResend;
 
-    private AuthRepository authRepository;
 
     @Nullable
     @Override
@@ -64,7 +58,6 @@ public class OtpFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        authRepository = new AuthRepository(authApiService, tokenManager);
 
         email = getArguments() != null ? getArguments().getString(ARG_EMAIL, "") : "";
 

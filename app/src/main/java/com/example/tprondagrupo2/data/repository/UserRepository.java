@@ -9,6 +9,7 @@ import com.example.tprondagrupo2.network.TokenManager;
 import com.example.tprondagrupo2.network.UserApiService;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -24,6 +25,7 @@ import retrofit2.Response;
  * Recibe UserApiService y TokenManager por constructor, provisto por Hilt
  * via NetworkModule.
  */
+@Singleton
 public class UserRepository {
 
     public interface ProfileCallback {

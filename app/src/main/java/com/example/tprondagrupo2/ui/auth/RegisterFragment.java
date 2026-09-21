@@ -24,8 +24,6 @@ import android.util.Log;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.AuthRepository;
 import com.example.tprondagrupo2.model.RegisterRequest;
-import com.example.tprondagrupo2.network.AuthApiService;
-import com.example.tprondagrupo2.network.TokenManager;
 
 import javax.inject.Inject;
 
@@ -37,10 +35,7 @@ public class RegisterFragment extends Fragment {
     private static final String TAG = "RONDA_REGISTER";
 
     @Inject
-    AuthApiService authApiService;
-
-    @Inject
-    TokenManager tokenManager;
+    AuthRepository authRepository;
 
     private EditText etNombre;
     private EditText etEmail;
@@ -54,7 +49,6 @@ public class RegisterFragment extends Fragment {
     private Button btnRegister;
     private Button btnGoLogin;
 
-    private AuthRepository authRepository;
 
     /** Nivel de fuerza actual de la contrasena (0=vacia, 1=debil, 2=media, 3=fuerte) */
     private int passwordStrengthLevel = 0;
@@ -70,7 +64,6 @@ public class RegisterFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        authRepository = new AuthRepository(authApiService, tokenManager);
 
         etNombre = view.findViewById(R.id.etNombre);
         etEmail = view.findViewById(R.id.etEmail);
