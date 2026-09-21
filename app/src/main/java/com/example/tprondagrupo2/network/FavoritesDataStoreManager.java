@@ -40,6 +40,12 @@ public class FavoritesDataStoreManager {
         loadCacheAsync();
     }
 
+    /** Constructor sin DataStore — exclusivo para tests JVM. */
+    public FavoritesDataStoreManager(boolean testMode) {
+        this.dataStore = null;
+        this.isInitialized = true;
+    }
+
     private synchronized void loadCacheAsync() {
         if (isInitialized || dataStore == null) return;
         dataStore.data().firstOrError().subscribe(prefs -> {
@@ -65,6 +71,7 @@ public class FavoritesDataStoreManager {
             memoryCache.put(pubId, false);
         }
 
+        if (dataStore == null) return;
         dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
@@ -84,6 +91,7 @@ public class FavoritesDataStoreManager {
             memoryCache.remove(pubId);
         }
 
+        if (dataStore == null) return;
         dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
@@ -103,6 +111,7 @@ public class FavoritesDataStoreManager {
             memoryCache.put(pubId, hasUpdates);
         }
 
+        if (dataStore == null) return;
         dataStore.updateDataAsync(prefsIn -> {
             MutablePreferences mutable = prefsIn.toMutablePreferences();
             synchronized (memoryCache) {
