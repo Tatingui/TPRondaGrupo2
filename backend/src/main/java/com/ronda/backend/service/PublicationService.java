@@ -18,6 +18,9 @@ import com.ronda.backend.model.UserFavorite;
 import com.ronda.backend.repository.CategoryRepository;
 import com.ronda.backend.repository.OfferRepository;
 import com.ronda.backend.repository.PublicationRepository;
+import com.ronda.backend.repository.QuestionRepository;
+import com.ronda.backend.repository.RatingRepository;
+import com.ronda.backend.repository.TransactionRepository;
 import com.ronda.backend.repository.UserFavoriteRepository;
 import com.ronda.backend.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -43,19 +46,28 @@ public class PublicationService {
     private final CategoryRepository categoryRepository;
     private final OfferRepository offerRepository;
     private final TransactionService transactionService;
+    private final QuestionRepository questionRepository;
+    private final RatingRepository ratingRepository;
+    private final TransactionRepository transactionRepository;
 
     public PublicationService(PublicationRepository publicationRepository,
                               UserRepository userRepository,
                               UserFavoriteRepository userFavoriteRepository,
                               CategoryRepository categoryRepository,
                               OfferRepository offerRepository,
-                              TransactionService transactionService) {
+                              TransactionService transactionService,
+                              QuestionRepository questionRepository,
+                              RatingRepository ratingRepository,
+                              TransactionRepository transactionRepository) {
         this.publicationRepository = publicationRepository;
         this.userRepository = userRepository;
         this.userFavoriteRepository = userFavoriteRepository;
         this.categoryRepository = categoryRepository;
         this.offerRepository = offerRepository;
         this.transactionService = transactionService;
+        this.questionRepository = questionRepository;
+        this.ratingRepository = ratingRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -295,6 +307,35 @@ public class PublicationService {
                 });
             });
         });
+    }
+
+
+    @Transactional
+    public void deletePublication(Long publicationId, String email) {
+        if (email == null) {
+            throw new ResourceNotFoundException("Usuario no autenticado");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Publication publication = publicationRepository.findById(publicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada"));
+
+        if (publication.getSeller() == null || !publication.getSeller().getId().equals(user.getId())) {
+            throw new ForbiddenException("No autorizado para eliminar esta publicación");
+        }
+
+        // Eliminar ratings de las transacciones asociadas
+        List<com.ronda.backend.model.Transaction> transactions = transactionRepository.findByPublicationId(publicationId);
+        for (com.ronda.backend.model.Transaction tx : transactions) {
+            ratingRepository.deleteByTransactionId(tx.getId());
+        }
+
+        // Eliminar en orden: transacciones, ofertas, preguntas, favoritos, publicación
+        transactionRepository.deleteByPublicationId(publicationId);
+        offerRepository.deleteByPublicationId(publicationId);
+        questionRepository.deleteByPublicationId(publicationId);
+        userFavoriteRepository.deleteByPublicationId(publicationId);
+        publicationRepository.delete(publication);
     }
 
     @Transactional(readOnly = true)

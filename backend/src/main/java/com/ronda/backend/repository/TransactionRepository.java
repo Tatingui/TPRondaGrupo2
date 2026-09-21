@@ -47,4 +47,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByBuyer(User buyer);
     List<Transaction> findBySeller(User seller);
+    List<Transaction> findByPublicationId(Long publicationId);
+    void deleteByPublicationId(Long publicationId);
 }

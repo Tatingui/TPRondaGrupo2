@@ -58,6 +58,9 @@ public interface PublicationApiService {
     @POST("publications/{id}/view")
     Call<Void> recordView(@Path("id") String id);
 
+    @DELETE("publications/{id}")
+    Call<Void> deletePublication(@Path("id") Long id);
+
     // Preguntas y ofertas desde el detalle
 
     @GET("publications/{id}/questions")

@@ -35,4 +35,5 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     /** Calificaciones recibidas por un usuario (para mostrar en perfil publico). */
     List<Rating> findByToUserOrderByCreatedAtDesc(User toUser);
     List<Rating> findByFromUser(com.ronda.backend.model.User fromUser);
+    void deleteByTransactionId(Long transactionId);
 }
