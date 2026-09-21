@@ -45,11 +45,14 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
 
     public void updateList(List<Publicacion> newList) {
         this.publications.clear();
-        this.publications.addAll(newList);
+        if (newList != null) {
+            this.publications.addAll(newList);
+        }
         notifyDataSetChanged();
     }
 
     public void addItems(List<Publicacion> newItems) {
+        if (newItems == null || newItems.isEmpty()) return;
         int startPos = this.publications.size();
         this.publications.addAll(newItems);
         notifyItemRangeInserted(startPos, newItems.size());
@@ -94,8 +97,9 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         }
 
         holder.btnFavorite.setOnClickListener(v -> {
-            if (favoriteListener != null) {
-                favoriteListener.onFavoriteClick(pub, position);
+            int pos = holder.getBindingAdapterPosition();
+            if (favoriteListener != null && pos != RecyclerView.NO_POSITION) {
+                favoriteListener.onFavoriteClick(pub, pos);
             }
         });
 
@@ -105,7 +109,12 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 showFullscreenImage(v, imageUrl);
             }
         });
-        holder.itemView.setOnClickListener(v -> listener.onItemClick(pub));
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onItemClick(pub);
+            }
+        });
     }
 
     private void showFullscreenImage(View anchorView, String imageUrl) {
