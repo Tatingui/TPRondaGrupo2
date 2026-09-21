@@ -19,7 +19,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.HistorialRepository;
-import com.example.tprondagrupo2.data.repository.RepoCallback;
 import com.example.tprondagrupo2.model.Calificacion;
 import com.example.tprondagrupo2.model.CalificacionRequest;
 import com.example.tprondagrupo2.model.OperacionHistorial;
