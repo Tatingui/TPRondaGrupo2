@@ -106,4 +106,34 @@
     <string name="offers_network_error">No se pudieron cargar las ofertas. Revisá la conexión y reintentá.</string>
     <string name="offers_retry">Reintentar</string>
     <string name="open_offer_publication">Ver publicación</string>
+
+    <!-- Adaptadores (Capa 6) -->
+    <string name="publication_no_location">Sin ubicación</string>
+    <string name="historial_compra">COMPRA</string>
+    <string name="historial_venta">VENTA</string>
+    <string name="historial_vendedor">Vendedor: %1$s</string>
+    <string name="historial_comprador">Comprador: %1$s</string>
+    <string name="historial_sin_titulo">Sin título</string>
+    <string name="historial_entrega_confirmada">✓ Entrega confirmada (%1$s)</string>
+    <string name="historial_entrega_pendiente">⏳ Entrega pendiente</string>
+    <string name="historial_calificado">Calificado</string>
+    <string name="historial_calificar">Calificar</string>
+
+    <string name="offer_publication_number">Publicación #%1$d</string>
+    <string name="offer_details_format">Ofertado: %1$s (Original: %2$s)</string>
+    <string name="offer_buyer_format">Comprador: %1$s</string>
+    <string name="offer_seller_format">Vendedor: %1$s</string>
+    <string name="offer_default_user">Usuario</string>
+    <string name="offer_default_seller">Vendedor</string>
+    <string name="offer_status_format">Estado: %1$s</string>
+    <string name="offer_status_pending">Pendiente</string>
+    <string name="offer_status_accepted">Aceptada</string>
+    <string name="offer_status_rejected">Rechazada</string>
+    <string name="offer_status_counter">Contra-oferta</string>
+    <string name="offer_status_expired">Expirada</string>
+    <string name="offer_message_format">Mensaje: %1$s</string>
+
+    <string name="my_publication_state_format">Estado: %1$s</string>
+    <string name="my_publication_reactivate">Reactivar</string>
+    <string name="my_publication_pause">Pausar</string>
 </resources>

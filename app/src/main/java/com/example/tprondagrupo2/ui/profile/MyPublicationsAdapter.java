@@ -1,5 +1,6 @@
 package com.example.tprondagrupo2.ui.profile;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.util.FormatUtils;
+import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.List;
 
@@ -34,13 +37,7 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     }
 
     public static String traducirEstado(String state) {
-        if (state == null) return "Activa";
-        switch (state) {
-            case "ACTIVE": return "Activa";
-            case "PAUSED": return "Pausada";
-            case "SOLD": return "Vendida";
-            default: return state;
-        }
+        return PublicationConstants.translateStatus(state);
     }
 
     @NonNull
@@ -53,14 +50,16 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Publicacion pub = publications.get(position);
+        Context context = holder.itemView.getContext();
+
         holder.tvTitle.setText(pub.getTitle());
-        holder.tvPrice.setText("$" + pub.getPrice());
-        
+        holder.tvPrice.setText(FormatUtils.formatPrice(pub.getPrice()));
+
         String state = pub.getState() != null ? pub.getState() : "ACTIVE";
-        holder.tvState.setText("Estado: " + traducirEstado(state));
+        holder.tvState.setText(context.getString(R.string.my_publication_state_format, traducirEstado(state)));
 
         if (pub.getFirstImageUrl() != null && !pub.getFirstImageUrl().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
+            Glide.with(context)
                     .load(pub.getFirstImageUrl())
                     .into(holder.ivThumbnail);
         } else {
@@ -68,10 +67,10 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
         }
 
         if ("PAUSED".equals(state)) {
-            holder.btnPause.setText("Reactivar");
+            holder.btnPause.setText(context.getString(R.string.my_publication_reactivate));
             holder.btnPause.setOnClickListener(v -> listener.onActivate(pub, holder.getAdapterPosition()));
         } else {
-            holder.btnPause.setText("Pausar");
+            holder.btnPause.setText(context.getString(R.string.my_publication_pause));
             holder.btnPause.setOnClickListener(v -> listener.onPause(pub, holder.getAdapterPosition()));
         }
 

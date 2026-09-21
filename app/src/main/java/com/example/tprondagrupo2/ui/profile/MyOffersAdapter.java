@@ -1,5 +1,6 @@
 package com.example.tprondagrupo2.ui.profile;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Offer;
+import com.example.tprondagrupo2.util.FormatUtils;
 
 import java.util.List;
 
@@ -48,36 +50,57 @@ public class MyOffersAdapter extends RecyclerView.Adapter<MyOffersAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Offer offer = offers.get(position);
+        Context context = holder.itemView.getContext();
+
         holder.btnOpenPublication.setOnClickListener(v -> listener.onOpenPublication(offer));
-        holder.tvTitle.setText(offer.getPublicationTitle() != null ? offer.getPublicationTitle() : "Publicación #" + offer.getPublicationId());
-        holder.tvDetails.setText("Ofertado: $" + offer.getOfferedPrice() + " (Original: $" + offer.getPublicationOriginalPrice() + ")");
-        
+        holder.tvTitle.setText(offer.getPublicationTitle() != null
+                ? offer.getPublicationTitle()
+                : context.getString(R.string.offer_publication_number, offer.getPublicationId()));
+
+        String offeredStr = FormatUtils.formatPrice(offer.getOfferedPrice());
+        String originalStr = FormatUtils.formatPrice(offer.getPublicationOriginalPrice());
+        holder.tvDetails.setText(context.getString(R.string.offer_details_format, offeredStr, originalStr));
+
         if (isReceived) {
-            holder.tvUser.setText("Comprador: " + (offer.getBuyerName() != null ? offer.getBuyerName() : "Usuario"));
+            String buyerName = offer.getBuyerName() != null ? offer.getBuyerName() : context.getString(R.string.offer_default_user);
+            holder.tvUser.setText(context.getString(R.string.offer_buyer_format, buyerName));
         } else {
-            holder.tvUser.setText("Vendedor: " + (offer.getSellerName() != null ? offer.getSellerName() : "Vendedor"));
+            String sellerName = offer.getSellerName() != null ? offer.getSellerName() : context.getString(R.string.offer_default_seller);
+            holder.tvUser.setText(context.getString(R.string.offer_seller_format, sellerName));
         }
 
         String statusText;
         switch (offer.getStatus() != null ? offer.getStatus() : "") {
-            case "PENDING": statusText = "Pendiente"; break;
-            case "ACCEPTED": statusText = "Aceptada"; break;
-            case "REJECTED": statusText = "Rechazada"; break;
-            case "COUNTER_OFFER": statusText = "Contra-oferta"; break;
-            case "EXPIRED": statusText = "Expirada"; break;
-            default: statusText = offer.getStatus(); break;
+            case "PENDING":
+                statusText = context.getString(R.string.offer_status_pending);
+                break;
+            case "ACCEPTED":
+                statusText = context.getString(R.string.offer_status_accepted);
+                break;
+            case "REJECTED":
+                statusText = context.getString(R.string.offer_status_rejected);
+                break;
+            case "COUNTER_OFFER":
+                statusText = context.getString(R.string.offer_status_counter);
+                break;
+            case "EXPIRED":
+                statusText = context.getString(R.string.offer_status_expired);
+                break;
+            default:
+                statusText = offer.getStatus();
+                break;
         }
-        holder.tvStatus.setText("Estado: " + statusText);
+        holder.tvStatus.setText(context.getString(R.string.offer_status_format, statusText));
 
         if (offer.getMessage() != null && !offer.getMessage().trim().isEmpty()) {
             holder.tvMessage.setVisibility(View.VISIBLE);
-            holder.tvMessage.setText("Mensaje: " + offer.getMessage());
+            holder.tvMessage.setText(context.getString(R.string.offer_message_format, offer.getMessage()));
         } else {
             holder.tvMessage.setVisibility(View.GONE);
         }
 
         if (offer.getPublicationImage() != null && !offer.getPublicationImage().isEmpty()) {
-            Glide.with(holder.itemView.getContext())
+            Glide.with(context)
                     .load(offer.getPublicationImage())
                     .into(holder.ivImage);
         } else {
