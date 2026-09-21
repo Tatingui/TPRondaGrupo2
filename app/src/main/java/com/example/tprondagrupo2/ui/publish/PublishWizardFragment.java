@@ -4,7 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -18,19 +19,21 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tprondagrupo2.R;
-import com.yalantis.ucrop.UCrop;
 import com.example.tprondagrupo2.data.DraftManager;
+import com.example.tprondagrupo2.data.repository.PublicationRepository;
+import com.example.tprondagrupo2.data.repository.RepoCallback;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.PublicationCreateRequest;
-import com.example.tprondagrupo2.network.PublicationApiService;
+import com.example.tprondagrupo2.util.PublicationConstants;
 import com.google.android.material.textfield.TextInputEditText;
+import com.yalantis.ucrop.UCrop;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,15 +42,12 @@ import java.util.List;
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 @AndroidEntryPoint
 public class PublishWizardFragment extends Fragment {
 
     @Inject
-    PublicationApiService publicationApiService;
+    PublicationRepository publicationRepository;
 
     @Inject
     DraftManager.Factory draftManagerFactory;
@@ -66,6 +66,9 @@ public class PublishWizardFragment extends Fragment {
     private List<Uri> imageUris = new ArrayList<>();
     private RecyclerView rvPhotoThumbnails;
     private PhotoThumbnailAdapter photoAdapter;
+
+    private final Handler draftHandler = new Handler(Looper.getMainLooper());
+    private Runnable draftRunnable;
 
     private final ActivityResultLauncher<String> galleryLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
@@ -154,7 +157,7 @@ public class PublishWizardFragment extends Fragment {
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
         etImageUrl = view.findViewById(R.id.etImageUrl);
 
-        String[] categories = com.example.tprondagrupo2.util.PublicationConstants.CATEGORIES;
+        String[] categories = PublicationConstants.CATEGORIES;
         android.widget.ArrayAdapter<String> catAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         autoCompleteCategory.setAdapter(catAdapter);
         autoCompleteCategory.setText(categories[0], false);
@@ -210,20 +213,17 @@ public class PublishWizardFragment extends Fragment {
 
     private Long getSelectedCategoryId() {
         String sel = autoCompleteCategory.getText() != null ? autoCompleteCategory.getText().toString() : "";
-        switch (sel) {
-            case "Hogar": return 2L;
-            case "Electrónica": return 3L;
-            case "Ropa": return 4L;
-            case "Otros": return 5L;
-            default: return 1L; // Deportes
+        for (int i = 0; i < PublicationConstants.CATEGORIES.length; i++) {
+            if (PublicationConstants.CATEGORIES[i].equals(sel)) {
+                return (long) (i + 1);
+            }
         }
+        return 1L;
     }
 
     private String getSelectedStatus() {
         String sel = autoCompleteStatus.getText() != null ? autoCompleteStatus.getText().toString() : "";
-        if ("Como nuevo".equals(sel)) return "LIKE_NEW";
-        if ("Usado".equals(sel)) return "USED";
-        return "NEW";
+        return PublicationConstants.toBackendStatus(sel);
     }
 
     private void loadDraft() {
@@ -235,17 +235,12 @@ public class PublishWizardFragment extends Fragment {
             if (draft.getLocation() != null) etLocation.setText(draft.getLocation());
             if (draft.getAddress() != null) etDeliveryAddress.setText(draft.getAddress());
             if (draft.getCategoryId() != null) {
-                int idx = (int) (draft.getCategoryId() - 1);
-                String[] categories = {"Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
-                if (idx >= 0 && idx < categories.length) {
-                    autoCompleteCategory.setText(categories[idx], false);
-                }
+                String catName = PublicationConstants.getCategoryName(draft.getCategoryId());
+                autoCompleteCategory.setText(catName, false);
             }
             if (draft.getStatus() != null) {
-                String s = draft.getStatus();
-                if ("LIKE_NEW".equals(s)) autoCompleteStatus.setText("Como nuevo", false);
-                else if ("USED".equals(s)) autoCompleteStatus.setText("Usado", false);
-                else autoCompleteStatus.setText("Nuevo", false);
+                String uiStatus = PublicationConstants.translateStatus(draft.getStatus());
+                autoCompleteStatus.setText(uiStatus, false);
             }
             if (draft.getImageUrls() != null) {
                 imageUris.clear();
@@ -278,13 +273,21 @@ public class PublishWizardFragment extends Fragment {
         draftManager.saveDraft(request);
     }
 
+    private void saveCurrentDraftDebounced() {
+        if (draftRunnable != null) {
+            draftHandler.removeCallbacks(draftRunnable);
+        }
+        draftRunnable = this::saveCurrentDraft;
+        draftHandler.postDelayed(draftRunnable, 500); // 500ms debounce
+    }
+
     private void setupTextWatchers() {
         TextWatcher watcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                saveCurrentDraft();
+                saveCurrentDraftDebounced();
             }
             @Override
             public void afterTextChanged(Editable s) {}
@@ -382,20 +385,25 @@ public class PublishWizardFragment extends Fragment {
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);
         request.setAddress(etDeliveryAddress.getText().toString().trim());
-        publicationApiService.createPublication(request).enqueue(new Callback<Publicacion>() {
+
+        publicationRepository.createPublication(request, new RepoCallback<Publicacion>() {
             @Override
-            public void onResponse(Call<Publicacion> call, Response<Publicacion> response) {
-                if (response.isSuccessful()) {
-                    draftManager.clearDraft();
-                    Toast.makeText(getContext(), "¡Publicado con éxito!", Toast.LENGTH_LONG).show();
-                    NavHostFragment.findNavController(PublishWizardFragment.this).popBackStack();
-                } else {
-                    Toast.makeText(getContext(), "Error al publicar: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
+            public void onSuccess(Publicacion pub) {
+                if (!isAdded()) return;
+                draftManager.clearDraft();
+                Toast.makeText(getContext(), "¡Publicado con éxito!", Toast.LENGTH_LONG).show();
+                NavHostFragment.findNavController(PublishWizardFragment.this).popBackStack();
             }
 
             @Override
-            public void onFailure(Call<Publicacion> call, Throwable t) {
+            public void onError(String message) {
+                if (!isAdded()) return;
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNetworkError() {
+                if (!isAdded()) return;
                 Toast.makeText(getContext(), "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });

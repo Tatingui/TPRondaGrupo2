@@ -3,9 +3,11 @@ package com.example.tprondagrupo2.data.repository;
 import androidx.annotation.NonNull;
 
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.model.PublicationCreateRequest;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.network.PublicationApiService;
 import com.example.tprondagrupo2.network.PublicationPageResponse;
+import com.example.tprondagrupo2.data.repository.RepoCallback;
 
 import java.util.List;
 
@@ -26,7 +28,6 @@ public class PublicationRepository implements PublicationDetailSource {
 
     public interface FavoritesCallback extends RepoCallback<List<Publicacion>> {}
     public interface PublicationPageCallback extends RepoCallback<PublicationPageResponse> {}
-
     public interface ToggleFavoriteCallback extends RepoCallback<Void> {
         void onSuccess();
         @Override
@@ -120,7 +121,7 @@ public class PublicationRepository implements PublicationDetailSource {
             public void onResponse(@NonNull Call<Void> call,
                                    @NonNull Response<Void> response) {
                 if (response.isSuccessful()) {
-                    callback.onSuccess();
+                    callback.onSuccess(null);
                 } else {
                     callback.onError("Error al cambiar favorito");
                 }
@@ -153,5 +154,23 @@ public class PublicationRepository implements PublicationDetailSource {
                         callback.onNetworkError();
                     }
                 });
+    }
+
+    public void createPublication(PublicationCreateRequest request, RepoCallback<Publicacion> callback) {
+        apiService.createPublication(request).enqueue(new Callback<Publicacion>() {
+            @Override
+            public void onResponse(@NonNull Call<Publicacion> call, @NonNull Response<Publicacion> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError("Error al publicar: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Publicacion> call, @NonNull Throwable t) {
+                callback.onNetworkError();
+            }
+        });
     }
 }
