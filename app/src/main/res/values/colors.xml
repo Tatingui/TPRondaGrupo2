@@ -7,4 +7,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Colores Historial -->
+    <color name="historial_compra_bg">#E8F5E9</color>
+    <color name="historial_compra_text">#2E7D32</color>
+    <color name="historial_venta_bg">#F3E5F5</color>
+    <color name="historial_venta_text">#6A1B9A</color>
+    <color name="historial_entrega_confirmada">#1B5E20</color>
+    <color name="historial_entrega_pendiente">#E65100</color>
 </resources>

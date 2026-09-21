@@ -18,6 +18,8 @@ public class PublicationConstants {
                 return "Pausada";
             case "SOLD":
                 return "Vendida";
+            case "CANCELLED":
+                return "Cancelada";
             case "NEW":
                 return "Nuevo";
             case "LIKE_NEW":
