@@ -736,17 +736,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     /** El backend manda NEW / LIKE_NEW / USED. */
     private String traducirEstado(String status) {
-        if (status == null) return "";
-        switch (status) {
-            case "NEW":
-                return "Nuevo";
-            case "LIKE_NEW":
-                return "Como nuevo";
-            case "USED":
-                return "Usado";
-            default:
-                return status;
-        }
+        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(status);
     }
 
     /** El backend manda la fecha como "2026-09-18T10:30:00"; la mostramos como "18/09/2026". */

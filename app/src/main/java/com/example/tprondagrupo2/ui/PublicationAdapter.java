@@ -107,17 +107,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
     }
 
     private String traducirEstado(String status) {
-        if (status == null) return "";
-        switch (status) {
-            case "NEW":
-                return "Nuevo";
-            case "LIKE_NEW":
-                return "Como nuevo";
-            case "USED":
-                return "Usado";
-            default:
-                return status;
-        }
+        return com.example.tprondagrupo2.util.PublicationConstants.translateStatus(status);
     }
 
     private void showFullscreenImage(View anchorView, String imageUrl) {

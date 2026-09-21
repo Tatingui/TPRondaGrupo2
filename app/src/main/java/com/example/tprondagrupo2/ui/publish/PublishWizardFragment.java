@@ -154,7 +154,7 @@ public class PublishWizardFragment extends Fragment {
         autoCompleteStatus = view.findViewById(R.id.autoCompleteStatus);
         etImageUrl = view.findViewById(R.id.etImageUrl);
 
-        String[] categories = {"Deportes", "Hogar", "Electrónica", "Ropa", "Otros"};
+        String[] categories = com.example.tprondagrupo2.util.PublicationConstants.CATEGORIES;
         android.widget.ArrayAdapter<String> catAdapter = new android.widget.ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categories);
         autoCompleteCategory.setAdapter(catAdapter);
         autoCompleteCategory.setText(categories[0], false);
