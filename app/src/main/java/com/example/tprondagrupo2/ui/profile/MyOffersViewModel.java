@@ -55,9 +55,8 @@ public class MyOffersViewModel extends ViewModel {
     public LiveData<Publicacion> getNavigateToDetail() { return navigateToDetail; }
 
     public void fetchOffers(boolean isReceivedTab) {
-        if (loadingCall != null) {
-            loadingCall.cancel();
-        }
+        cancelLoading();
+        offers.setValue(new ArrayList<>());
         loading.setValue(true);
         emptyMessage.setValue(null);
         errorMessage.setValue(null);
@@ -68,6 +67,8 @@ public class MyOffersViewModel extends ViewModel {
         call.enqueue(new Callback<List<Offer>>() {
             @Override
             public void onResponse(Call<List<Offer>> call, Response<List<Offer>> response) {
+                if (call != loadingCall) return;
+                loadingCall = null;
                 loading.setValue(false);
                 if (response.isSuccessful() && response.body() != null) {
                     List<Offer> result = response.body();
@@ -82,12 +83,26 @@ public class MyOffersViewModel extends ViewModel {
 
             @Override
             public void onFailure(Call<List<Offer>> call, Throwable t) {
+                if (call != loadingCall) return;
+                loadingCall = null;
                 if (!call.isCanceled()) {
                     loading.setValue(false);
                     errorMessage.setValue("Error de conexión al cargar ofertas");
                 }
             }
         });
+    }
+
+    private void cancelLoading() {
+        Call<List<Offer>> previous = loadingCall;
+        loadingCall = null;
+        if (previous != null) previous.cancel();
+    }
+
+    @Override
+    protected void onCleared() {
+        cancelLoading();
+        super.onCleared();
     }
 
     public void acceptOffer(Offer offer, boolean isReceivedTab) {
