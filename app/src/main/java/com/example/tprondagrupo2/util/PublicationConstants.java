@@ -10,14 +10,8 @@ public class PublicationConstants {
     }
 
     public static String translateStatus(String status) {
-        if (status == null) return "Activa";
+        if (status == null) return "";
         switch (status) {
-            case "NEW":
-                return "Nuevo";
-            case "LIKE_NEW":
-                return "Como nuevo";
-            case "USED":
-                return "Usado";
             case "ACTIVE":
                 return "Activa";
             case "PAUSED":
@@ -26,6 +20,12 @@ public class PublicationConstants {
                 return "Vendida";
             case "CANCELLED":
                 return "Cancelada";
+            case "NEW":
+                return "Nuevo";
+            case "LIKE_NEW":
+                return "Como nuevo";
+            case "USED":
+                return "Usado";
             default:
                 return status;
         }

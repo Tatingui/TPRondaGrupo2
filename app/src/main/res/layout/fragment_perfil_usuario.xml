@@ -17,7 +17,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/purple_500"
+            android:background="?attr/colorPrimary"
             android:gravity="center"
             android:orientation="vertical"
             android:paddingTop="32dp"
@@ -59,7 +59,7 @@
                     app:fabCustomSize="32dp"
                     app:maxImageSize="16dp"
                     app:backgroundTint="@color/white"
-                    app:tint="@color/purple_500" />
+                    app:tint="?attr/colorPrimary" />
 
             </FrameLayout>
 

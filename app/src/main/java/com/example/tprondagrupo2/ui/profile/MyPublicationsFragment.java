@@ -101,11 +101,6 @@ public class MyPublicationsFragment extends Fragment {
             }
 
             @Override
-            public void onSell(Publicacion pub, int position) {
-                viewModel.updateStatus(pub.getIdLong(), "SOLD");
-            }
-
-            @Override
             public void onDelete(Publicacion pub, int position) {
                 confirmDelete(pub);
             }

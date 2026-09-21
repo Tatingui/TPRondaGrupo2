@@ -24,7 +24,6 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     public interface OnPublicationActionListener {
         void onPause(Publicacion pub, int position);
         void onActivate(Publicacion pub, int position);
-        void onSell(Publicacion pub, int position);
         void onDelete(Publicacion pub, int position);
     }
 
@@ -62,30 +61,28 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
             holder.ivThumbnail.setImageResource(R.drawable.ic_launcher_foreground);
         }
 
-        if ("PAUSED".equals(state)) {
-            holder.btnPause.setText(context.getString(R.string.my_publication_reactivate));
-            holder.btnPause.setOnClickListener(v -> {
-                int pos = holder.getBindingAdapterPosition();
-                if (listener != null && pos != RecyclerView.NO_POSITION) {
-                    listener.onActivate(pub, pos);
-                }
-            });
+        if ("SOLD".equals(state)) {
+            holder.btnPause.setVisibility(View.GONE);
         } else {
-            holder.btnPause.setText(context.getString(R.string.my_publication_pause));
-            holder.btnPause.setOnClickListener(v -> {
-                int pos = holder.getBindingAdapterPosition();
-                if (listener != null && pos != RecyclerView.NO_POSITION) {
-                    listener.onPause(pub, pos);
-                }
-            });
-        }
-
-        holder.btnSell.setOnClickListener(v -> {
-            int pos = holder.getBindingAdapterPosition();
-            if (listener != null && pos != RecyclerView.NO_POSITION) {
-                listener.onSell(pub, pos);
+            holder.btnPause.setVisibility(View.VISIBLE);
+            if ("PAUSED".equals(state)) {
+                holder.btnPause.setText(context.getString(R.string.my_publication_reactivate));
+                holder.btnPause.setOnClickListener(v -> {
+                    int pos = holder.getBindingAdapterPosition();
+                    if (listener != null && pos != RecyclerView.NO_POSITION) {
+                        listener.onActivate(pub, pos);
+                    }
+                });
+            } else {
+                holder.btnPause.setText(context.getString(R.string.my_publication_pause));
+                holder.btnPause.setOnClickListener(v -> {
+                    int pos = holder.getBindingAdapterPosition();
+                    if (listener != null && pos != RecyclerView.NO_POSITION) {
+                        listener.onPause(pub, pos);
+                    }
+                });
             }
-        });
+        }
 
         holder.btnDelete.setOnClickListener(v -> {
             int pos = holder.getBindingAdapterPosition();
@@ -103,16 +100,15 @@ public class MyPublicationsAdapter extends RecyclerView.Adapter<MyPublicationsAd
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivThumbnail;
         TextView tvTitle, tvPrice, tvState;
-        Button btnPause, btnSell, btnDelete;
+        Button btnPause, btnDelete;
 
-        ViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivThumbnail = itemView.findViewById(R.id.ivMyPubThumbnail);
             tvTitle = itemView.findViewById(R.id.tvMyPubTitle);
             tvPrice = itemView.findViewById(R.id.tvMyPubPrice);
             tvState = itemView.findViewById(R.id.tvMyPubState);
             btnPause = itemView.findViewById(R.id.btnMyPubPause);
-            btnSell = itemView.findViewById(R.id.btnMyPubSell);
             btnDelete = itemView.findViewById(R.id.btnMyPubDelete);
         }
     }
