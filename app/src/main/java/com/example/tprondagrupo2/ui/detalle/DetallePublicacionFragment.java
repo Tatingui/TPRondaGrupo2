@@ -28,7 +28,7 @@ import com.example.tprondagrupo2.data.repository.PublicationDetailSource.LoadErr
 import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 import com.example.tprondagrupo2.model.AuthResponse;
-import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.OfertaRequest;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
@@ -396,13 +396,13 @@ public class DetallePublicacionFragment extends Fragment {
         tvAvisoEstado.setVisibility(View.GONE);
         layoutAccionesComprador.setVisibility(View.VISIBLE);
 
-        Oferta miOferta = publicacion.getMyOffer();
+        Offer miOferta = publicacion.getMyOffer();
         if (miOferta != null) {
             tvMiOferta.setVisibility(View.VISIBLE);
             tvMiOferta.setText(getString(R.string.detalle_mi_oferta,
-                    formatearPrecio(miOferta.getAmount()), miOferta.getStatusTexto()));
+                    formatearPrecio(miOferta.getOfferedPrice()), traducirEstadoOferta(miOferta.getStatus())));
             // Mientras haya una oferta pendiente no se puede hacer otra
-            btnOfertar.setEnabled(!miOferta.estaPendiente());
+            btnOfertar.setEnabled(!"PENDING".equals(miOferta.getStatus()));
         } else {
             tvMiOferta.setVisibility(View.GONE);
             btnOfertar.setEnabled(true);
@@ -616,9 +616,9 @@ public class DetallePublicacionFragment extends Fragment {
         btnOfertar.setEnabled(false);
         viewRequests.enqueue(publicationApiService
                 .makeOffer(currentPublicacion.getId(), new OfertaRequest(monto, mensaje)),
-                new Callback<Oferta>() {
+                new Callback<Offer>() {
                     @Override
-                    public void onResponse(@NonNull Call<Oferta> call, @NonNull Response<Oferta> response) {
+                    public void onResponse(@NonNull Call<Offer> call, @NonNull Response<Offer> response) {
                         if (!isAdded()) return;
                         ofertaEnCurso = false;
                         if (response.isSuccessful() && response.body() != null) {
@@ -633,7 +633,7 @@ public class DetallePublicacionFragment extends Fragment {
                     }
 
                     @Override
-                    public void onFailure(@NonNull Call<Oferta> call, @NonNull Throwable t) {
+                    public void onFailure(@NonNull Call<Offer> call, @NonNull Throwable t) {
                         if (isAdded()) {
                             ofertaEnCurso = false;
                             btnOfertar.setEnabled(true);
@@ -895,6 +895,17 @@ public class DetallePublicacionFragment extends Fragment {
 
     private String formatearPrecio(double precio) {
         return FormatUtils.formatPrice(precio);
+    }
+
+    private String traducirEstadoOferta(String status) {
+        if (status == null) return "";
+        switch (status) {
+            case "PENDING": return "Pendiente";
+            case "ACCEPTED": return "Aceptada";
+            case "REJECTED": return "Rechazada";
+            case "EXPIRED": return "Vencida";
+            default: return status;
+        }
     }
 
     @Override
