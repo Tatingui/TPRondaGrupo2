@@ -4,7 +4,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -48,8 +47,9 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
                 .into(holder.ivFoto);
 
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onFotoClick(position);
+            int pos = holder.getBindingAdapterPosition();
+            if (listener != null && pos != RecyclerView.NO_POSITION) {
+                listener.onFotoClick(pos);
             }
         });
     }
@@ -59,7 +59,7 @@ public class GaleriaFotosAdapter extends RecyclerView.Adapter<GaleriaFotosAdapte
         return fotos.size();
     }
 
-    static class FotoViewHolder extends RecyclerView.ViewHolder {
+    public static class FotoViewHolder extends RecyclerView.ViewHolder {
 
         final ImageView ivFoto;
 
