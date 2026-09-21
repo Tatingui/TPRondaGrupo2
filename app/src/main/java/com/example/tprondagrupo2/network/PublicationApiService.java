@@ -1,6 +1,6 @@
 package com.example.tprondagrupo2.network;
 
-import com.example.tprondagrupo2.model.Oferta;
+import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.OfertaRequest;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
@@ -73,5 +73,5 @@ public interface PublicationApiService {
     Call<Pregunta> answerQuestion(@Path("questionId") Long questionId, @Body TextoRequest request);
 
     @POST("publications/{id}/offers")
-    Call<Oferta> makeOffer(@Path("id") String id, @Body OfertaRequest request);
+    Call<Offer> makeOffer(@Path("id") String id, @Body OfertaRequest request);
 }

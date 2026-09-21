@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
 import com.google.gson.Gson;
 
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class PerfilPublicoTest {
         assertEquals(Long.valueOf(2L), perfil.getId());
         assertEquals("Maria Hogar", perfil.getNombre());
         assertEquals("Septiembre 2026", perfil.getMiembroDesde());
-        assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, perfil.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.SIN_CALIFICACIONES, VendedorViewBinder.calcularNivel(perfil));
         assertEquals(1, perfil.getPublicacionesActivas().size());
         assertEquals("Auriculares", perfil.getPublicacionesActivas().get(0).getTitle());
     }

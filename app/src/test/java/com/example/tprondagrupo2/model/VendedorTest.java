@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.example.tprondagrupo2.ui.detalle.VendedorViewBinder;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,13 +20,11 @@ public class VendedorTest {
 
     @Test
     public void testConstructorVacioNoLanzaExcepcion() {
-        // Constructor sin argumentos requerido por Gson
         assertNotNull(new Vendedor());
     }
 
     @Test
     public void testCamposPorDefecto() {
-        // Las referencias (incluido el ID Long) arrancan en null y los primitivos en 0
         assertNull(vendedor.getId());
         assertNull(vendedor.getNombre());
         assertNull(vendedor.getMiembroDesde());
@@ -67,78 +67,70 @@ public class VendedorTest {
     }
 
     @Test
-    public void testGetInicialDevuelvePrimeraLetraEnMayuscula() {
-        vendedor.setNombre("juan");
-        assertEquals("J", vendedor.getInicial());
+    public void testObtenerInicialDevuelvePrimeraLetraEnMayuscula() {
+        assertEquals("J", VendedorViewBinder.obtenerInicial("juan"));
     }
 
     @Test
-    public void testGetInicialConNombreConEspacios() {
-        vendedor.setNombre("  ana maría  ");
-        assertEquals("A", vendedor.getInicial());
+    public void testObtenerInicialConNombreConEspacios() {
+        assertEquals("A", VendedorViewBinder.obtenerInicial("  ana maría  "));
     }
 
     @Test
-    public void testGetInicialConNombreNullDevuelveInterrogacion() {
-        vendedor.setNombre(null);
-        assertEquals("?", vendedor.getInicial());
+    public void testObtenerInicialConNombreNullDevuelveInterrogacion() {
+        assertEquals("?", VendedorViewBinder.obtenerInicial(null));
     }
 
     @Test
-    public void testGetInicialConNombreVacioDevuelveInterrogacion() {
-        vendedor.setNombre("   ");
-        assertEquals("?", vendedor.getInicial());
+    public void testObtenerInicialConNombreVacioDevuelveInterrogacion() {
+        assertEquals("?", VendedorViewBinder.obtenerInicial("   "));
     }
 
     @Test
     public void testNivelSinCalificacionesCuandoNoHayOpiniones() {
-        // Aunque tenga puntaje, sin opiniones no se muestra reputación real
         vendedor.setReputacion(5.0);
         vendedor.setCantidadOpiniones(0);
-        assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, vendedor.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.SIN_CALIFICACIONES, VendedorViewBinder.calcularNivel(vendedor));
     }
 
     @Test
     public void testNivelExcelente() {
         vendedor.setReputacion(4.5);
         vendedor.setCantidadOpiniones(10);
-        assertEquals(Vendedor.NivelReputacion.EXCELENTE, vendedor.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.EXCELENTE, VendedorViewBinder.calcularNivel(vendedor));
     }
 
     @Test
     public void testNivelBueno() {
         vendedor.setReputacion(3.5);
         vendedor.setCantidadOpiniones(10);
-        assertEquals(Vendedor.NivelReputacion.BUENO, vendedor.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.BUENO, VendedorViewBinder.calcularNivel(vendedor));
     }
 
     @Test
     public void testNivelRegular() {
         vendedor.setReputacion(2.5);
         vendedor.setCantidadOpiniones(10);
-        assertEquals(Vendedor.NivelReputacion.REGULAR, vendedor.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.REGULAR, VendedorViewBinder.calcularNivel(vendedor));
     }
 
     @Test
     public void testNivelMalo() {
         vendedor.setReputacion(1.5);
         vendedor.setCantidadOpiniones(10);
-        assertEquals(Vendedor.NivelReputacion.MALO, vendedor.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.MALO, VendedorViewBinder.calcularNivel(vendedor));
     }
 
     @Test
     public void testNivelExpoConEtiquetaYColorNoNulos() {
-        // Cada nivel debe tener etiqueta y color definidos para pintar la UI
-        for (Vendedor.NivelReputacion nivel : Vendedor.NivelReputacion.values()) {
+        for (VendedorViewBinder.NivelReputacion nivel : VendedorViewBinder.NivelReputacion.values()) {
             assertNotNull(nivel.getEtiqueta());
-            // El color es un int ARGB; validamos que tenga canal alfa (no transparente)
             assertEquals(0xFF000000, nivel.getColor() & 0xFF000000);
         }
     }
 
     @Test
     public void testComprasEmpiezaEnCeroYSePuedeSetear() {
-        // Operaciones concretadas como comprador (se completan con el punto 9)
         Vendedor v = new Vendedor(1L, "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
         assertEquals(0, v.getCantidadCompras());
 
@@ -148,8 +140,7 @@ public class VendedorTest {
 
     @Test
     public void testSinCalificacionesMuestraEseNivel() {
-        // Con la reputación en 0 tiene que decir "Sin calificaciones aún"
         Vendedor v = new Vendedor(1L, "Ana", 0, 0, 0, "Septiembre 2026", "Palermo");
-        assertEquals(Vendedor.NivelReputacion.SIN_CALIFICACIONES, v.getNivel());
+        assertEquals(VendedorViewBinder.NivelReputacion.SIN_CALIFICACIONES, VendedorViewBinder.calcularNivel(v));
     }
 }
