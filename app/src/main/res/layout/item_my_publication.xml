@@ -61,33 +61,17 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:layout_marginTop="8dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnMyPubPause"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="36dp"
-                        android:text="Pausar"
-                        android:textSize="12sp"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_marginEnd="8dp" />
-
-                    <Button
-                        android:id="@+id/btnMyPubSell"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="36dp"
-                        android:text="Vendido"
-                        android:textSize="12sp"
-                        style="@style/Widget.MaterialComponents.Button.TextButton" />
-                </LinearLayout>
+                <Button
+                    android:id="@+id/btnMyPubPause"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Pausar"
+                    android:textSize="12sp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_marginEnd="8dp" />
 
                 <Button
                     android:id="@+id/btnMyPubDelete"
@@ -96,8 +80,7 @@
                     android:text="Dar de baja"
                     android:textSize="12sp"
                     android:textColor="#D32F2F"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_marginTop="4dp" />
+                    style="@style/Widget.MaterialComponents.Button.TextButton" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
