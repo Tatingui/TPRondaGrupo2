@@ -141,10 +141,13 @@ public class UserRepository {
     /**
      * Cierra la sesion del usuario: limpia el token de sesion y el flag
      * de mantener sesion. Preserva la configuracion de biometria y el
-     * token cifrado para que al re-loguear no vuelva a preguntar.
+     * Preserva biometricEnabled para que al re-loguear no vuelva a
+     * preguntar si quiere activar biometria. Limpia el token cifrado
+     * para que no salte el prompt biometrico al volver al login.
      */
     public void logout() {
         tokenManager.clearToken();
+        tokenManager.clearEncryptedToken();
         tokenManager.setKeepSession(false);
     }
 
@@ -160,6 +163,7 @@ public class UserRepository {
                     tokenManager.clearToken();
                     tokenManager.setBiometricEnabled(false);
                     tokenManager.clearEncryptedToken();
+        tokenManager.clearEncryptedToken();
                     tokenManager.setKeepSession(false);
                     callback.onSuccess();
                 } else {
