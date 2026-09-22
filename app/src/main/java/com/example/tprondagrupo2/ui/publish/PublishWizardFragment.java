@@ -178,6 +178,10 @@ public class PublishWizardFragment extends Fragment {
                 if (imageUris.isEmpty() && etImageUrl.getText() != null && !etImageUrl.getText().toString().isEmpty()) {
                     imageUris.add(Uri.parse(etImageUrl.getText().toString().trim()));
                 }
+                if (imageUris.isEmpty()) {
+                    Toast.makeText(getContext(), "Seleccioná al menos una foto para tu publicación", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 currentStep = 3;
                 updateReviewSummary();
                 updateStepUI();
@@ -397,8 +401,12 @@ public class PublishWizardFragment extends Fragment {
         for (Uri u : imageUris) {
             finalUrls.add(u.toString());
         }
+        // Validacion: no deberia llegar aca sin fotos (se valida en paso 2)
         if (finalUrls.isEmpty()) {
-            finalUrls.add(getString(R.string.publish_default_image_url));
+            Toast.makeText(getContext(), "Seleccioná al menos una foto", Toast.LENGTH_SHORT).show();
+            currentStep = 2;
+            updateStepUI();
+            return;
         }
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);

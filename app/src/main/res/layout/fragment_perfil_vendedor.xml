@@ -21,6 +21,14 @@
             android:paddingTop="32dp"
             android:paddingBottom="32dp">
 
+            <ImageView
+                android:id="@+id/ivPerfilAvatar"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:visibility="gone"
+                android:contentDescription="@string/perfil_foto"
+                tools:src="@drawable/bg_avatar_vendedor" />
+
             <TextView
                 android:id="@+id/tvPerfilAvatar"
                 android:layout_width="96dp"

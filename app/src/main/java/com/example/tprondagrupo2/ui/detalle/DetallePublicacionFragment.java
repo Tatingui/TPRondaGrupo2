@@ -1,6 +1,11 @@
 package com.example.tprondagrupo2.ui.detalle;
 
 import android.os.Bundle;
+import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import com.example.tprondagrupo2.BuildConfig;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.text.Editable;
@@ -75,6 +80,7 @@ public class DetallePublicacionFragment extends Fragment {
 
     // Sección del vendedor
     private View seccionVendedor;
+    private ImageView ivVendedorAvatar;
     private TextView tvVendedorAvatar;
     private TextView tvVendedorNombre;
     private TextView tvVendedorNivel;
@@ -137,6 +143,7 @@ public class DetallePublicacionFragment extends Fragment {
         btnFavorite = view.findViewById(R.id.btnFavoriteDetail);
 
         seccionVendedor = view.findViewById(R.id.seccionVendedor);
+        ivVendedorAvatar = view.findViewById(R.id.ivVendedorAvatar);
         tvVendedorAvatar = view.findViewById(R.id.tvVendedorAvatar);
         tvVendedorNombre = view.findViewById(R.id.tvVendedorNombre);
         tvVendedorNivel = view.findViewById(R.id.tvVendedorNivel);
@@ -584,6 +591,32 @@ public class DetallePublicacionFragment extends Fragment {
         seccionVendedor.setVisibility(View.VISIBLE);
 
         tvVendedorNombre.setText(vendedor.getNombre());
+
+        // Cargar foto de perfil del vendedor si esta disponible
+        if (vendedor.getProfileImageUrl() != null && !vendedor.getProfileImageUrl().isEmpty()) {
+            String imageUrl = vendedor.getProfileImageUrl();
+            if (imageUrl.startsWith("/")) {
+                String baseUrl = BuildConfig.BASE_URL;
+                if (baseUrl.endsWith("/")) {
+                    baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                }
+                imageUrl = baseUrl + imageUrl;
+            }
+            if (ivVendedorAvatar != null && isAdded()) {
+                ivVendedorAvatar.setVisibility(View.VISIBLE);
+                tvVendedorAvatar.setVisibility(View.GONE);
+                Glide.with(this)
+                        .load(imageUrl)
+                        .transform(new CircleCrop())
+                        .placeholder(R.drawable.bg_avatar_vendedor)
+                        .error(R.drawable.bg_avatar_vendedor)
+                        .into(ivVendedorAvatar);
+            }
+        } else {
+            if (ivVendedorAvatar != null) ivVendedorAvatar.setVisibility(View.GONE);
+            if (tvVendedorAvatar != null) tvVendedorAvatar.setVisibility(View.VISIBLE);
+        }
+
         VendedorViewBinder.bindReputacion(vendedor, tvVendedorAvatar, rbVendedorReputacion,
                 tvVendedorReputacion, tvVendedorNivel);
 
@@ -663,6 +696,7 @@ public class DetallePublicacionFragment extends Fragment {
         tvDescripcion = null;
         btnFavorite = null;
         seccionVendedor = null;
+        ivVendedorAvatar = null;
         tvVendedorAvatar = null;
         tvVendedorNombre = null;
         tvVendedorNivel = null;

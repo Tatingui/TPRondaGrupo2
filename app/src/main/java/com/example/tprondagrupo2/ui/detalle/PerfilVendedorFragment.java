@@ -16,6 +16,11 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.widget.ImageView;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import com.example.tprondagrupo2.BuildConfig;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.PerfilPublico;
@@ -48,6 +53,7 @@ public class PerfilVendedorFragment extends Fragment {
     /** Repositorio que centraliza las operaciones de perfil */
     @Inject UserRepository userRepository;
 
+    private ImageView ivAvatar;
     private TextView tvAvatar;
     private TextView tvNombre;
     private TextView tvNivel;
@@ -74,6 +80,7 @@ public class PerfilVendedorFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
 
+        ivAvatar = view.findViewById(R.id.ivPerfilAvatar);
         tvAvatar = view.findViewById(R.id.tvPerfilAvatar);
         tvNombre = view.findViewById(R.id.tvPerfilNombre);
         tvNivel = view.findViewById(R.id.tvPerfilNivel);
@@ -147,6 +154,35 @@ public class PerfilVendedorFragment extends Fragment {
 
     private void mostrarVendedor(@NonNull ReputacionInfo info) {
         tvNombre.setText(info.getNombre());
+
+        // Cargar foto de perfil si esta disponible
+        if (info instanceof Vendedor) {
+            Vendedor v = (Vendedor) info;
+            if (v.getProfileImageUrl() != null && !v.getProfileImageUrl().isEmpty()) {
+                String imageUrl = v.getProfileImageUrl();
+                if (imageUrl.startsWith("/")) {
+                    String baseUrl = BuildConfig.BASE_URL;
+                    if (baseUrl.endsWith("/")) {
+                        baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+                    }
+                    imageUrl = baseUrl + imageUrl;
+                }
+                if (ivAvatar != null && isAdded()) {
+                    ivAvatar.setVisibility(View.VISIBLE);
+                    tvAvatar.setVisibility(View.GONE);
+                    Glide.with(this)
+                            .load(imageUrl)
+                            .transform(new CircleCrop())
+                            .placeholder(R.drawable.bg_avatar_vendedor)
+                            .error(R.drawable.bg_avatar_vendedor)
+                            .into(ivAvatar);
+                }
+            } else {
+                if (ivAvatar != null) ivAvatar.setVisibility(View.GONE);
+                if (tvAvatar != null) tvAvatar.setVisibility(View.VISIBLE);
+            }
+        }
+
         VendedorViewBinder.bindReputacion(info, tvAvatar, rbReputacion, tvReputacion, tvNivel);
 
         tvVentas.setText(getString(R.string.vendedor_operaciones,

@@ -13,6 +13,7 @@ public class SellerDTO {
     private int cantidadOpiniones;   // Calificaciones recibidas
     private String miembroDesde;     // Ej: "Septiembre 2026"
     private String ubicacion;        // Zona del vendedor
+    private String profileImageUrl;  // URL de la foto de perfil
 
     public SellerDTO() {
     }
@@ -79,5 +80,13 @@ public class SellerDTO {
 
     public void setUbicacion(String ubicacion) {
         this.ubicacion = ubicacion;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 }
