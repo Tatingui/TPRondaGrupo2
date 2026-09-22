@@ -198,6 +198,7 @@ public class PublicationService {
         dto.setCantidadOpiniones(transactionService.getRatingCount(seller.getId()));
         dto.setCantidadVentas(transactionService.getSaleCount(seller.getId()));
         dto.setCantidadCompras(transactionService.getPurchaseCount(seller.getId()));
+        dto.setProfileImageUrl(seller.getProfileImageUrl());
     }
 
     @Transactional

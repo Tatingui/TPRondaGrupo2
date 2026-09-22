@@ -137,4 +137,5 @@
     <string name="my_publication_reactivate">Reactivar</string>
     <string name="my_publication_pause">Pausar</string>
     <string name="publish_default_image_url" translatable="false">https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&amp;fit=crop&amp;q=80&amp;w=800</string>
+    <string name="perfil_foto">Foto de perfil</string>
 </resources>

@@ -16,6 +16,7 @@ public class Vendedor implements Serializable, ReputacionInfo {
     private int cantidadOpiniones;    // Opiniones recibidas
     private String miembroDesde;      // Ej: "Marzo 2023"
     private String ubicacion;         // Zona del vendedor
+    private String profileImageUrl;   // URL de la foto de perfil
 
     public Vendedor() {
         // Constructor vacio requerido por Gson
@@ -100,5 +101,13 @@ public class Vendedor implements Serializable, ReputacionInfo {
 
     public void setUbicacion(String ubicacion) {
         this.ubicacion = ubicacion;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 }
