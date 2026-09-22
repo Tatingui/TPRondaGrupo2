@@ -36,4 +36,16 @@ public class PublicationConstants {
         if ("Usado".equals(uiStatus)) return "USED";
         return "NEW";
     }
+
+    public static String translateOfferStatus(String status) {
+        if (status == null) return "";
+        switch (status) {
+            case "PENDING": return "Pendiente";
+            case "ACCEPTED": return "Aceptada";
+            case "REJECTED": return "Rechazada";
+            case "COUNTER_OFFER": return "Contraoferta";
+            case "EXPIRED": return "Vencida";
+            default: return status;
+        }
+    }
 }

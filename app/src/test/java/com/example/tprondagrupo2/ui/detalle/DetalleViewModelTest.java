@@ -9,6 +9,10 @@ import com.example.tprondagrupo2.data.repository.PublicationDetailSource;
 import com.example.tprondagrupo2.model.Offer;
 import com.example.tprondagrupo2.model.Pregunta;
 import com.example.tprondagrupo2.model.Publicacion;
+import com.example.tprondagrupo2.network.FavoritesDataStoreManager;
+import com.example.tprondagrupo2.network.PublicationFavoriteApiService;
+import com.example.tprondagrupo2.network.PublicationWriteApiService;
+import com.example.tprondagrupo2.support.FakeCall;
 import com.example.tprondagrupo2.support.ImmediateMainThreadRule;
 import com.google.gson.Gson;
 
@@ -16,20 +20,31 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import retrofit2.Response;
+
 public class DetalleViewModelTest {
     @Rule public final ImmediateMainThreadRule mainThread = new ImmediateMainThreadRule();
     private FakeSource source;
+    private FakeWriteApi writeApi;
+    private FakeFavoriteApi favoriteApi;
+    private FavoritesDataStoreManager favoritesDataStore;
     private DetalleViewModel vm;
 
     @Before
     public void setup() {
         source = new FakeSource();
-        vm = new DetalleViewModel(source);
+        writeApi = new FakeWriteApi();
+        favoriteApi = new FakeFavoriteApi();
+        favoritesDataStore = new FavoritesDataStoreManager(true);
+        vm = new DetalleViewModel(source, writeApi, favoriteApi, favoritesDataStore);
     }
+
+    // ────────── Tests de lectura existentes ──────────
 
     @Test
     public void muestraResumenMientrasCargaSinHabilitarAccionesAntesDelDetalle() {
@@ -50,7 +65,8 @@ public class DetalleViewModelTest {
     @Test
     public void recrearVistaConMismoStoreConservaDatosYNoRepiteSolicitudesNiVisita() {
         ViewModelStore store = new ViewModelStore();
-        DetalleViewModelFactory factory = new DetalleViewModelFactory(source);
+        DetalleViewModelFactory factory = new DetalleViewModelFactory(
+                source, writeApi, favoriteApi, favoritesDataStore);
         DetalleViewModel primera = new ViewModelProvider(store, factory).get(DetalleViewModel.class);
         primera.inicializar(publicacion("Inicial"));
         source.detalles.get(0).success(publicacion("Actualizada"));
@@ -121,7 +137,7 @@ public class DetalleViewModelTest {
                 PublicationDetailSource.LoadError.UNAUTHORIZED,
                 PublicationDetailSource.LoadError.FORBIDDEN }) {
             FakeSource actual = new FakeSource();
-            DetalleViewModel model = new DetalleViewModel(actual);
+            DetalleViewModel model = new DetalleViewModel(actual, writeApi, favoriteApi, favoritesDataStore);
             model.inicializar(publicacion("Inicial"));
             actual.detalles.get(0).success(publicacion("Completa"));
             model.recargarDetalle();
@@ -221,6 +237,193 @@ public class DetalleViewModelTest {
         assertTrue(source.visitas.isEmpty());
     }
 
+    // ────────── Tests de escritura ──────────
+
+    @Test
+    public void enviarPreguntaExitosaRecargaPreguntas() {
+        inicializarCompleto();
+        vm.enviarPregunta("¿Acepta permuta?");
+
+        assertNotNull(writeApi.lastAskQuestionCall);
+        writeApi.lastAskQuestionCall.respond(Response.success(new Pregunta()));
+
+        assertEquals("Pregunta enviada", vm.getToastMessage().getValue());
+        // Recargó preguntas (2 peticiones: la inicial + la recarga)
+        assertEquals(2, source.preguntas.size());
+    }
+
+    @Test
+    public void enviarPreguntaConErrorMuestraToast() {
+        inicializarCompleto();
+        vm.enviarPregunta("¿Acepta permuta?");
+
+        writeApi.lastAskQuestionCall.fail(new RuntimeException("timeout"));
+
+        assertEquals("Error de conexión", vm.getToastMessage().getValue());
+    }
+
+    @Test
+    public void responderPreguntaExitosaRecargaPreguntas() {
+        inicializarCompleto();
+        vm.responderPregunta(42L, "Sí, acepto permutas");
+
+        assertNotNull(writeApi.lastAnswerQuestionCall);
+        writeApi.lastAnswerQuestionCall.respond(Response.success(new Pregunta()));
+
+        assertEquals("Respuesta enviada", vm.getToastMessage().getValue());
+        assertEquals(2, source.preguntas.size());
+    }
+
+    @Test
+    public void enviarOfertaExitosaActualizaOfertaEnEstado() {
+        inicializarCompleto();
+        assertFalse(estado().isOfertaEnCurso());
+
+        vm.enviarOferta(5000.0, "Ofrezco esto");
+
+        assertTrue(estado().isOfertaEnCurso());
+        assertNotNull(writeApi.lastMakeOfferCall);
+
+        Offer ofertaRespuesta = new Gson().fromJson(
+                "{\"id\":10,\"status\":\"PENDING\",\"offeredPrice\":5000}", Offer.class);
+        writeApi.lastMakeOfferCall.respond(Response.success(ofertaRespuesta));
+
+        assertFalse(estado().isOfertaEnCurso());
+        assertEquals("Oferta enviada", vm.getToastMessage().getValue());
+        assertSame(ofertaRespuesta, estado().getPublicacion().getMyOffer());
+    }
+
+    @Test
+    public void enviarOfertaNoPermiteDuplicadoMientrasCursa() {
+        inicializarCompleto();
+        vm.enviarOferta(5000.0, null);
+        assertTrue(estado().isOfertaEnCurso());
+
+        // Segunda llamada mientras la primera cursa — no debe generar otro Call
+        vm.enviarOferta(6000.0, null);
+        assertEquals(1, writeApi.makeOfferCallCount);
+    }
+
+    @Test
+    public void enviarOfertaConErrorLimpiaBandera() {
+        inicializarCompleto();
+        vm.enviarOferta(5000.0, null);
+        assertTrue(estado().isOfertaEnCurso());
+
+        writeApi.lastMakeOfferCall.fail(new RuntimeException("red"));
+
+        assertFalse(estado().isOfertaEnCurso());
+        assertEquals("Error de conexión", vm.getToastMessage().getValue());
+    }
+
+    @Test
+    public void cambiarEstadoPublicacionExitosaRecargaDetalle() {
+        inicializarCompleto();
+        assertFalse(estado().isGestionEnCurso());
+
+        vm.cambiarEstadoPublicacion("PAUSED");
+
+        assertTrue(estado().isGestionEnCurso());
+        assertNotNull(writeApi.lastUpdateStatusCall);
+
+        writeApi.lastUpdateStatusCall.respond(Response.success(publicacion("Pausada")));
+
+        assertFalse(estado().isGestionEnCurso());
+        assertEquals("Publicación actualizada", vm.getToastMessage().getValue());
+        // Recargó detalle
+        assertEquals(2, source.detalles.size());
+    }
+
+    @Test
+    public void cambiarEstadoNoPermiteDuplicadoMientrasCursa() {
+        inicializarCompleto();
+        vm.cambiarEstadoPublicacion("PAUSED");
+        vm.cambiarEstadoPublicacion("ACTIVE");
+        assertEquals(1, writeApi.updateStatusCallCount);
+    }
+
+    @Test
+    public void toggleFavoriteAgregaYNotifica() {
+        inicializarCompleto();
+        assertFalse(estado().getPublicacion().isFavorite());
+        assertFalse(estado().isFavoritoEnCurso());
+
+        vm.toggleFavorite();
+
+        assertTrue(estado().isFavoritoEnCurso());
+        assertNotNull(favoriteApi.lastMarkCall);
+
+        favoriteApi.lastMarkCall.respond(Response.success(null));
+
+        assertFalse(estado().isFavoritoEnCurso());
+        assertTrue(estado().getPublicacion().isFavorite());
+        assertEquals("Agregado a favoritos", vm.getToastMessage().getValue());
+    }
+
+    @Test
+    public void toggleFavoriteQuitaYNotifica() {
+        inicializarCompleto();
+        vm.actualizarFavorito(true);
+        assertTrue(estado().getPublicacion().isFavorite());
+
+        vm.toggleFavorite();
+
+        assertTrue(estado().isFavoritoEnCurso());
+        assertNotNull(favoriteApi.lastUnmarkCall);
+
+        favoriteApi.lastUnmarkCall.respond(Response.success(null));
+
+        assertFalse(estado().isFavoritoEnCurso());
+        assertFalse(estado().getPublicacion().isFavorite());
+        assertEquals("Eliminado de favoritos", vm.getToastMessage().getValue());
+    }
+
+    @Test
+    public void toggleFavoriteNoPermiteDuplicadoMientrasCursa() {
+        inicializarCompleto();
+        vm.toggleFavorite();
+        assertTrue(estado().isFavoritoEnCurso());
+        vm.toggleFavorite();
+        assertEquals(1, favoriteApi.markCallCount);
+    }
+
+    @Test
+    public void hasPendingWritesTrueConEscrituraEnCurso() {
+        inicializarCompleto();
+        assertFalse(vm.hasPendingWrites());
+
+        vm.enviarPregunta("Hola");
+        assertTrue(vm.hasPendingWrites());
+
+        writeApi.lastAskQuestionCall.respond(Response.success(new Pregunta()));
+        assertFalse(vm.hasPendingWrites());
+    }
+
+    @Test
+    public void onClearedCancelaEscriturasEnCurso() {
+        inicializarCompleto();
+        vm.enviarOferta(100, null);
+        FakeCall<Offer> call = writeApi.lastMakeOfferCall;
+
+        vm.onCleared();
+        assertTrue(call.isCanceled());
+    }
+
+    @Test
+    public void registrarVistaLocalPersisteFlagEnDataStore() {
+        vm.registrarVistaLocal("42");
+        // No lanza excepción con dataStore null (guarded)
+        // El memoryCache interno se actualiza
+    }
+
+    // ────────── Helpers ──────────
+
+    private void inicializarCompleto() {
+        vm.inicializar(publicacion("Test"));
+        source.detalles.get(0).success(publicacion("Completa"));
+        source.preguntas.get(0).success(Collections.emptyList());
+    }
+
     private DetalleUiState estado() { return vm.getEstado().getValue(); }
 
     private static Publicacion publicacion(String titulo) {
@@ -229,6 +432,8 @@ public class DetalleViewModelTest {
         p.setTitle(titulo);
         return p;
     }
+
+    // ────────── Fakes ──────────
 
     private static class Pending<T> implements PublicationDetailSource.Request {
         boolean canceled;
@@ -257,6 +462,62 @@ public class DetalleViewModelTest {
             Pending<Void> pendiente = new Pending<>(null);
             visitas.add(pendiente);
             return pendiente;
+        }
+    }
+
+    private static class FakeWriteApi implements PublicationWriteApiService {
+        FakeCall<Pregunta> lastAskQuestionCall;
+        FakeCall<Pregunta> lastAnswerQuestionCall;
+        FakeCall<Offer> lastMakeOfferCall;
+        FakeCall<Publicacion> lastUpdateStatusCall;
+        int makeOfferCallCount;
+        int updateStatusCallCount;
+
+        @Override public retrofit2.Call<Publicacion> createPublication(
+                com.example.tprondagrupo2.model.PublicationCreateRequest request) {
+            return new FakeCall<>();
+        }
+        @Override public retrofit2.Call<Publicacion> updatePublicationStatus(Long id, String state) {
+            updateStatusCallCount++;
+            lastUpdateStatusCall = new FakeCall<>();
+            return lastUpdateStatusCall;
+        }
+        @Override public retrofit2.Call<Void> deletePublication(Long id) {
+            return new FakeCall<>();
+        }
+        @Override public retrofit2.Call<Pregunta> askQuestion(String id,
+                com.example.tprondagrupo2.model.TextoRequest request) {
+            lastAskQuestionCall = new FakeCall<>();
+            return lastAskQuestionCall;
+        }
+        @Override public retrofit2.Call<Pregunta> answerQuestion(Long questionId,
+                com.example.tprondagrupo2.model.TextoRequest request) {
+            lastAnswerQuestionCall = new FakeCall<>();
+            return lastAnswerQuestionCall;
+        }
+        @Override public retrofit2.Call<Offer> makeOffer(String id,
+                com.example.tprondagrupo2.model.OfertaRequest request) {
+            makeOfferCallCount++;
+            lastMakeOfferCall = new FakeCall<>();
+            return lastMakeOfferCall;
+        }
+    }
+
+    private static class FakeFavoriteApi implements PublicationFavoriteApiService {
+        FakeCall<Void> lastMarkCall;
+        FakeCall<Void> lastUnmarkCall;
+        int markCallCount;
+        int unmarkCallCount;
+
+        @Override public retrofit2.Call<Void> markAsFavorite(String id) {
+            markCallCount++;
+            lastMarkCall = new FakeCall<>();
+            return lastMarkCall;
+        }
+        @Override public retrofit2.Call<Void> unmarkAsFavorite(String id) {
+            unmarkCallCount++;
+            lastUnmarkCall = new FakeCall<>();
+            return lastUnmarkCall;
         }
     }
 }
