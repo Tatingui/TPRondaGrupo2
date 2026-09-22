@@ -10,10 +10,17 @@ import com.example.tprondagrupo2.data.repository.SavedSearchRepository;
 import com.example.tprondagrupo2.data.repository.UserRepository;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.model.SavedSearch;
+import com.example.tprondagrupo2.model.SavedSearchDataStoreItem;
 import com.example.tprondagrupo2.model.UserProfile;
 import com.example.tprondagrupo2.model.UserProfileUpdateRequest;
+import com.example.tprondagrupo2.network.SavedSearchesDataStoreManager;
+import com.example.tprondagrupo2.network.PublicationPageResponse;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -26,6 +33,7 @@ public class ProfileViewModel extends ViewModel {
     private final UserRepository userRepository;
     private final SavedSearchRepository savedSearchRepository;
     private final PublicationRepository publicationRepository;
+    private final SavedSearchesDataStoreManager savedSearchesDataStoreManager;
 
     private final MutableLiveData<UserProfile> userProfile = new MutableLiveData<>();
     private final MutableLiveData<List<SavedSearch>> savedSearches = new MutableLiveData<>();
@@ -38,10 +46,12 @@ public class ProfileViewModel extends ViewModel {
     @Inject
     public ProfileViewModel(UserRepository userRepository,
                             SavedSearchRepository savedSearchRepository,
-                            PublicationRepository publicationRepository) {
+                            PublicationRepository publicationRepository,
+                            SavedSearchesDataStoreManager savedSearchesDataStoreManager) {
         this.userRepository = userRepository;
         this.savedSearchRepository = savedSearchRepository;
         this.publicationRepository = publicationRepository;
+        this.savedSearchesDataStoreManager = savedSearchesDataStoreManager;
     }
 
     public LiveData<UserProfile> getUserProfile() { return userProfile; }
@@ -127,7 +137,7 @@ public class ProfileViewModel extends ViewModel {
         savedSearchRepository.getSavedSearches(new RepoCallback<List<SavedSearch>>() {
             @Override
             public void onSuccess(List<SavedSearch> list) {
-                savedSearches.setValue(list);
+                synchronizeSavedSearches(list != null ? list : new ArrayList<>(), 0);
             }
 
             @Override
@@ -140,6 +150,75 @@ public class ProfileViewModel extends ViewModel {
                 error.setValue("Error de red al cargar búsquedas");
             }
         });
+    }
+
+    private void synchronizeSavedSearches(List<SavedSearch> searches, int index) {
+        if (index >= searches.size()) {
+            savedSearches.setValue(searches);
+            return;
+        }
+
+        SavedSearch search = searches.get(index);
+        if (search == null || search.getId() == null) {
+            synchronizeSavedSearches(searches, index + 1);
+            return;
+        }
+
+        publicationRepository.getPublications(
+                search.getQuery(),
+                search.getCategoryId(),
+                search.getMinPrice(),
+                search.getMaxPrice(),
+                search.getCondition(),
+                search.getLocation(),
+                0,
+                50,
+                search.getSort() != null ? search.getSort() : "createdAt,desc",
+                new PublicationRepository.PublicationPageCallback() {
+                    @Override
+                    public void onSuccess(PublicationPageResponse response) {
+                        updateSavedSearchState(search, response != null ? response.getContent() : null);
+                        synchronizeSavedSearches(searches, index + 1);
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        synchronizeSavedSearches(searches, index + 1);
+                    }
+
+                    @Override
+                    public void onNetworkError() {
+                        synchronizeSavedSearches(searches, index + 1);
+                    }
+                });
+    }
+
+    private void updateSavedSearchState(SavedSearch search, List<Publicacion> currentPublications) {
+        String searchId = String.valueOf(search.getId());
+        Map<String, SavedSearchDataStoreItem> storedSearches =
+                savedSearchesDataStoreManager.getSavedSearchesMap();
+        SavedSearchDataStoreItem stored = storedSearches.get(searchId);
+
+        List<String> currentIds = new ArrayList<>();
+        if (currentPublications != null) {
+            for (Publicacion publication : currentPublications) {
+                if (publication != null && publication.getId() != null) {
+                    currentIds.add(publication.getId());
+                }
+            }
+        }
+
+        if (stored == null) {
+            savedSearchesDataStoreManager.updateSearchUpdates(searchId, currentIds, false);
+            search.setHasUpdates(false);
+            return;
+        }
+
+        Set<String> knownIds = new HashSet<>(stored.getPublicationIds());
+        boolean hasNewPublications = currentIds.stream().anyMatch(id -> !knownIds.contains(id));
+        boolean hasUpdates = stored.isHasUpdates() || hasNewPublications;
+        savedSearchesDataStoreManager.updateSearchUpdates(searchId, currentIds, hasUpdates);
+        search.setHasUpdates(hasUpdates);
     }
 
     public void deleteSavedSearch(Long id) {
