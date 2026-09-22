@@ -139,21 +139,28 @@ public class UserRepository {
     }
 
     /**
-     * Cierra la sesion del usuario: limpia el token almacenado.
+     * Cierra la sesion del usuario: limpia el token de sesion y el flag
+     * de mantener sesion. Preserva la configuracion de biometria y el
+     * token cifrado para que al re-loguear no vuelva a preguntar.
      */
     public void logout() {
         tokenManager.clearToken();
-        tokenManager.setBiometricEnabled(false);
-        tokenManager.clearEncryptedToken();
         tokenManager.setKeepSession(false);
     }
 
+    /**
+     * Elimina la cuenta del usuario en el backend y limpia todos los
+     * datos locales: token, biometria, token cifrado y mantener sesion.
+     */
     public void deleteAccount(DeleteAccountCallback callback) {
         userApiService.deleteMyAccount().enqueue(new retrofit2.Callback<Void>() {
             @Override
             public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {
                 if (response.isSuccessful()) {
                     tokenManager.clearToken();
+                    tokenManager.setBiometricEnabled(false);
+                    tokenManager.clearEncryptedToken();
+                    tokenManager.setKeepSession(false);
                     callback.onSuccess();
                 } else {
                     callback.onError("Error al eliminar la cuenta");
