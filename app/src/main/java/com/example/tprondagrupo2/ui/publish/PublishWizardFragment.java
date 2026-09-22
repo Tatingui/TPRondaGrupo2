@@ -398,7 +398,7 @@ public class PublishWizardFragment extends Fragment {
             finalUrls.add(u.toString());
         }
         if (finalUrls.isEmpty()) {
-            finalUrls.add("https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=800");
+            finalUrls.add(getString(R.string.publish_default_image_url));
         }
 
         PublicationCreateRequest request = new PublicationCreateRequest(title, desc, price, status, loc, catId, finalUrls);

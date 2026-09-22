@@ -1,13 +1,9 @@
 package com.example.tprondagrupo2.ui;
 
-import android.app.Dialog;
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,6 +15,7 @@ import com.bumptech.glide.Glide;
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.util.FormatUtils;
+import com.example.tprondagrupo2.util.ImageUtils;
 import com.example.tprondagrupo2.util.PublicationConstants;
 
 import java.util.List;
@@ -106,7 +103,7 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
         // Click en la imagen: abrir en pantalla completa
         holder.ivProduct.setOnClickListener(v -> {
             if (imageUrl != null && !imageUrl.isEmpty()) {
-                showFullscreenImage(v, imageUrl);
+                ImageUtils.showFullscreenImage(v, imageUrl);
             }
         });
 
@@ -115,27 +112,6 @@ public class PublicationAdapter extends RecyclerView.Adapter<PublicationAdapter.
                 listener.onItemClick(pub);
             }
         });
-    }
-
-    private void showFullscreenImage(View anchorView, String imageUrl) {
-        Dialog dialog = new Dialog(anchorView.getContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.dialog_fullscreen_image);
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        }
-
-        ImageView ivFullscreen = dialog.findViewById(R.id.ivFullscreen);
-        dialog.findViewById(R.id.btnCloseFullscreen).setOnClickListener(v -> dialog.dismiss());
-        ivFullscreen.setOnClickListener(v -> dialog.dismiss());
-
-        Glide.with(anchorView.getContext())
-                .load(imageUrl)
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_gallery)
-                .into(ivFullscreen);
-
-        dialog.show();
     }
 
     public int getItemCount() {
