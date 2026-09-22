@@ -95,6 +95,11 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            showError("Ingresa un email valido");
+            return;
+        }
+
         hideError();
         setLoading(true);
 
@@ -146,6 +151,11 @@ public class LoginFragment extends Fragment {
 
         if (email.isEmpty()) {
             showError("Ingresa tu email para recibir el codigo");
+            return;
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            showError("Ingresa un email valido");
             return;
         }
 

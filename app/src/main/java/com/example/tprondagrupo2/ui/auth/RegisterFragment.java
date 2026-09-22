@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import android.util.Log;
+import android.util.Patterns;
 
 import com.example.tprondagrupo2.R;
 import com.example.tprondagrupo2.data.repository.AuthRepository;
@@ -197,6 +198,11 @@ public class RegisterFragment extends Fragment {
 
         if (nombre.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             showError("Completa todos los campos obligatorios");
+            return;
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            showError("Ingresa un email valido (ej: usuario@dominio.com)");
             return;
         }
 
