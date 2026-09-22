@@ -17,11 +17,8 @@ import com.example.tprondagrupo2.model.OperacionHistorial;
 import com.example.tprondagrupo2.util.FormatUtils;
 import com.google.android.material.button.MaterialButton;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Adaptador de RecyclerView para renderizar cada tarjeta de transacción del historial de operaciones.
@@ -90,7 +87,7 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         }
 
         // 2. Fecha de transacción
-        holder.tvFecha.setText(formatFechaDisplay(operacion.getFecha()));
+        holder.tvFecha.setText(FormatUtils.formatFechaDisplay(operacion.getFecha()));
 
         // 3. Título del artículo
         holder.tvTituloArticulo.setText(operacion.getTituloPublicacion() != null
@@ -110,7 +107,7 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
 
         // 6. Estado de la entrega
         if (operacion.entregaConfirmada()) {
-            String fechaEntregaFormat = formatFechaDisplay(operacion.getFechaEntrega());
+            String fechaEntregaFormat = FormatUtils.formatFechaDisplay(operacion.getFechaEntrega());
             holder.tvEstadoEntrega.setText(context.getString(R.string.historial_entrega_confirmada, fechaEntregaFormat));
             holder.tvEstadoEntrega.setTextColor(ContextCompat.getColor(context, R.color.historial_entrega_confirmada));
             holder.btnConfirmarEntrega.setVisibility(View.GONE);
@@ -126,7 +123,8 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
         }
 
         // 7. Botón para Calificar
-        boolean enVentana7Dias = isDentroDe7DiasEntrega(operacion);
+        boolean enVentana7Dias = operacion.entregaConfirmada()
+                && FormatUtils.isDentroDe7Dias(operacion.getFechaEntrega());
         boolean puedeCalificar = operacion.entregaConfirmada() && (enVentana7Dias || operacion.isPuedeCalificar());
 
         if (operacion.isYaCalificado()) {
@@ -151,65 +149,6 @@ public class HistorialAdapter extends RecyclerView.Adapter<HistorialAdapter.View
     @Override
     public int getItemCount() {
         return operaciones.size();
-    }
-
-    /**
-     * Verifica si la fecha de entrega de la operación se produjo dentro de los 7 días anteriores
-     * respecto al momento actual.
-     *
-     * @param operacion Transacción a evaluar.
-     * @return true si la entrega fue confirmada y está dentro de la ventana de 7 días, false en caso contrario.
-     */
-    private boolean isDentroDe7DiasEntrega(OperacionHistorial operacion) {
-        if (!operacion.entregaConfirmada()) {
-            return false;
-        }
-        String fechaEntregaStr = operacion.getFechaEntrega();
-        if (fechaEntregaStr == null || fechaEntregaStr.trim().isEmpty()) {
-            return false;
-        }
-        try {
-            SimpleDateFormat sdf;
-            if (fechaEntregaStr.contains("T")) {
-                sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-            } else {
-                sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            }
-            Date deliveryDate = sdf.parse(fechaEntregaStr);
-            if (deliveryDate != null) {
-                long diffMs = System.currentTimeMillis() - deliveryDate.getTime();
-                long maxMs = 7L * 24 * 60 * 60 * 1000L;
-                return diffMs >= 0 && diffMs <= maxMs;
-            }
-        } catch (Exception ignored) { }
-        return operacion.isPuedeCalificar();
-    }
-
-    /**
-     * Convierte una cadena de texto en formato ISO a una representación de fecha/hora legible
-     * en formato dd/MM/yyyy HH:mm.
-     *
-     * @param isoDate Cadena de texto que contiene la fecha en ISO (ej. "2025-05-10T14:30:00").
-     * @return Cadena formateada o la cadena original si ocurrió un error en el procesamiento.
-     */
-    private String formatFechaDisplay(String isoDate) {
-        if (isoDate == null || isoDate.trim().isEmpty()) {
-            return "-";
-        }
-        try {
-            SimpleDateFormat inFormat;
-            if (isoDate.contains("T")) {
-                inFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-            } else {
-                inFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            }
-            Date date = inFormat.parse(isoDate);
-            if (date != null) {
-                SimpleDateFormat outFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
-                return outFormat.format(date);
-            }
-        } catch (Exception ignored) { }
-        return isoDate;
     }
 
     /**
