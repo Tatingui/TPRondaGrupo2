@@ -1,9 +1,5 @@
 # Ronda — Marketplace de Compraventa
 
-<p align="center">
-  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" alt="Ronda Logo" width="120"/>
-</p>
-
 **Ronda** es una aplicación de marketplace para Android que permite a los usuarios publicar, buscar, ofertar y concretar compras y ventas de productos de segunda mano. Desarrollada como Trabajo Práctico Obligatorio para la materia *Desarrollo de Aplicaciones I* — Universidad Argentina de la Empresa (UADE), 2025.
 
 ---
@@ -543,6 +539,12 @@ Esto garantiza que `main` siempre tenga código que compila y pasa los tests.
 ## Equipo
 
 Proyecto desarrollado por el Grupo 2 de Desarrollo de Aplicaciones I — UADE, 2025.
+
+- Santiago Emanuel Gonzalez 
+- Isnardo Julián Ezequiel 
+- Agustin Chiaravalli
+- Valentin Gonzalez 
+- Michelle Perna Jazmin 
 
 ---
 
