@@ -269,6 +269,7 @@ public class ProfileFragment extends Fragment {
             savedSearches.clear();
             if (searches != null) {
                 savedSearches.addAll(searches);
+                applySavedSearchUpdateState(savedSearches);
             }
             if (savedSearchAdapter != null) {
                 savedSearchAdapter.notifyDataSetChanged();
@@ -296,6 +297,18 @@ public class ProfileFragment extends Fragment {
                         .navigate(R.id.action_profile_to_login);
             }
         });
+    }
+
+    private void applySavedSearchUpdateState(List<SavedSearch> searches) {
+        Map<String, SavedSearchDataStoreItem> storedSearches =
+                savedSearchesDataStoreManager.getSavedSearchesMap();
+        for (SavedSearch search : searches) {
+            if (search == null || search.getId() == null) continue;
+            SavedSearchDataStoreItem stored = storedSearches.get(String.valueOf(search.getId()));
+            if (stored != null) {
+                search.setHasUpdates(stored.isHasUpdates());
+            }
+        }
     }
 
     @Override
