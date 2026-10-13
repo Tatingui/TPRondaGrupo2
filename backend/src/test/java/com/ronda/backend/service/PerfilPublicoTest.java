@@ -65,21 +65,20 @@ public class PerfilPublicoTest {
     }
 
     @Test
-    public void traeSoloLasPublicacionesActivas() {
+    public void noMuestraHistorialPublicacionesSegunConsigna() {
         PublicProfileDTO perfil = publicationService.getPerfilPublico(user.getId(), null);
 
-        assertEquals(2, perfil.getPublicacionesActivas().size());
-        assertTrue(perfil.getPublicacionesActivas().stream()
-                .allMatch(p -> p.getState() == PublicationState.ACTIVE));
+        assertTrue(perfil.getPublicacionesActivas().isEmpty());
     }
 
     @Test
-    public void traeReputacionAntiguedadYZona() {
+    public void traeReputacionAntiguedadYZonaEInsignias() {
         PublicProfileDTO perfil = publicationService.getPerfilPublico(user.getId(), null);
 
         assertEquals("Ana Perfil", perfil.getNombre());
         assertEquals("Palermo", perfil.getUbicacion());
         assertNotNull(perfil.getMiembroDesde());
+        assertNotNull(perfil.getInsignias());
         assertEquals(0.0, perfil.getReputacion());
         assertEquals(0, perfil.getCantidadVentas());
         assertEquals(0, perfil.getCantidadCompras());
