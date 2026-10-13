@@ -14,6 +14,8 @@ public class UserProfileUpdateRequest {
     @Size(max = 30, message = "El teléfono no puede superar los 30 caracteres")
     private String telefono;
 
+    private Boolean telefonoVisible;
+
     @Size(max = 100, message = "La zona no puede superar los 100 caracteres")
     private String zona;
 
@@ -34,6 +36,14 @@ public class UserProfileUpdateRequest {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public Boolean getTelefonoVisible() {
+        return telefonoVisible;
+    }
+
+    public void setTelefonoVisible(Boolean telefonoVisible) {
+        this.telefonoVisible = telefonoVisible;
     }
 
     public String getZona() {

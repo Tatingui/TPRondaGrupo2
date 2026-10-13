@@ -1,5 +1,8 @@
 package com.ronda.backend.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Resumen del vendedor que se muestra en el detalle de la publicacion.
  * Los nombres de los campos coinciden con el modelo Vendedor de Android.
@@ -14,6 +17,7 @@ public class SellerDTO {
     private String miembroDesde;     // Ej: "Septiembre 2026"
     private String ubicacion;        // Zona del vendedor
     private String profileImageUrl;  // URL de la foto de perfil
+    private List<String> insignias = new ArrayList<>();
 
     public SellerDTO() {
     }
@@ -88,5 +92,13 @@ public class SellerDTO {
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public List<String> getInsignias() {
+        return insignias;
+    }
+
+    public void setInsignias(List<String> insignias) {
+        this.insignias = insignias != null ? insignias : new ArrayList<>();
     }
 }
