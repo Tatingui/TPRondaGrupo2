@@ -27,6 +27,9 @@ public interface PublicacionDao {
     @Query("SELECT * FROM publicaciones WHERE id = :id LIMIT 1")
     PublicacionEntity getById(String id);
 
+    @Query("DELETE FROM publicaciones WHERE id = :id")
+    void deleteById(String id);
+
     @Query("DELETE FROM publicaciones")
     void deleteAll();
 }

@@ -20,6 +20,7 @@ public class PublicacionEntity {
     private String description;
     private String categoryName;
     private String status;
+    private String state;
     private double price;
     private String createdAt;
     private Vendedor vendedor;
@@ -37,6 +38,7 @@ public class PublicacionEntity {
         entity.setDescription(p.getDescription());
         entity.setCategoryName(p.getCategoryName());
         entity.setStatus(p.getStatus());
+        entity.setState(p.getState());
         entity.setPrice(p.getPrice());
         entity.setCreatedAt(p.getCreatedAt());
         entity.setVendedor(p.getVendedor());
@@ -53,6 +55,7 @@ public class PublicacionEntity {
         p.setDescription(this.description);
         p.setCategoryName(this.categoryName);
         p.setStatus(this.status);
+        p.setState(this.state);
         p.setPrice(this.price);
         p.setCreatedAt(this.createdAt);
         p.setVendedor(this.vendedor);
@@ -78,6 +81,9 @@ public class PublicacionEntity {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }

@@ -249,7 +249,12 @@ public class DetallePublicacionFragment extends Fragment {
         }
         tvCargaDetalle.setVisibility(estado.isCargando() || estado.getError() != null ? View.VISIBLE : View.GONE);
         if (estado.isCargando()) tvCargaDetalle.setText(R.string.detalle_cargando);
-        else if (estado.getError() != null) tvCargaDetalle.setText(textoErrorCarga(estado.getError()));
+        else if (estado.getError() != null) {
+            tvCargaDetalle.setText(textoErrorCarga(estado.getError()));
+            if (estado.getError() == LoadError.NOT_FOUND && currentPublicacion != null && currentPublicacion.getId() != null) {
+                publicacionDao.deleteById(currentPublicacion.getId());
+            }
+        }
         boolean reintentar = !estado.isCargando() && !estado.isCargandoPreguntas()
                 && (estado.getError() != null || estado.getErrorPreguntas() != null);
         btnReintentarDetalle.setVisibility(reintentar ? View.VISIBLE : View.GONE);
