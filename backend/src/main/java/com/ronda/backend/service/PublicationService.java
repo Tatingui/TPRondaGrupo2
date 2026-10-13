@@ -23,6 +23,7 @@ import com.ronda.backend.repository.RatingRepository;
 import com.ronda.backend.repository.TransactionRepository;
 import com.ronda.backend.repository.UserFavoriteRepository;
 import com.ronda.backend.repository.UserRepository;
+import java.util.Collections;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -170,13 +171,8 @@ public class PublicationService {
 
         PublicProfileDTO dto = new PublicProfileDTO();
         llenarVendedor(dto, user);
-
-        Set<Long> favoriteIds = getFavoriteIdsForUser(email);
-        List<PublicationDTO> activas = publicationRepository
-                .findBySellerIdAndStateOrderByCreatedAtDesc(userId, PublicationState.ACTIVE).stream()
-                .map(pub -> convertToDTO(pub, favoriteIds))
-                .collect(Collectors.toList());
-        dto.setPublicacionesActivas(activas);
+        // La consigna especifica que el perfil público no incluye el historial de publicaciones ni teléfono
+        dto.setPublicacionesActivas(Collections.emptyList());
         return dto;
     }
 
@@ -199,6 +195,7 @@ public class PublicationService {
         dto.setCantidadVentas(transactionService.getSaleCount(seller.getId()));
         dto.setCantidadCompras(transactionService.getPurchaseCount(seller.getId()));
         dto.setProfileImageUrl(seller.getProfileImageUrl());
+        dto.setInsignias(UserService.calcularInsignias(dto.getCantidadVentas(), dto.getCantidadCompras(), dto.getReputacion()));
     }
 
     @Transactional

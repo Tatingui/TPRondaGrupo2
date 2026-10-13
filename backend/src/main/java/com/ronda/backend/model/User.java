@@ -42,6 +42,9 @@ public class User {
     /** Telefono de contacto. Opcional, el usuario lo puede completar despues. */
     private String telefono;
 
+    /** Visibilidad del telefono de contacto para la contraparte en transacciones. */
+    private boolean telefonoVisible = true;
+
     /** Zona/ubicacion del usuario. Opcional. */
     private String zona;
 
@@ -131,6 +134,14 @@ public class User {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public boolean isTelefonoVisible() {
+        return telefonoVisible;
+    }
+
+    public void setTelefonoVisible(boolean telefonoVisible) {
+        this.telefonoVisible = telefonoVisible;
     }
 
     public String getZona() {

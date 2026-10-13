@@ -7,7 +7,7 @@ import androidx.room.TypeConverters;
 import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.db.entity.PublicacionEntity;
 
-@Database(entities = {PublicacionEntity.class}, version = 1, exportSchema = false)
+@Database(entities = {PublicacionEntity.class}, version = 2, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

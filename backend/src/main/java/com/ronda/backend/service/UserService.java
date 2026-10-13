@@ -64,6 +64,7 @@ public class UserService {
         response.setNombre(user.getNombre());
         response.setEmail(user.getEmail());
         response.setTelefono(user.getTelefono());
+        response.setTelefonoVisible(user.isTelefonoVisible());
         response.setZona(user.getZona());
         response.setProfileImageUrl(user.getProfileImageUrl());
 
@@ -75,7 +76,24 @@ public class UserService {
         response.setCantidadVentas(transactionService.getSaleCount(user.getId()));
         response.setCantidadCompras(transactionService.getPurchaseCount(user.getId()));
 
+        response.setInsignias(calcularInsignias(response.getCantidadVentas(), response.getCantidadCompras(), response.getReputacion()));
+
         return response;
+    }
+
+    /**
+     * Calcula las insignias otorgadas al usuario en base a sus transacciones concretadas y reputacion.
+     */
+    public static java.util.List<String> calcularInsignias(int ventas, int compras, double reputacion) {
+        java.util.List<String> insignias = new java.util.ArrayList<>();
+        int totalOperaciones = ventas + compras;
+        if (totalOperaciones >= 5) {
+            insignias.add("Vecino solidario");
+        }
+        if (reputacion >= 4.5 && totalOperaciones >= 3) {
+            insignias.add("Excelente reputación");
+        }
+        return insignias;
     }
 
     /**
@@ -107,6 +125,9 @@ public class UserService {
         }
         if (request.getTelefono() != null) {
             user.setTelefono(request.getTelefono().trim());
+        }
+        if (request.getTelefonoVisible() != null) {
+            user.setTelefonoVisible(request.getTelefonoVisible());
         }
         if (request.getZona() != null) {
             user.setZona(request.getZona().trim());

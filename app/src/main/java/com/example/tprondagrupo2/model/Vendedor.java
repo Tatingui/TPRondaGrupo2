@@ -1,6 +1,8 @@
 package com.example.tprondagrupo2.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Datos del vendedor que se muestran en el detalle de la publicacion
@@ -17,6 +19,7 @@ public class Vendedor implements Serializable, ReputacionInfo {
     private String miembroDesde;      // Ej: "Marzo 2023"
     private String ubicacion;         // Zona del vendedor
     private String profileImageUrl;   // URL de la foto de perfil
+    private List<String> insignias = new ArrayList<>();
 
     public Vendedor() {
         // Constructor vacio requerido por Gson
@@ -109,5 +112,13 @@ public class Vendedor implements Serializable, ReputacionInfo {
 
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public List<String> getInsignias() {
+        return insignias != null ? insignias : new ArrayList<>();
+    }
+
+    public void setInsignias(List<String> insignias) {
+        this.insignias = insignias != null ? insignias : new ArrayList<>();
     }
 }

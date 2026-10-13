@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.tprondagrupo2.db.dao.PublicacionDao;
 import com.example.tprondagrupo2.model.Publicacion;
 import com.example.tprondagrupo2.network.PublicationReadApiService;
 import com.example.tprondagrupo2.network.PublicationWriteApiService;
@@ -24,6 +25,7 @@ public class MyPublicationsViewModel extends ViewModel {
 
     private final PublicationReadApiService publicationReadApiService;
     private final PublicationWriteApiService publicationWriteApiService;
+    private final PublicacionDao publicacionDao;
 
     private final MutableLiveData<List<Publicacion>> myPublications = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
@@ -32,9 +34,11 @@ public class MyPublicationsViewModel extends ViewModel {
 
     @Inject
     public MyPublicationsViewModel(PublicationReadApiService publicationReadApiService,
-                                   PublicationWriteApiService publicationWriteApiService) {
+                                   PublicationWriteApiService publicationWriteApiService,
+                                   PublicacionDao publicacionDao) {
         this.publicationReadApiService = publicationReadApiService;
         this.publicationWriteApiService = publicationWriteApiService;
+        this.publicacionDao = publicacionDao;
     }
 
     public LiveData<List<Publicacion>> getMyPublications() { return myPublications; }
@@ -98,6 +102,9 @@ public class MyPublicationsViewModel extends ViewModel {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 loading.setValue(false);
                 if (response.isSuccessful()) {
+                    if (pub.getId() != null) {
+                        publicacionDao.deleteById(pub.getId());
+                    }
                     toastMessage.setValue("Publicación dada de baja");
                     fetchMyPublications();
                 } else {

@@ -1,5 +1,8 @@
 package com.ronda.backend.dto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Datos del perfil del usuario logueado.
  * Se devuelve en GET /usuarios/me.
@@ -10,6 +13,7 @@ public class UserProfileResponse {
     private String nombre;
     private String email;
     private String telefono;
+    private boolean telefonoVisible = true;
     private String zona;
     private String profileImageUrl;
     private String miembroDesde;  // Ej: "Septiembre 2026"
@@ -19,6 +23,7 @@ public class UserProfileResponse {
     private int cantidadOpiniones;      // Calificaciones recibidas
     private int cantidadVentas;         // Operaciones concretadas como vendedor
     private int cantidadCompras;        // Operaciones concretadas como comprador
+    private List<String> insignias = new ArrayList<>();
 
     public UserProfileResponse() {
     }
@@ -109,5 +114,21 @@ public class UserProfileResponse {
 
     public void setMiembroDesde(String miembroDesde) {
         this.miembroDesde = miembroDesde;
+    }
+
+    public boolean isTelefonoVisible() {
+        return telefonoVisible;
+    }
+
+    public void setTelefonoVisible(boolean telefonoVisible) {
+        this.telefonoVisible = telefonoVisible;
+    }
+
+    public List<String> getInsignias() {
+        return insignias;
+    }
+
+    public void setInsignias(List<String> insignias) {
+        this.insignias = insignias != null ? insignias : new ArrayList<>();
     }
 }

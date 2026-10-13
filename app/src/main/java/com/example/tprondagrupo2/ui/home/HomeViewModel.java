@@ -110,9 +110,13 @@ public class HomeViewModel extends ViewModel {
                             List<Publicacion> currentList = publications.getValue() != null ? publications.getValue() : new ArrayList<>();
                             if (page == 0) {
                                 currentList = new ArrayList<>(newItems);
-                                saveToCache(newItems);
+                                boolean isDefaultQuery = (search == null || search.isEmpty())
+                                        && categoryId == null && minPrice == null && maxPrice == null
+                                        && status == null && location == null;
+                                saveToCache(newItems, isDefaultQuery);
                             } else {
                                 currentList.addAll(newItems);
+                                saveToCache(newItems, false);
                             }
                             publications.setValue(currentList);
                             isLastPage.setValue(pageResponse.isLast());
@@ -136,7 +140,10 @@ public class HomeViewModel extends ViewModel {
                 });
     }
 
-    private void saveToCache(List<Publicacion> items) {
+    private void saveToCache(List<Publicacion> items, boolean clearPrevious) {
+        if (clearPrevious) {
+            publicacionDao.deleteAll();
+        }
         if (items == null) return;
         List<PublicacionEntity> entities = items.stream()
                 .map(PublicacionEntity::fromModel)
@@ -159,6 +166,7 @@ public class HomeViewModel extends ViewModel {
 
         List<Publicacion> filtered = new ArrayList<>();
         for (Publicacion p : cachedItems) {
+            if (!p.estaActiva()) continue;
             boolean matches = true;
             if (categoryId != null && (p.getCategoryName() == null || !p.getCategoryName().equals(String.valueOf(categoryId)))) matches = false;
             if (matches && status != null && !status.equals(p.getStatus())) matches = false;
